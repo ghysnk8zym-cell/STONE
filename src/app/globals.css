@@ -1,7 +1,310 @@
+/* Design tokens: plain CSS custom properties named exactly like the Figma variables (ADR-003). */
+@import "../styles/tokens/color.css";
+@import "../styles/tokens/type.css";
+@import "../styles/tokens/layout.css";
+@import "../styles/tokens/effects.css";
+@import "../styles/tokens/motion.css";
 @import "tailwindcss";
 
 /* Default Tailwind palette and fonts are disabled: only STONE tokens (Phase 2) may be used. */
 @theme {
   --color-*: initial;
   --font-*: initial;
+}
+
+/* One colour utility per Figma colour variable (bg-surface-page, text-ink, border-glass …).
+   text-* variables drop the prefix (text-primary -> --color-primary), border-glass* drop "border-"
+   (border-glass), --border-ink keeps its name so it cannot clash with --text-ink (--color-ink). */
+@theme inline {
+  --color-surface-page: var(--surface-page);
+  --color-surface-header: var(--surface-header);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-card: var(--surface-card);
+  --color-surface-card-hover: var(--surface-card-hover);
+  --color-surface-button: var(--surface-button);
+  --color-surface-nav-pill: var(--surface-nav-pill);
+  --color-surface-footer: var(--surface-footer);
+  --color-surface-selected: var(--surface-selected);
+  --color-glass: var(--border-glass);
+  --color-glass-strong: var(--border-glass-strong);
+  --color-border-ink: var(--border-ink);
+  --color-divider-light: var(--divider-light);
+  --color-overlay-tint-10: var(--overlay-tint-10);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-label: var(--text-label);
+  --color-ink: var(--text-ink);
+  --color-ink-secondary: var(--text-ink-secondary);
+  --color-icon-light: var(--icon-light);
+  --color-icon-ink: var(--icon-ink);
+  --color-accent-focus: var(--accent-focus);
+  --color-success-ink: var(--success-ink);
+  --color-success-bg: var(--success-bg);
+  --color-stone-catalog-page: var(--stone-catalog-page);
+  --color-stone-catalog-card: var(--stone-catalog-card);
+  --color-stone-catalog-photo: var(--stone-catalog-photo);
+  --color-stone-catalog-line: var(--stone-catalog-line);
+  --color-stone-catalog-ink: var(--stone-catalog-ink);
+  --color-stone-catalog-secondary: var(--stone-catalog-secondary);
+}
+
+/* State variants (D020/D030 contract). Each matches the real pseudo-class AND a data-state
+   attribute so the styleguide can render a frozen state. Disabled elements never react. */
+@custom-variant hov (&:where(:hover:not(:disabled, [aria-disabled="true"]), [data-state="hover"]));
+@custom-variant focusv (&:where(:focus-visible, [data-state="focus"]));
+@custom-variant press (&:where(:active:not(:disabled, [aria-disabled="true"]), [data-state="pressed"]));
+
+/* Text styles. Names follow the Figma text styles; Figma letter-spacing is percent (10 -> 0.1em).
+   Sizes bound to a Figma variable use that token, so they change per breakpoint.
+   Cyrillic in the Lusitana roles falls back to PT Serif (ADR-003). */
+@utility type-brand-logo {
+  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: var(--type-logo-size);
+  line-height: 32px;
+  letter-spacing: 0.1em;
+}
+
+@utility type-nav-link {
+  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: var(--type-nav-size);
+  line-height: 28px;
+  letter-spacing: 0;
+}
+
+@utility type-nav-menu {
+  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 36px;
+  letter-spacing: 0;
+}
+
+@utility type-button-label {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+@utility type-hero-headline {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 400;
+  font-size: var(--type-headline-size);
+  line-height: var(--type-headline-lh);
+  letter-spacing: 0.14em;
+}
+
+@utility type-section-label {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.12em;
+}
+
+@utility type-card-title {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-lh);
+  letter-spacing: 0;
+}
+
+@utility type-body-m {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 400;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-lh);
+  letter-spacing: 0;
+}
+
+/* Figma: "Catalog refined/Product name mobile" (18/24) on phones, "Catalog/Product name" (26/32) from 768. */
+@utility type-catalog-product-name {
+  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: 0;
+
+  @media (min-width: 768px) {
+    font-size: 26px;
+    line-height: 32px;
+  }
+}
+
+/* "Catalog refined/Meta" (14/20); "Catalog/Meta" (15/20) is the larger product-page variant. */
+@utility type-catalog-meta {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+@utility type-catalog-meta-lg {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+@utility type-catalog-action {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+@utility type-catalog-field-value {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+
+/* Figma: "Catalog/Page title 44" on phones, "Catalog/Page title 72" at 1440 on the Catalog screen. */
+@utility type-catalog-page-title {
+  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: 44px;
+  line-height: 52px;
+  letter-spacing: 0;
+
+  @media (min-width: 1440px) {
+    font-size: 72px;
+    line-height: 80px;
+  }
+}
+
+/* Figma: "Catalog/Page title 56", used at 1440 on the Account screen (44 on phones). */
+@utility type-catalog-page-title-56 {
+  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: 44px;
+  line-height: 52px;
+  letter-spacing: 0;
+
+  @media (min-width: 1440px) {
+    font-size: 56px;
+    line-height: 64px;
+  }
+}
+
+@utility type-catalog-product-title {
+  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 48px;
+  letter-spacing: 0;
+}
+
+@utility type-catalog-section {
+  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: 0;
+}
+
+@utility type-footer-link {
+  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: var(--type-footer-size);
+  line-height: 20px;
+  letter-spacing: 0.12em;
+}
+
+@utility type-footer-small {
+  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
+/* Glass effects. The Figma GLASS refraction is approximated with backdrop-filter plus a light top edge
+   (known deviation, see docs/QA). */
+@utility glass-panel {
+  backdrop-filter: blur(var(--effect-glass-panel-blur));
+  box-shadow:
+    var(--effect-glass-panel-shadow),
+    inset 0 1px 0 0 var(--border-glass);
+}
+
+@utility glass-card {
+  backdrop-filter: blur(var(--effect-glass-card-blur));
+  box-shadow:
+    var(--effect-glass-card-shadow),
+    inset 0 1px 0 0 var(--border-glass);
+}
+
+@utility glass-header {
+  background-color: var(--surface-header);
+  backdrop-filter: blur(var(--effect-glass-header-blur));
+}
+
+/* Hover/focus colour changes use the motion tokens; reduced motion makes them instant. */
+@utility motion-hover {
+  transition-property:
+    background-color, border-color, color, box-shadow, opacity;
+  transition-duration: var(--motion-hover-duration);
+  transition-timing-function: var(--motion-hover-ease);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* Press ripple (Figma RippleStart -> RippleEnd: a ring grows from 8 px to 300 px). Pure CSS, runs on
+   :active or [data-state="pressed"] via the press variant; removed under prefers-reduced-motion. */
+@keyframes ripple-expand {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.0267);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@utility ripple {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    border: 1px solid var(--border-glass-strong);
+    border-radius: 9999px;
+    background-color: var(--surface-card-hover);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.0267);
+  }
+
+  @variant press {
+    &::after {
+      animation: ripple-expand var(--motion-ripple-duration)
+        var(--motion-ripple-ease);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      animation: none;
+    }
+  }
 }

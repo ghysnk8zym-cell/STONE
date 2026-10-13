@@ -1,0 +1,55 @@
+/* Layout tokens, mobile-first (base = 390). Generated once from figma-variables.json; keep both in sync (tests/unit/tokens.test.ts). */
+:root {
+  --stone-catalog-radius-control: 12px;
+  --stone-catalog-space-4: 4px;
+  --stone-catalog-space-8: 8px;
+  --stone-catalog-space-12: 12px;
+  --layout-header-pad-x: 16px;
+  --layout-section-gap: 16px;
+  --layout-margin: 16px;
+  --layout-control-h: 44px;
+  --layout-panel-pad: 16px;
+  --layout-card-gap: 12px;
+  --layout-main-top: 20px;
+  --layout-footer-link-gap: 24px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --layout-header-pad-x: 32px;
+    --layout-section-gap: 20px;
+    --layout-margin: 32px;
+    --layout-panel-pad: 20px;
+    --layout-card-gap: 16px;
+    --layout-main-top: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --layout-header-pad-x: 40px;
+    --layout-section-gap: 24px;
+    --layout-margin: 40px;
+    --layout-control-h: 40px;
+    --layout-panel-pad: 24px;
+    --layout-main-top: 32px;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --layout-header-pad-x: 24px;
+    --layout-margin: 77px;
+    --layout-card-gap: 24px;
+    --layout-footer-link-gap: 44px;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --layout-header-pad-x: 40px;
+    --layout-margin: 317px;
+    --layout-panel-pad: 28px;
+    --layout-main-top: 40px;
+  }
+}

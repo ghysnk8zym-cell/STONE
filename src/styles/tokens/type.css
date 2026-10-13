@@ -1,0 +1,59 @@
+/* Type-scale tokens, mobile-first (base = 390). Generated once from figma-variables.json; keep both in sync (tests/unit/tokens.test.ts). */
+:root {
+  --type-headline-size: 22px;
+  --type-headline-lh: 28px;
+  --type-title-size: 17px;
+  --type-title-lh: 24px;
+  --type-body-size: 14px;
+  --type-body-lh: 20px;
+  --type-footer-size: 13px;
+  --type-logo-size: 22px;
+  --type-nav-size: 18px;
+}
+
+@media (max-width: 389px) {
+  :root {
+    --type-headline-size: 20px;
+    --type-headline-lh: 26px;
+    --type-title-size: 16px;
+    --type-title-lh: 22px;
+    --type-body-size: 13px;
+    --type-body-lh: 19px;
+    --type-logo-size: 20px;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --type-headline-size: 26px;
+    --type-headline-lh: 32px;
+    --type-title-size: 18px;
+    --type-footer-size: 14px;
+    --type-logo-size: 24px;
+    --type-nav-size: 20px;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --type-headline-size: 28px;
+    --type-headline-lh: 34px;
+    --type-footer-size: 15px;
+    --type-logo-size: 26px;
+    --type-nav-size: 22px;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --type-headline-size: 32px;
+    --type-headline-lh: 40px;
+    --type-title-size: 20px;
+    --type-title-lh: 28px;
+    --type-body-size: 15px;
+    --type-body-lh: 22px;
+    --type-footer-size: 16px;
+    --type-logo-size: 30px;
+    --type-nav-size: 24px;
+  }
+}
