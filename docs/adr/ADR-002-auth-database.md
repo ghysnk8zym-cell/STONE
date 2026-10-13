@@ -33,11 +33,11 @@ The database driver is chosen in one file, `src/server/db/client.ts`, by the `DA
 
 ### Option A: Better Auth + Neon Postgres + Drizzle (chosen)
 
-| Dimension | Assessment |
-|---|---|
-| Complexity | Medium: auth tables and guards live in the repo |
-| Cost | Free (Neon Free) |
-| Scalability | Adequate; Postgres can move to any provider |
+| Dimension        | Assessment                                           |
+| ---------------- | ---------------------------------------------------- |
+| Complexity       | Medium: auth tables and guards live in the repo      |
+| Cost             | Free (Neon Free)                                     |
+| Scalability      | Adequate; Postgres can move to any provider          |
 | Team familiarity | High: TypeScript library, standard Postgres, Drizzle |
 
 **Pros:** auth code is in the repository and works with any Postgres and any host; roles are a column checked by our own guards; seeding is a plain script; tests run against PGlite without network.
@@ -45,12 +45,12 @@ The database driver is chosen in one file, `src/server/db/client.ts`, by the `DA
 
 ### Option B: Supabase (Auth + Postgres + RLS)
 
-| Dimension | Assessment |
-|---|---|
-| Complexity | Low–Medium: hosted auth, RLS policies |
-| Cost | Free, but projects pause after 7 idle days |
-| Scalability | Good |
-| Team familiarity | Medium |
+| Dimension        | Assessment                                 |
+| ---------------- | ------------------------------------------ |
+| Complexity       | Low–Medium: hosted auth, RLS policies      |
+| Cost             | Free, but projects pause after 7 idle days |
+| Scalability      | Good                                       |
+| Team familiarity | Medium                                     |
 
 **Pros:** auth, database and dashboard in one service; RLS as a second line of defence.
 **Cons:** a test environment that is idle between work sessions and handed to other developers would regularly be paused; auth is tied to the Supabase service, so moving hosts is easy but moving away from Supabase is not.
@@ -69,11 +69,11 @@ Owning the auth layer costs some configuration effort but gives the strongest po
 
 ## Authorization model
 
-| Layer | Responsibility |
-|---|---|
-| `middleware.ts` | Optimistic cookie presence check for `/[locale]/account/*` and `/[locale]/admin/*`; redirect Guests to `/[locale]/sign-in?next=…`. Not a security boundary. |
+| Layer                       | Responsibility                                                                                                                                              |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `middleware.ts`             | Optimistic cookie presence check for `/[locale]/account/*` and `/[locale]/admin/*`; redirect Guests to `/[locale]/sign-in?next=…`. Not a security boundary. |
 | `src/server/auth/guards.ts` | `requireUser()`, `requireRole("admin")`: validate the session against the database. Called in every protected layout/page, server action and route handler. |
-| CI test | Fails if an exported server action is not wrapped by a guard. |
+| CI test                     | Fails if an exported server action is not wrapped by a guard.                                                                                               |
 
 Sign-up (Figma "Create account") always creates `role = "client"`. Admin exists only through the seed. Sign-out uses the Figma "Sign out" confirmation screen.
 

@@ -24,19 +24,19 @@
   5. `next build` (portability proof);
   6. OpenNext build + compressed size check (fail above 3 MiB);
   7. Playwright (Chromium desktop + mobile viewport) against `next start`.
-  A separate manual workflow (`workflow_dispatch`, input: URL) runs smoke tests against a Cloudflare preview URL.
+     A separate manual workflow (`workflow_dispatch`, input: URL) runs smoke tests against a Cloudflare preview URL.
 - Branch protection on `main` with required checks is enabled by the owner following steps in `docs/DEPLOYMENT.md`.
 
 ## Options Considered
 
 ### Option A: Vitest + Playwright + GitHub Actions (chosen)
 
-| Dimension | Assessment |
-|---|---|
-| Complexity | Low–Medium |
-| Cost | Free for a public repository |
-| Scalability | Good; jobs can be split later |
-| Team familiarity | High |
+| Dimension        | Assessment                    |
+| ---------------- | ----------------------------- |
+| Complexity       | Low–Medium                    |
+| Cost             | Free for a public repository  |
+| Scalability      | Good; jobs can be split later |
+| Team familiarity | High                          |
 
 **Pros:** fast unit tests with native ESM/TS; Playwright covers e2e, a11y and screenshots in one tool; PGlite removes external DB from CI.
 **Cons:** visual baselines are OS-sensitive (mitigated by the Linux container).
