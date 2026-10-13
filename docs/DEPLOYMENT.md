@@ -10,17 +10,17 @@ Prerequisite: a Cloudflare account with a `workers.dev` subdomain (Workers & Pag
 2. **Connect GitHub** → authorise the Cloudflare app for the repository `ghysnk8zym-cell/STONE` only.
 3. Configure the project:
 
-   | Field                            | Value                                                                      |
-   | -------------------------------- | -------------------------------------------------------------------------- |
-   | Project / Worker name            | `stone` (must equal `name` in `wrangler.jsonc`, otherwise the build fails) |
-   | Production branch                | `main`                                                                     |
-   | Build command                    | `pnpm run cf:build` — **required**; if empty, nothing is built             |
-   | Deploy command                   | `pnpm run cf:deploy` (replace the default `npx wrangler deploy`)           |
-   | Non-production branch builds     | **enabled**                                                                |
-   | Preview command (non-production) | `pnpm run cf:upload` (replace the default `npx wrangler preview`)          |
-   | Root directory                   | `/`                                                                        |
+   | Field                 | Value                                                                      |
+   | --------------------- | -------------------------------------------------------------------------- |
+   | Project / Worker name | `stone` (must equal `name` in `wrangler.jsonc`, otherwise the build fails) |
+   | Production branch     | `main`                                                                     |
+   | Build command         | `pnpm run cf:build` — **required**; if empty, nothing is built             |
+   | Deploy command        | `pnpm run cf:deploy` (replace the default `npx wrangler deploy`)           |
+   | Root directory        | `/`                                                                        |
 
-   Why not the defaults: `npx wrangler deploy` / `npx wrangler preview` skip the OpenNext build output and fail with "missing a `previews` block" or a missing `.open-next/worker.js`. Existing project: **Settings → Build → Build configuration → Edit** (_verify in the current dashboard_), then **Retry build** on the PR.
+   Non-production branches (PRs) use Cloudflare **Worker Previews**: Workers Builds runs the same build command and then `wrangler preview`, which reads the `previews` block in `wrangler.jsonc`. No separate preview command is needed; if your dashboard shows a "Preview command" field, leave its default (`npx wrangler preview`).
+
+   Existing project (as of 2026-10): **Workers & Pages → stone → Settings → Builds → Build configuration**: click a field to edit, then save; afterwards **Deployments → Retry build** on the PR branch (_verify in the current dashboard_).
 
 4. **Build variables** (Settings → Build → Variables): `NODE_VERSION` = `24`.
    `INDEXING` is inlined at build time (`next.config.ts` → `env`), so the header and `robots.txt` always agree; leave it **unset** (= noindex). For a real launch: set `INDEXING=on` as a build variable **and** remove the `/*` noindex rule from `public/_headers` (static files bypass Next.js).

@@ -21,4 +21,13 @@
     "PLATFORM": "cloudflare",
     "APP_ENV": "preview",
   },
+  // Worker Previews (`wrangler preview`, used by Workers Builds for non-production branches)
+  // do not inherit top-level vars. The self-reference service binding is omitted on purpose:
+  // it is only needed for ISR revalidation, which this app does not use.
+  "previews": {
+    "vars": {
+      "PLATFORM": "cloudflare",
+      "APP_ENV": "preview",
+    },
+  },
 }
