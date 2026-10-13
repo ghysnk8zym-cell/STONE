@@ -1,1 +1,1 @@
-﻿# STONE
+# STONE
