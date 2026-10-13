@@ -47,6 +47,18 @@ test.describe("smoke", { tag: "@smoke" }, () => {
     expect(new URL(response.url()).pathname).toBe("/ru/de");
   });
 
+  for (const [locale, messages] of [
+    ["ru", ru],
+    ["en", en],
+  ] as const) {
+    test(`unknown ${locale} path shows a localized 404`, async ({ page }) => {
+      const response = await page.goto(`/${locale}/no-such-page`);
+      expect(response?.status()).toBe(404);
+      await expect(page.locator("html")).toHaveAttribute("lang", locale);
+      await expect(page.locator("h1")).toHaveText(messages.notFound.title);
+    });
+  }
+
   test("upper-case locale redirects to the canonical lower-case path", async ({
     request,
   }) => {
