@@ -9,6 +9,9 @@
     "command": "node scripts/ensure-opennext-build.mjs",
   },
   "compatibility_date": "2026-09-29",
+  // stone.<subdomain>.workers.dev for main; <preview-name>-stone.<subdomain>.workers.dev for PRs.
+  "workers_dev": true,
+  "preview_urls": true,
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": ".open-next/assets",

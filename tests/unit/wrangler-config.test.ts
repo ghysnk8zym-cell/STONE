@@ -6,6 +6,8 @@ type WranglerConfig = {
   vars: Record<string, string>;
   previews?: { vars?: Record<string, string> };
   build?: { command?: string };
+  preview_urls?: boolean;
+  workers_dev?: boolean;
 };
 
 function readJsonc(path: string): WranglerConfig {
@@ -30,6 +32,12 @@ describe("wrangler.jsonc", () => {
     expect(config.build?.command).toBe(
       "node scripts/ensure-opennext-build.mjs",
     );
+  });
+
+  // Without this, `wrangler preview` uploads the Preview but it has no URL to test.
+  it("serves Previews on workers.dev URLs", () => {
+    expect(config.preview_urls).toBe(true);
+    expect(config.workers_dev).toBe(true);
   });
 
   it("keeps the Worker name expected by the dashboard", () => {
