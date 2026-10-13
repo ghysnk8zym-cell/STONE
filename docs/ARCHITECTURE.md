@@ -33,7 +33,7 @@ Decisions and their reasoning live in `docs/adr/` (ADR-001 … ADR-005) and the 
 2. `src/app/[locale]/layout.tsx` validates the locale (`dynamicParams = false`), renders `<html lang>` and provides messages.
 3. `next.config.ts` inlines `INDEXING` at build time and adds `X-Robots-Tag: noindex, nofollow` to every response unless it is `on`; `src/app/robots.ts` reads the same inlined value. `public/_headers` adds the header to static files that bypass Next.js on Cloudflare/Netlify.
 4. Unknown paths under a locale hit `src/app/[locale]/[...rest]/page.tsx`, which renders the localized 404.
-5. On Cloudflare, prerendered pages are served from the build via OpenNext's static-assets incremental cache (`open-next.config.ts`), not re-rendered per request.
+5. On Cloudflare, pages are rendered per request (OpenNext default, no incremental cache). The read-only static-assets cache was tried and returned 404 for prerendered pages (`NoFallbackError`); revisit with an R2/KV cache when traffic or CPU limits require it.
 
 ## Portability rules
 
