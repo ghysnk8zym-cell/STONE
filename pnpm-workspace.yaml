@@ -1,0 +1,9 @@
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
+  # Optional native helpers pulled in by next-intl; prebuilt binaries are used instead.
+  "@parcel/watcher": false
+  "@swc/core": false
+  # Cloudflare toolchain (wrangler): install scripts fetch/verify platform binaries.
+  esbuild: true
+  workerd: true

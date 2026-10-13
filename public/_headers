@@ -1,0 +1,7 @@
+# Applies to files served directly from static assets (Cloudflare, Netlify), which
+# bypass next.config headers. Remove the noindex rule only for a real launch (INDEXING=on).
+/*
+  X-Robots-Tag: noindex, nofollow
+
+/_next/static/*
+  Cache-Control: public,max-age=31536000,immutable

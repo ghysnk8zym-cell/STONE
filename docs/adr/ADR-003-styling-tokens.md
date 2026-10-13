@@ -13,17 +13,17 @@
 
 Sample of variables read on 2026-10-13 (Home v2 — 1440, `722:1300`; Product / Black Marble — 1440, `782:11526`):
 
-| Variable | Value |
-|---|---|
-| `--surface-page` | `#1b1d20` |
-| `--surface-header` | `#1214169e` |
-| `--surface-panel` | `#1214168c` |
-| `--surface-button` / `--surface-nav-pill` | `#ffffff14` |
-| `--border-glass` / `--border-glass-strong` | `#ffffff1f` / `#ffffff3d` |
-| `--text-primary` / `--text-secondary` / `--text-label` | `#ffffff` / `#ffffffb8` / `#ffffffcc` |
-| `--text-ink` / `--text-ink-secondary` | `#1b1c1e` / `#3a3d41` |
-| `--stone-catalog-page` / `-card` / `-photo` / `-line` / `-ink` / `-secondary` | `#f3f0eb` / `#f8f5f0` / `#e9e4dd` / `#d8d1c8` / `#292722` / `#625d55` |
-| `--layout-margin` / `--layout-panel-pad` / `--layout-card-gap` / `--layout-control-h` | `77` / `24` / `24` / `40` |
+| Variable                                                                              | Value                                                                 |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `--surface-page`                                                                      | `#1b1d20`                                                             |
+| `--surface-header`                                                                    | `#1214169e`                                                           |
+| `--surface-panel`                                                                     | `#1214168c`                                                           |
+| `--surface-button` / `--surface-nav-pill`                                             | `#ffffff14`                                                           |
+| `--border-glass` / `--border-glass-strong`                                            | `#ffffff1f` / `#ffffff3d`                                             |
+| `--text-primary` / `--text-secondary` / `--text-label`                                | `#ffffff` / `#ffffffb8` / `#ffffffcc`                                 |
+| `--text-ink` / `--text-ink-secondary`                                                 | `#1b1c1e` / `#3a3d41`                                                 |
+| `--stone-catalog-page` / `-card` / `-photo` / `-line` / `-ink` / `-secondary`         | `#f3f0eb` / `#f8f5f0` / `#e9e4dd` / `#d8d1c8` / `#292722` / `#625d55` |
+| `--layout-margin` / `--layout-panel-pad` / `--layout-card-gap` / `--layout-control-h` | `77` / `24` / `24` / `40`                                             |
 
 ## Decision
 
@@ -45,24 +45,24 @@ Figma letter-spacing values such as 14, 12, 10 are treated as percent and conver
 
 ### Option A: Tailwind CSS v4 + CSS custom properties (chosen)
 
-| Dimension | Assessment |
-|---|---|
-| Complexity | Low: CSS-first config, no JS config file |
-| Cost | Build-time only, no runtime |
-| Scalability | Good; tokens are plain CSS variables |
-| Team familiarity | High |
+| Dimension        | Assessment                               |
+| ---------------- | ---------------------------------------- |
+| Complexity       | Low: CSS-first config, no JS config file |
+| Cost             | Build-time only, no runtime              |
+| Scalability      | Good; tokens are plain CSS variables     |
+| Team familiarity | High                                     |
 
 **Pros:** familiar to most developers; tokens stay framework-agnostic CSS variables; default palette can be removed to protect the brand; good for state variants (`hover:`, `focus-visible:`, `disabled:`, `data-[state=…]`).
 **Cons:** long class lists on complex glass components; needs a lint/format plugin for class ordering.
 
 ### Option B: CSS Modules + CSS custom properties
 
-| Dimension | Assessment |
-|---|---|
-| Complexity | Low |
-| Cost | Zero dependencies |
-| Scalability | Good |
-| Team familiarity | High |
+| Dimension        | Assessment        |
+| ---------------- | ----------------- |
+| Complexity       | Low               |
+| Cost             | Zero dependencies |
+| Scalability      | Good              |
+| Team familiarity | High              |
 
 **Pros:** no extra dependency; explicit per-component styles; same token layer.
 **Cons:** more verbose; state variants and responsive rules written by hand; easier to drift from tokens (raw values in modules). A valid fallback.

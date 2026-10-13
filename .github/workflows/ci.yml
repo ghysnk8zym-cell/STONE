@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Plain Next.js build: proves the app is portable beyond Cloudflare.
+      - run: pnpm build
+
+  cloudflare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm cf:build
+      - run: pnpm cf:size
+      # Run the built Worker in workerd (the Cloudflare runtime) and smoke-test it, so runtime
+      # errors that `next start` cannot show are caught before deployment.
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Start Worker locally
+        run: |
+          pnpm exec wrangler dev --ip 127.0.0.1 --port 8787 > wrangler-dev.log 2>&1 &
+          for i in $(seq 1 90); do
+            curl -s -o /dev/null http://127.0.0.1:8787/robots.txt && exit 0
+            sleep 1
+          done
+          echo "Worker did not start"; cat wrangler-dev.log; exit 1
+      - name: Smoke-test the Worker
+        run: pnpm test:e2e --grep @smoke --project desktop
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:8787
+      - if: always()
+        run: cat wrangler-dev.log || true
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm build
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7

@@ -30,23 +30,23 @@ All Cloudflare-specific code lives in `wrangler.jsonc`, `open-next.config.ts` an
 
 ### Option A: OpenNext adapter on Workers (chosen)
 
-| Dimension | Assessment |
-|---|---|
-| Complexity | Medium: adapter config plus Linux-only Cloudflare build |
-| Cost | Free plan; Paid ($5/month) only with owner approval if > 3 MiB |
-| Scalability | Sufficient for a test environment |
-| Team familiarity | High: the app is plain Next.js; adapter is a build step |
+| Dimension        | Assessment                                                     |
+| ---------------- | -------------------------------------------------------------- |
+| Complexity       | Medium: adapter config plus Linux-only Cloudflare build        |
+| Cost             | Free plan; Paid ($5/month) only with owner approval if > 3 MiB |
+| Scalability      | Sufficient for a test environment                              |
+| Team familiarity | High: the app is plain Next.js; adapter is a build step        |
 
 **Pros:** builds the real `next build` output, so other hosts run the same code; mature (1.x); per-branch previews; standard middleware supported.
 **Cons:** no `proxy.ts` yet; 3 MiB Free limit is tight; Windows builds unsupported; image optimisation needs a workaround.
 
 ### Option B: vinext on Workers
 
-| Dimension | Assessment |
-|---|---|
-| Complexity | Medium |
-| Cost | Free plan |
-| Scalability | Sufficient |
+| Dimension        | Assessment                                  |
+| ---------------- | ------------------------------------------- |
+| Complexity       | Medium                                      |
+| Cost             | Free plan                                   |
+| Scalability      | Sufficient                                  |
 | Team familiarity | Low: Vite-based reimplementation of Next.js |
 
 **Pros:** Cloudflare's current default; Vite build; Cloudflare bindings.
@@ -79,9 +79,9 @@ Portability outweighs following Cloudflare's newest default. OpenNext adapts the
 
 ## Migration path
 
-| Target | Steps |
-|---|---|
-| Vercel / Netlify | Import the repository; set env vars from `.env.example`; build command `pnpm build`. Delete `wrangler.jsonc` and `open-next.config.ts` (optional). Set `PLATFORM=node`. |
+| Target           | Steps                                                                                                                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Vercel / Netlify | Import the repository; set env vars from `.env.example`; build command `pnpm build`. Delete `wrangler.jsonc` and `open-next.config.ts` (optional). Set `PLATFORM=node`.                                      |
 | Node.js / Docker | `NEXT_OUTPUT=standalone pnpm build`; run with the provided Dockerfile (`node .next/standalone/server.js`); set env vars; put any Postgres URL in `DATABASE_URL` (the `pg` driver is selected automatically). |
 
 Phase 5 performs and records a dry run of the Node/Docker path.

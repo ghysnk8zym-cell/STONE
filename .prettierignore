@@ -1,0 +1,14 @@
+.next
+.open-next
+.wrangler
+.superpowers
+.claude/worktrees
+node_modules
+pnpm-lock.yaml
+playwright-report
+test-results
+next-env.d.ts
+AGENTS.md
+docs/superpowers
+CLAUDE.md
+.impeccable

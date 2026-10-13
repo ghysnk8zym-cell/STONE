@@ -1,0 +1,40 @@
+// Cloudflare Workers config for the OpenNext build (ADR-001). Not used on other hosts.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Must match the Worker name in the Cloudflare dashboard (Workers Builds).
+  "name": "stone",
+  "main": ".open-next/worker.js",
+  // Builds the OpenNext worker only if it is missing (Workers Builds preview branches).
+  "build": {
+    "command": "node scripts/ensure-opennext-build.mjs",
+  },
+  "compatibility_date": "2026-09-29",
+  // stone.<subdomain>.workers.dev for main; <preview-name>-stone.<subdomain>.workers.dev for PRs.
+  "workers_dev": true,
+  "preview_urls": true,
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "stone",
+    },
+  ],
+  // Non-secret runtime defaults; secrets are set in the dashboard, never here.
+  "vars": {
+    "PLATFORM": "cloudflare",
+    "APP_ENV": "preview",
+  },
+  // Worker Previews (`wrangler preview`, used by Workers Builds for non-production branches)
+  // do not inherit top-level vars. The self-reference service binding is omitted on purpose:
+  // it is only needed for ISR revalidation, which this app does not use.
+  "previews": {
+    "vars": {
+      "PLATFORM": "cloudflare",
+      "APP_ENV": "preview",
+    },
+  },
+}

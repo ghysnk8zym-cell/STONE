@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Default Tailwind palette and fonts are disabled: only STONE tokens (Phase 2) may be used. */
+@theme {
+  --color-*: initial;
+  --font-*: initial;
+}
