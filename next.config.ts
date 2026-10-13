@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 import { isIndexingEnabled, robotsHeaders } from "./src/server/indexing";
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 // cacheComponents/partialPrefetching are intentionally off: OpenNext on Cloudflare Workers
 // has open bugs with Cache Components (see docs/adr/ADR-001 and the Phase 1 ledger).
@@ -19,4 +22,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

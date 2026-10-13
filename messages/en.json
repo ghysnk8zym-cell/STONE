@@ -1,0 +1,17 @@
+{
+  "common": {
+    "siteName": "STONE"
+  },
+  "meta": {
+    "title": "STONE — natural stone",
+    "description": "Natural stone surfaces."
+  },
+  "placeholder": {
+    "title": "Site under construction",
+    "body": "This test build is not indexed."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to home"
+  }
+}

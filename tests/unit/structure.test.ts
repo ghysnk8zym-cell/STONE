@@ -6,6 +6,7 @@ const root = process.cwd();
 
 const requiredFolders = [
   "docs",
+  "src/app/[locale]",
   "src/components",
   "src/features/account",
   "src/features/admin",
@@ -27,8 +28,6 @@ describe("repository structure", () => {
   it.each(requiredFolders)("required folder %s exists", (folder) => {
     expect(existsSync(join(root, folder))).toBe(true);
   });
-
-  it.todo("required folder src/app/[locale] exists");
 });
 
 describe("portability guard", () => {
