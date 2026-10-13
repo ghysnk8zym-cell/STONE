@@ -15,6 +15,12 @@ describe("worker size budget", () => {
     );
   });
 
+  it("throws when the gzip size is not a number", () => {
+    expect(() => parseGzipKiB("Total Upload: 10 KiB / gzip: . KiB")).toThrow(
+      "Could not find gzip size in wrangler output",
+    );
+  });
+
   it("limit is 3 MiB", () => {
     expect(LIMIT_KIB).toBe(3072);
   });

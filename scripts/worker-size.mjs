@@ -8,6 +8,10 @@ export const LIMIT_KIB = 3072;
  */
 export function parseGzipKiB(output) {
   const match = /Total Upload:.*?gzip:\s*([\d.]+)\s*KiB/.exec(output);
-  if (!match) throw new Error("Could not find gzip size in wrangler output");
-  return Number(match[1]);
+  const size = match ? Number(match[1]) : NaN;
+  // NaN would compare false against the limit and pass silently.
+  if (!Number.isFinite(size)) {
+    throw new Error("Could not find gzip size in wrangler output");
+  }
+  return size;
 }

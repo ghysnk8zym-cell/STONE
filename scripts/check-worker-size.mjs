@@ -12,7 +12,14 @@ const output = execSync(
   },
 );
 
-const gzipKiB = parseGzipKiB(output);
+let gzipKiB;
+try {
+  gzipKiB = parseGzipKiB(output);
+} catch (error) {
+  // Show what wrangler printed so a format change can be diagnosed in CI.
+  console.error(output);
+  throw error;
+}
 console.log(`Worker gzip size: ${gzipKiB} KiB / limit ${LIMIT_KIB} KiB`);
 
 if (gzipKiB > LIMIT_KIB) {
