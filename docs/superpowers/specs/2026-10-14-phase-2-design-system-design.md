@@ -1,7 +1,7 @@
 # Phase 2 — Design system from Figma
 
 **Date:** 2026-10-14
-**Status:** Sections 1–4 approved by the owner in conversation (2026-10-14); written spec awaiting owner review.
+**Status:** Approved (sections approved in conversation; written spec approved by owner 2026-10-14).
 **Scope:** design tokens, core components with all states, real Figma assets, a noindex styleguide page and visual-comparison notes. Pages (home, catalog, product) are Phase 3.
 **Inputs:** Figma `1vEGuD9cYYFNynyByUGHwF` (read-only), `docs/FIGMA-INVENTORY.md`, ADR-003 (styling/tokens), ADR-004 (i18n), STONE design history (D020/D030 state contract) read as reference only.
 
