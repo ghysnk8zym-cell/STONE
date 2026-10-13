@@ -6,11 +6,17 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-// Lusitana has a Latin subset only (ADR-003).
+// Lusitana has a Latin subset only (ADR-003). next/font would add a "Lusitana Fallback" face
+// (local Times New Roman, no unicode-range) and put it in --font-lusitana; it has Cyrillic on
+// Windows/macOS and would claim those glyphs before PT Serif in the --font-display stack.
+// Turbopack ignores `adjustFontFallback: false` on its own, so an explicit empty `fallback`
+// is what actually drops that face (verified in the built CSS); both are kept.
 const lusitana = Lusitana({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-lusitana",
+  adjustFontFallback: false,
+  fallback: [],
 });
 
 // Cyrillic fallback for the Lusitana roles. Only its Cyrillic @font-face is emitted, so

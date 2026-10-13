@@ -2,9 +2,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import snapshot from "../../src/styles/tokens/figma-variables.json";
+
 type FontOptions = {
   subsets?: string[];
   weight?: string | string[];
+  adjustFontFallback?: boolean | string;
+  fallback?: string[];
   variable?: string;
 };
 
@@ -27,6 +31,20 @@ const typeCss = readFileSync(
   "utf8",
 );
 
+const globalsCss = readFileSync(
+  join(process.cwd(), "src", "app", "globals.css"),
+  "utf8",
+);
+
+function utilityBody(name: string): string {
+  const start = globalsCss.search(
+    new RegExp(String.raw`@utility\s+${name}\s*\{`),
+  );
+  if (start === -1) return "";
+  const open = globalsCss.indexOf("{", start);
+  return globalsCss.slice(open + 1, globalsCss.indexOf("\n}", open));
+}
+
 function tokenValue(name: string): string | undefined {
   return new RegExp(`${name}:\\s*([^;]+);`).exec(typeCss)?.[1].trim();
 }
@@ -42,6 +60,14 @@ describe("fonts", () => {
     expect(calls.Lusitana.subsets).toEqual(["latin"]);
     expect(calls.Lusitana.weight).toBe("400");
     expect(calls.Lusitana.variable).toBe("--font-lusitana");
+  });
+
+  it("Lusitana emits no unranged local fallback face that would shadow PT Serif", () => {
+    // next/font's "Lusitana Fallback" (local Times New Roman, no unicode-range) has Cyrillic
+    // on Windows/macOS and would capture it before PT Serif in the display stack.
+    expect(calls.Lusitana.adjustFontFallback).toBe(false);
+    // Turbopack ignores adjustFontFallback:false; an explicit empty fallback is what removes it.
+    expect(calls.Lusitana.fallback).toEqual([]);
   });
 
   it("PT Serif is cyrillic only", () => {
@@ -76,5 +102,19 @@ describe("fonts", () => {
 
   it("body stack uses Inter", () => {
     expect(tokenValue("--font-body")).toBe("var(--font-inter), sans-serif");
+  });
+
+  it("type-* utilities read the font stack tokens", () => {
+    const styles = Object.values(snapshot.textStyles);
+    expect(styles.length).toBeGreaterThan(0);
+    for (const style of styles) {
+      const body = utilityBody(style.utility);
+      expect(body, `${style.utility} body`).not.toBe("");
+      const token =
+        style.family === "Lusitana" ? "--font-display" : "--font-body";
+      expect(body, `${style.utility} family`).toContain(
+        `font-family: var(${token}`,
+      );
+    }
   });
 });
