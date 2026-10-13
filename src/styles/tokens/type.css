@@ -1,5 +1,9 @@
 /* Type-scale tokens, mobile-first (base = 390). Generated once from figma-variables.json; keep both in sync (tests/unit/tokens.test.ts). */
 :root {
+  /* Font stacks. --font-inter/-lusitana/-pt-serif are defined by next/font (src/app/fonts.ts).
+     Latin resolves in Lusitana, Cyrillic falls through to PT Serif (ADR-003). */
+  --font-display: var(--font-lusitana), var(--font-pt-serif), serif;
+  --font-body: var(--font-inter), sans-serif;
   --type-headline-size: 22px;
   --type-headline-lh: 28px;
   --type-title-size: 17px;

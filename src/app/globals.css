@@ -58,7 +58,7 @@
    Sizes bound to a Figma variable use that token, so they change per breakpoint.
    Cyrillic in the Lusitana roles falls back to PT Serif (ADR-003). */
 @utility type-brand-logo {
-  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;
   font-size: var(--type-logo-size);
   line-height: 32px;
@@ -66,7 +66,7 @@
 }
 
 @utility type-nav-link {
-  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;
   font-size: var(--type-nav-size);
   line-height: 28px;
@@ -74,7 +74,7 @@
 }
 
 @utility type-nav-menu {
-  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;
   font-size: 28px;
   line-height: 36px;
@@ -82,7 +82,7 @@
 }
 
 @utility type-button-label {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -90,7 +90,7 @@
 }
 
 @utility type-hero-headline {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 400;
   font-size: var(--type-headline-size);
   line-height: var(--type-headline-lh);
@@ -98,7 +98,7 @@
 }
 
 @utility type-section-label {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 600;
   font-size: 12px;
   line-height: 16px;
@@ -106,7 +106,7 @@
 }
 
 @utility type-card-title {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 600;
   font-size: var(--type-title-size);
   line-height: var(--type-title-lh);
@@ -114,7 +114,7 @@
 }
 
 @utility type-body-m {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 400;
   font-size: var(--type-body-size);
   line-height: var(--type-body-lh);
@@ -123,7 +123,7 @@
 
 /* Figma: "Catalog refined/Product name mobile" (18/24) on phones, "Catalog/Product name" (26/32) from 768. */
 @utility type-catalog-product-name {
-  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;
   font-size: 18px;
   line-height: 24px;
@@ -137,7 +137,7 @@
 
 /* "Catalog refined/Meta" (14/20); "Catalog/Meta" (15/20) is the larger product-page variant. */
 @utility type-catalog-meta {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;
@@ -145,7 +145,7 @@
 }
 
 @utility type-catalog-meta-lg {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 400;
   font-size: 15px;
   line-height: 20px;
@@ -153,7 +153,7 @@
 }
 
 @utility type-catalog-action {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 500;
   font-size: 15px;
   line-height: 20px;
@@ -161,7 +161,7 @@
 }
 
 @utility type-catalog-field-value {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 400;
   font-size: 16px;
   line-height: 22px;
@@ -170,7 +170,7 @@
 
 /* Figma: "Catalog/Page title 44" on phones, "Catalog/Page title 72" at 1440 on the Catalog screen. */
 @utility type-catalog-page-title {
-  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;
   font-size: 44px;
   line-height: 52px;
@@ -184,7 +184,7 @@
 
 /* Figma: "Catalog/Page title 56", used at 1440 on the Account screen (44 on phones). */
 @utility type-catalog-page-title-56 {
-  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;
   font-size: 44px;
   line-height: 52px;
@@ -197,7 +197,7 @@
 }
 
 @utility type-catalog-product-title {
-  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;
   font-size: 40px;
   line-height: 48px;
@@ -205,7 +205,7 @@
 }
 
 @utility type-catalog-section {
-  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;
   font-size: 20px;
   line-height: 28px;
@@ -213,7 +213,7 @@
 }
 
 @utility type-footer-link {
-  font-family: var(--font-lusitana, "Lusitana"), "PT Serif", Georgia, serif;
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;
   font-size: var(--type-footer-size);
   line-height: 20px;
@@ -221,7 +221,7 @@
 }
 
 @utility type-footer-small {
-  font-family: var(--font-inter, "Inter"), system-ui, sans-serif;
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 400;
   font-size: 12px;
   line-height: 16px;
