@@ -5,6 +5,7 @@ type WranglerConfig = {
   name: string;
   vars: Record<string, string>;
   previews?: { vars?: Record<string, string> };
+  build?: { command?: string };
 };
 
 function readJsonc(path: string): WranglerConfig {
@@ -21,6 +22,14 @@ describe("wrangler.jsonc", () => {
   // without a `previews` block because vars are not inherited from the top level.
   it("defines preview vars equal to the top-level vars", () => {
     expect(config.previews?.vars).toEqual(config.vars);
+  });
+
+  // Workers Builds skips the dashboard build command for preview builds, so wrangler itself
+  // must produce .open-next/worker.js before `wrangler preview` uploads it.
+  it("lets wrangler build the OpenNext worker when it is missing", () => {
+    expect(config.build?.command).toBe(
+      "node scripts/ensure-opennext-build.mjs",
+    );
   });
 
   it("keeps the Worker name expected by the dashboard", () => {

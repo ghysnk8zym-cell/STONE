@@ -18,7 +18,7 @@ Prerequisite: a Cloudflare account with a `workers.dev` subdomain (Workers & Pag
    | Deploy command        | `pnpm run cf:deploy` (replace the default `npx wrangler deploy`)           |
    | Root directory        | `/`                                                                        |
 
-   Non-production branches (PRs) use Cloudflare **Worker Previews**: Workers Builds runs the same build command and then `wrangler preview`, which reads the `previews` block in `wrangler.jsonc`. No separate preview command is needed; if your dashboard shows a "Preview command" field, leave its default (`npx wrangler preview`).
+   Non-production branches (PRs) use Cloudflare **Worker Previews**: Workers Builds runs only `npx wrangler preview` (the dashboard build command is skipped for previews). Wrangler then runs `build.command` from `wrangler.jsonc` (`scripts/ensure-opennext-build.mjs`), which builds the OpenNext worker if `.open-next/worker.js` is missing, and reads the `previews` block for vars. No separate preview command is needed; if your dashboard shows a "Preview command" field, leave its default.
 
    Existing project (as of 2026-10): **Workers & Pages → stone → Settings → Builds → Build configuration**: click a field to edit, then save; afterwards **Deployments → Retry build** on the PR branch (_verify in the current dashboard_).
 
