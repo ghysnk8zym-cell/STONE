@@ -31,7 +31,9 @@ Decisions and their reasoning live in `docs/adr/` (ADR-001 … ADR-005) and the 
 
 1. `src/middleware.ts` (next-intl) maps `/` → `/ru`, keeps `/ru/*` and `/en/*`, and redirects paths without a locale to `/ru/<path>`. Phase 4 adds the optimistic auth cookie check here.
 2. `src/app/[locale]/layout.tsx` validates the locale (`dynamicParams = false`), renders `<html lang>` and provides messages.
-3. `next.config.ts` adds `X-Robots-Tag: noindex, nofollow` to every response unless `INDEXING=on` at build time; `src/app/robots.ts` mirrors it.
+3. `next.config.ts` inlines `INDEXING` at build time and adds `X-Robots-Tag: noindex, nofollow` to every response unless it is `on`; `src/app/robots.ts` reads the same inlined value. `public/_headers` adds the header to static files that bypass Next.js on Cloudflare/Netlify.
+4. Unknown paths under a locale hit `src/app/[locale]/[...rest]/page.tsx`, which renders the localized 404.
+5. On Cloudflare, prerendered pages are served from the build via OpenNext's static-assets incremental cache (`open-next.config.ts`), not re-rendered per request.
 
 ## Portability rules
 

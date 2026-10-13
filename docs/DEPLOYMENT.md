@@ -19,8 +19,8 @@ Prerequisite: a Cloudflare account with a `workers.dev` subdomain (Workers & Pag
    | Non-production branch deploy command | `pnpm run cf:upload`                                                       |
    | Root directory                       | `/`                                                                        |
 4. **Build variables** (Settings → Build → Variables): `NODE_VERSION` = `24`.
-   `INDEXING` is resolved at build time; leave it **unset** (= noindex). Only set `INDEXING=on` as a build variable for a real launch.
-5. **Runtime variables**: none needed in Phase 1 (`PLATFORM`, `APP_ENV`, `INDEXING` defaults live in `wrangler.jsonc` `vars`). Secrets added in later phases go to Settings → **Variables and Secrets** as type _Secret_, never into the repository.
+   `INDEXING` is inlined at build time (`next.config.ts` → `env`), so the header and `robots.txt` always agree; leave it **unset** (= noindex). For a real launch: set `INDEXING=on` as a build variable **and** remove the `/*` noindex rule from `public/_headers` (static files bypass Next.js).
+5. **Runtime variables**: none needed in Phase 1 (`PLATFORM`, `APP_ENV` defaults live in `wrangler.jsonc` `vars`). Secrets added in later phases go to Settings → **Variables and Secrets** as type _Secret_, never into the repository.
 6. Settings → **Domains & Routes**: make sure **Preview URLs** are enabled (_verify in the current dashboard_).
 7. Save and deploy. The first build runs on `main` after PR merge; each PR branch gets a Preview URL, also posted as a PR comment by the Cloudflare GitHub app.
 

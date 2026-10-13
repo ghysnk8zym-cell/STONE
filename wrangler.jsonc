@@ -20,6 +20,5 @@
   "vars": {
     "PLATFORM": "cloudflare",
     "APP_ENV": "preview",
-    "INDEXING": "off",
   },
 }

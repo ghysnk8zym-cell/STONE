@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -29,6 +30,11 @@ describe("indexing policy", () => {
 
   it("robots.txt disallows everything when indexing is disabled", () => {
     expect(robotsRules(false).rules).toEqual({ userAgent: "*", disallow: "/" });
+  });
+
+  it("static assets served outside Next (public/_headers) are noindex too", () => {
+    const rules = readFileSync("public/_headers", "utf8");
+    expect(rules).toMatch(/^\/\*\r?\n\s+X-Robots-Tag: noindex, nofollow$/m);
   });
 
   it("robots.txt allows everything when indexing is enabled", () => {
