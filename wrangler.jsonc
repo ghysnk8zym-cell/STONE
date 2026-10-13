@@ -1,0 +1,25 @@
+// Cloudflare Workers config for the OpenNext build (ADR-001). Not used on other hosts.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Must match the Worker name in the Cloudflare dashboard (Workers Builds).
+  "name": "stone",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-29",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "stone",
+    },
+  ],
+  // Non-secret runtime defaults; secrets are set in the dashboard, never here.
+  "vars": {
+    "PLATFORM": "cloudflare",
+    "APP_ENV": "preview",
+    "INDEXING": "off",
+  },
+}

@@ -12,7 +12,12 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare deploy",
+    "cf:upload": "opennextjs-cloudflare upload",
+    "cf:size": "node scripts/check-worker-size.mjs"
   },
   "dependencies": {
     "next": "16.4.0",
@@ -24,6 +29,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@opennextjs/cloudflare": "^1.20.10",
     "@playwright/test": "1.64.0",
     "@tailwindcss/turbopack": "^4",
     "@testing-library/react": "16.3.3",
@@ -39,7 +45,8 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite-tsconfig-paths": "6.1.1",
-    "vitest": "5.0.4"
+    "vitest": "5.0.4",
+    "wrangler": "^4.149.0"
   },
   "engines": {
     "node": ">=24 <25"
