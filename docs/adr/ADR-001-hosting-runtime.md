@@ -1,6 +1,6 @@
 # ADR-001: Hosting and runtime
 
-**Status:** Proposed (approved in conversation 2026-10-13; awaiting written review)
+**Status:** Accepted (owner approved written ADR 2026-10-13)
 **Date:** 2026-10-13
 **Deciders:** Project owner (approval), lead engineer (Claude)
 

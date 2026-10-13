@@ -1,7 +1,7 @@
 # STONE Web — overall architecture design
 
 **Date:** 2026-10-13
-**Status:** Design approved in conversation section by section (2026-10-13); written spec awaiting owner review.
+**Status:** Approved (sections approved in conversation; written spec approved by owner 2026-10-13).
 **Scope:** Phase 0 decisions for the whole web codebase. Implementation details per phase get their own spec and plan.
 
 ## 1. Intent and success criteria
