@@ -5,9 +5,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { routing } from "@/i18n/routing";
 
-// Only ru and en exist; anything else is a 404 without rendering.
-export const dynamicParams = false;
-
+// Unknown locales are rejected below via hasLocale → notFound(). `dynamicParams = false`
+// is deliberately not used: on Workers (OpenNext) it turned /ru and /en into 404s
+// (NoFallbackError) because the prerender lookup did not match.
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
