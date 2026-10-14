@@ -17,8 +17,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { LanguageSwitch } from "@/components/navigation/LanguageSwitch";
 import { MobileMenu } from "@/components/navigation/MobileMenu";
+import { ShellTabBar } from "@/components/navigation/ShellTabBar";
 import { SiteFooter } from "@/components/navigation/SiteFooter";
 import { SiteHeader } from "@/components/navigation/SiteHeader";
+import { PHASE3_INERT } from "@/components/navigation/nav-items";
 import { TabBar } from "@/components/navigation/TabBar";
 
 import en from "../../messages/en.json";
@@ -30,15 +32,19 @@ import { renderWithIntl } from "./render";
 // KNOWN DEBT: the locale prefix of hrefs ("/en/catalog") and the real locale switch (cookie,
 // redirect) are not covered here. They will be covered by the Playwright styleguide / locale
 // e2e (Tasks 9 and Phase 3).
-const replace = vi.fn();
+const { replace, pathname } = vi.hoisted(() => ({
+  replace: vi.fn(),
+  pathname: { current: "/catalog" },
+}));
 vi.mock("@/i18n/navigation", () => ({
   Link: (props: ComponentProps<"a">) => <a {...props} />,
-  usePathname: () => "/catalog",
+  usePathname: () => pathname.current,
   useRouter: () => ({ replace }),
 }));
 
 beforeEach(() => {
   replace.mockClear();
+  pathname.current = "/catalog";
 });
 
 afterEach(() => {
@@ -646,5 +652,99 @@ describe("TabBar page offset", () => {
     expect(screen.getByRole("navigation").className).toContain(
       "bottom-[max(16px,env(safe-area-inset-bottom))]",
     );
+  });
+});
+
+describe("inert navigation (Phase 3)", () => {
+  function expectInert(element: HTMLElement | null, label: string) {
+    expect(element, label).toBeTruthy();
+    expect(element?.hasAttribute("href"), label).toBe(false);
+    expect(element?.getAttribute("aria-disabled"), label).toBe("true");
+  }
+
+  it("PHASE3_INERT lists favorites, cart, account (tab bar) and create, cart, account (header)", () => {
+    expect([...PHASE3_INERT.tabBar]).toEqual(["favorites", "cart", "account"]);
+    expect([...PHASE3_INERT.nav]).toEqual(["create", "cart", "account"]);
+  });
+
+  it("TabBar renders inert tabs without href and aria-disabled", () => {
+    renderWithIntl(<TabBar current="home" inert={PHASE3_INERT.tabBar} />);
+    const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
+    // active tabs stay real links
+    expect(
+      within(nav).getByRole("link", { name: "Home" }).getAttribute("href"),
+    ).toBe("/");
+    expect(
+      within(nav).getByRole("link", { name: "Catalog" }).getAttribute("href"),
+    ).toBe("/catalog");
+    for (const name of ["Favorites", "Cart", "Sign in"]) {
+      expectInert(within(nav).getByText(name).closest("[role=link]"), name);
+    }
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(2);
+  });
+
+  it("SiteHeader renders inert pills and the account button without href", () => {
+    renderWithIntl(<SiteHeader inert={PHASE3_INERT.nav} />);
+    const banner = screen.getByRole("banner");
+    const nav = within(banner).getByRole("navigation", { name: "Main" });
+    for (const name of ["Create Your Stone", "Cart", "Account"]) {
+      const item = within(nav).getByRole("link", { name });
+      expectInert(item, name);
+    }
+    // the logo and the language switch stay active
+    expect(
+      within(banner)
+        .getByRole("link", { name: "STONE — home" })
+        .hasAttribute("href"),
+    ).toBe(true);
+    expect(
+      (
+        within(banner).getByRole("button", {
+          name: /^RU \/ EN/,
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
+  });
+
+  it("MobileMenu receives the same inert list through the header", () => {
+    renderWithIntl(<SiteHeader inert={PHASE3_INERT.nav} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    const dialog = screen.getByRole("dialog", { name: "Menu" });
+    const nav = within(dialog).getByRole("navigation", { name: "Main" });
+    for (const name of ["Create Your Stone", "Cart", "Account"]) {
+      expectInert(within(nav).getByText(name).closest("[role=link]"), name);
+    }
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(0);
+    expect(
+      within(dialog).getByRole("button", { name: /^RU \/ EN/ }),
+    ).toBeTruthy();
+  });
+});
+
+describe("ShellTabBar", () => {
+  function current() {
+    return screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page")
+      .map((link) => link.textContent);
+  }
+
+  it.each([
+    ["/", ["Home"]],
+    ["/catalog", ["Catalog"]],
+    ["/catalog/black-marble", []],
+    ["/catalog/", ["Catalog"]],
+    ["/something-else", []],
+  ] as const)("maps %s to the current tab", (path, expected) => {
+    pathname.current = path;
+    renderWithIntl(<ShellTabBar />);
+    expect(current()).toEqual(expected);
+  });
+
+  it("keeps the Phase 3 inert tabs inert", () => {
+    renderWithIntl(<ShellTabBar />);
+    const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(2);
+    expect(nav.querySelectorAll("[aria-disabled=true]")).toHaveLength(3);
   });
 });

@@ -15,7 +15,13 @@ const DESKTOP_QUERY = "(min-width: 1280px)";
  * itself stays a server component. Visible below 1280 px only; the menu closes if the viewport
  * grows past that while it is open.
  */
-export function HeaderMenuButton({ current }: { current?: NavCurrent }) {
+export function HeaderMenuButton({
+  current,
+  inert,
+}: {
+  current?: NavCurrent;
+  inert?: readonly NavCurrent[];
+}) {
   const t = useTranslations("components.nav");
   const [open, setOpen] = useState(false);
   const wrapper = useRef<HTMLSpanElement>(null);
@@ -47,6 +53,7 @@ export function HeaderMenuButton({ current }: { current?: NavCurrent }) {
         open={open}
         onClose={() => setOpen(false)}
         current={current}
+        inert={inert}
       />
     </span>
   );

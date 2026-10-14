@@ -68,7 +68,9 @@ test.describe("smoke", { tag: "@smoke" }, () => {
       const response = await page.goto(`/${locale}/no-such-page`);
       expect(response?.status()).toBe(404);
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
-      await expect(page.locator("h1")).toHaveText(messages.notFound.title);
+      await expect(page.locator("h1")).toHaveText(
+        messages.pages.notFound.title,
+      );
     });
   }
 

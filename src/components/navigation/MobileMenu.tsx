@@ -17,6 +17,8 @@ export type MobileMenuProps = {
   onClose: () => void;
   /** Page the user is on: that entry gets `aria-current="page"`. */
   current?: NavCurrent;
+  /** Entries whose page does not exist yet: shown as non-link items with `aria-disabled`. */
+  inert?: readonly NavCurrent[];
 };
 
 const FOCUSABLE =
@@ -43,7 +45,12 @@ function focusableIn(root: HTMLElement) {
  *   is a direct child that stays out of that set), and page scrolling is locked.
  * - Choosing a link or the language closes it.
  */
-export function MobileMenu({ open, onClose, current }: MobileMenuProps) {
+export function MobileMenu({
+  open,
+  onClose,
+  current,
+  inert = [],
+}: MobileMenuProps) {
   const t = useTranslations("components.nav");
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -138,18 +145,28 @@ export function MobileMenu({ open, onClose, current }: MobileMenuProps) {
         <ul className="flex flex-col">
           {NAV_ITEMS.map((item) => (
             <li key={item.key} className="border-glass border-b">
-              <Link
-                href={item.href}
-                onClick={onClose}
-                aria-current={current === item.key ? "page" : undefined}
-                className={cn(
-                  "text-primary type-nav-menu focusv:outline-2 focusv:-outline-offset-2 focusv:outline-accent-focus block py-4 outline-0",
-                  current === item.key &&
-                    "underline decoration-1 underline-offset-8",
-                )}
-              >
-                {t(item.label)}
-              </Link>
+              {inert.includes(item.key) ? (
+                <span
+                  role="link"
+                  aria-disabled="true"
+                  className="text-primary type-nav-menu pointer-events-none block py-4 opacity-45"
+                >
+                  {t(item.label)}
+                </span>
+              ) : (
+                <Link
+                  href={item.href}
+                  onClick={onClose}
+                  aria-current={current === item.key ? "page" : undefined}
+                  className={cn(
+                    "text-primary type-nav-menu focusv:outline-2 focusv:-outline-offset-2 focusv:outline-accent-focus block py-4 outline-0",
+                    current === item.key &&
+                      "underline decoration-1 underline-offset-8",
+                  )}
+                >
+                  {t(item.label)}
+                </Link>
+              )}
             </li>
           ))}
         </ul>

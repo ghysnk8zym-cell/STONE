@@ -49,8 +49,16 @@ const ITEM = cn(
 );
 const IDLE = "text-secondary hov:text-primary";
 const CURRENT = "text-primary";
+const INERT = "pointer-events-none opacity-45";
 
-export function TabBar({ current }: { current?: TabBarCurrent }) {
+export function TabBar({
+  current,
+  inert = [],
+}: {
+  current?: TabBarCurrent;
+  /** Tabs whose page does not exist yet: rendered as non-link items with `aria-disabled`. */
+  inert?: readonly TabBarCurrent[];
+}) {
   const t = useTranslations("components.tabBar");
 
   return (
@@ -61,14 +69,25 @@ export function TabBar({ current }: { current?: TabBarCurrent }) {
       <ul className="flex h-[52px] items-center justify-between">
         {TABS.map(({ key, href, icon }) => (
           <li key={key} className="max-w-16 min-w-0 flex-1">
-            <Link
-              href={href}
-              aria-current={current === key ? "page" : undefined}
-              className={cn(ITEM, current === key ? CURRENT : IDLE)}
-            >
-              <Icon name={icon} />
-              {t(key)}
-            </Link>
+            {inert.includes(key) ? (
+              <span
+                role="link"
+                aria-disabled="true"
+                className={cn(ITEM, IDLE, INERT)}
+              >
+                <Icon name={icon} />
+                {t(key)}
+              </span>
+            ) : (
+              <Link
+                href={href}
+                aria-current={current === key ? "page" : undefined}
+                className={cn(ITEM, current === key ? CURRENT : IDLE)}
+              >
+                <Icon name={icon} />
+                {t(key)}
+              </Link>
+            )}
           </li>
         ))}
       </ul>

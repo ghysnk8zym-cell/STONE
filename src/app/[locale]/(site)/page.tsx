@@ -11,9 +11,9 @@ export default function HomePage({ params }: PageProps<"/[locale]">) {
   const t = useTranslations("placeholder");
 
   return (
-    <main>
+    <>
       <h1>{t("title")}</h1>
       <p>{t("body")}</p>
-    </main>
+    </>
   );
 }
