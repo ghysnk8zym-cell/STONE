@@ -17,6 +17,16 @@
   "components": {
     "button": {
       "loading": "Загрузка"
+    },
+    "carousel": {
+      "prev": "Назад",
+      "next": "Вперёд"
+    },
+    "social": {
+      "tg": "Telegram",
+      "vk": "ВКонтакте",
+      "ig": "Instagram",
+      "wa": "WhatsApp"
     }
   }
 }
