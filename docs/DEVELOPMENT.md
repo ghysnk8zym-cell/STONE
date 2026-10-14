@@ -40,6 +40,14 @@ pnpm dev                     # http://localhost:3000 → redirects to /ru
 
 First Playwright run: `pnpm exec playwright install chromium`.
 
+Extra scripts and the styleguide:
+
+- `pnpm images` (`scripts/optimize-images.mjs`) builds the WebP width sets listed in `assets/figma-manifest.json`.
+- `pnpm qa:visual` (`scripts/visual-compare.mjs`) compares styleguide components with the Figma reference screenshots in `tests/visual/figma/` and writes `-impl`/`-figma`/`-diff` PNGs and `results.md` to `docs/QA/phase-2/` (only the curated set is committed; it is a report, not a gate). It needs a running production server: `pnpm build`, `pnpm start` in another terminal, then `pnpm qa:visual`, or point it elsewhere with `BASE_URL=https://... pnpm qa:visual`.
+- The component styleguide lives at `/ru/_styleguide` and `/en/_styleguide`. It is a 404 when `APP_ENV=production`, and it is `noindex`.
+- `pnpm test:e2e` starts two servers: `pnpm start` on port 3000 and a second `next start -p 3001` with `APP_ENV=production` for the `production-guard` project (the styleguide must 404 there). Free both ports first; existing servers are reused outside CI.
+- Motion shipped so far is listed in `docs/ANIMATIONS.md`.
+
 ## Windows notes
 
 - OpenNext does not support Windows builds (`pnpm cf:build` fails with `EPERM symlink`). Use WSL, or rely on the `cloudflare` CI job. Everything else works on Windows.
