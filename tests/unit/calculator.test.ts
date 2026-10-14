@@ -1,0 +1,80 @@
+import { describe, expect, it } from "vitest";
+
+import { calculate, formatArea, parseDecimal } from "@/lib/calculator";
+
+describe("parseDecimal", () => {
+  it("parses comma decimals", () => {
+    expect(parseDecimal("2,5")).toBe(2.5);
+    expect(parseDecimal("2.5")).toBe(2.5);
+    expect(parseDecimal(" 2 ")).toBe(2);
+  });
+
+  it("rejects malformed input", () => {
+    for (const bad of ["", "  ", "2,5,1", "2.5.1", "2,5.1", "abc", "1e3", "-2", "+2", "1 000", "1,000.5", "."]) {
+      expect(parseDecimal(bad), bad).toBeNull();
+    }
+  });
+});
+
+describe("calculate", () => {
+  it("computes 2 m² x 24000", () => {
+    expect(calculate({ mode: "area", area: "2" }, 24000)).toEqual({
+      ok: true,
+      surfaceM2: 2,
+      extraM2: 0.2,
+      orderM2: 2.2,
+      unitCents: 24000,
+      totalCents: 52800,
+    });
+  });
+
+  it("wall 2 x 1 equals area 2", () => {
+    expect(calculate({ mode: "wall", length: "2", height: "1" }, 24000)).toEqual(
+      calculate({ mode: "area", area: "2" }, 24000),
+    );
+  });
+
+  it("charcoal 2 m² x 3800", () => {
+    const r = calculate({ mode: "area", area: "2" }, 3800);
+    expect(r.ok && r.totalCents).toBe(8360);
+  });
+
+  it("empty input is invalid", () => {
+    expect(calculate({ mode: "area", area: "" }, 24000)).toEqual({ ok: false, field: "area", reason: "invalid" });
+  });
+
+  it("0 and 10000.01 are out of range", () => {
+    expect(calculate({ mode: "area", area: "0" }, 100)).toEqual({ ok: false, field: "area", reason: "range" });
+    expect(calculate({ mode: "area", area: "10000.01" }, 100)).toEqual({ ok: false, field: "area", reason: "range" });
+    expect(calculate({ mode: "area", area: "10000" }, 100).ok).toBe(true);
+    expect(calculate({ mode: "area", area: "0.01" }, 100).ok).toBe(true);
+  });
+
+  it("wall 101 m length is out of range on length", () => {
+    expect(calculate({ mode: "wall", length: "101", height: "2" }, 100)).toEqual({
+      ok: false,
+      field: "length",
+      reason: "range",
+    });
+  });
+
+  it("reports height when length is valid", () => {
+    expect(calculate({ mode: "wall", length: "2", height: "abc" }, 100)).toEqual({
+      ok: false,
+      field: "height",
+      reason: "invalid",
+    });
+  });
+
+  it("1.005 m² rounds to 1.01", () => {
+    const r = calculate({ mode: "area", area: "1.005" }, 100);
+    expect(r.ok && r.surfaceM2).toBe(1.01);
+  });
+});
+
+describe("formatArea", () => {
+  it("formats with two fraction digits per locale", () => {
+    expect(formatArea(2.2, "en")).toBe("2.20");
+    expect(formatArea(2.2, "ru")).toBe("2,20");
+  });
+});
