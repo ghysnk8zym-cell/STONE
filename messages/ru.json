@@ -55,6 +55,26 @@
       "openMenu": "Открыть меню",
       "closeMenu": "Закрыть меню"
     },
+    "tabBar": {
+      "label": "Мобильная навигация",
+      "home": "Главная",
+      "catalog": "Каталог",
+      "favorites": "Избранное",
+      "cart": "Корзина",
+      "account": "Вход"
+    },
+    "footer": {
+      "label": "Нижняя навигация",
+      "information": "Информация",
+      "about": "О нас",
+      "reviews": "Отзывы",
+      "followUs": "Мы в соцсетях",
+      "copyright": "© 2026 STONE. Все права защищены.",
+      "privacy": "Политика конфиденциальности"
+    },
+    "breadcrumb": {
+      "label": "Хлебные крошки"
+    },
     "languageSwitch": {
       "label": "RU / EN — переключить язык на {language}",
       "separator": "/",

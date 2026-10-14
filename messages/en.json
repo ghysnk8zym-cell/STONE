@@ -55,6 +55,26 @@
       "openMenu": "Open menu",
       "closeMenu": "Close menu"
     },
+    "tabBar": {
+      "label": "Mobile navigation",
+      "home": "Home",
+      "catalog": "Catalog",
+      "favorites": "Favorites",
+      "cart": "Cart",
+      "account": "Sign in"
+    },
+    "footer": {
+      "label": "Footer",
+      "information": "Information",
+      "about": "About us",
+      "reviews": "Reviews",
+      "followUs": "Follow us",
+      "copyright": "© 2026 STONE. All rights reserved.",
+      "privacy": "Privacy policy"
+    },
+    "breadcrumb": {
+      "label": "Breadcrumb"
+    },
     "languageSwitch": {
       "label": "RU / EN — switch language to {language}",
       "separator": "/",

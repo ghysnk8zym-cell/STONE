@@ -11,9 +11,12 @@ import { NextIntlClientProvider } from "next-intl";
 import { type ComponentProps, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { LanguageSwitch } from "@/components/navigation/LanguageSwitch";
 import { MobileMenu } from "@/components/navigation/MobileMenu";
+import { SiteFooter } from "@/components/navigation/SiteFooter";
 import { SiteHeader } from "@/components/navigation/SiteHeader";
+import { TabBar } from "@/components/navigation/TabBar";
 
 import en from "../../messages/en.json";
 import ru from "../../messages/ru.json";
@@ -305,6 +308,306 @@ describe("MobileMenu", () => {
     const dialog = screen.getByRole("dialog", { name: "Меню" });
     expect(
       within(dialog).getByRole("button", { name: "Закрыть меню" }),
+    ).toBeTruthy();
+  });
+});
+
+const TAB_HREFS = {
+  Home: "/",
+  Catalog: "/catalog",
+  Favorites: "/account/favorites",
+  Cart: "/cart",
+  "Sign in": "/account",
+} as const;
+
+describe("TabBar", () => {
+  it("TabBar renders 5 localized links", () => {
+    renderWithIntl(<TabBar current="home" />);
+    const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
+    const links = within(nav).getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual([
+      "Home",
+      "Catalog",
+      "Favorites",
+      "Cart",
+      "Sign in",
+    ]);
+    for (const [name, href] of Object.entries(TAB_HREFS)) {
+      // the accessible name is exactly the visible label (WCAG 2.5.3); icons are decorative
+      expect(within(nav).getByRole("link", { name }).getAttribute("href")).toBe(
+        href,
+      );
+    }
+    expect(within(nav).getAllByRole("listitem")).toHaveLength(5);
+  });
+
+  it("renders the Figma labels in Russian", () => {
+    renderWithIntl(<TabBar current="home" />, "ru");
+    const nav = screen.getByRole("navigation", {
+      name: "Мобильная навигация",
+    });
+    expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Главная", "Каталог", "Избранное", "Корзина", "Вход"]);
+  });
+
+  it("marks only the current tab with aria-current", () => {
+    const { rerender } = renderWithIntl(<TabBar current="favorites" />);
+    expect(
+      screen
+        .getByRole("link", { name: "Favorites" })
+        .getAttribute("aria-current"),
+    ).toBe("page");
+    expect(
+      screen
+        .getAllByRole("link")
+        .filter((link) => link.hasAttribute("aria-current")),
+    ).toHaveLength(1);
+
+    rerender(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <TabBar />
+      </NextIntlClientProvider>,
+    );
+    expect(
+      screen
+        .getAllByRole("link")
+        .filter((link) => link.hasAttribute("aria-current")),
+    ).toHaveLength(0);
+  });
+
+  it("keeps its landmark name distinct from the main navigation", () => {
+    renderWithIntl(
+      <>
+        <SiteHeader />
+        <TabBar current="cart" />
+      </>,
+    );
+    expect(screen.getByRole("navigation", { name: "Main" })).toBeTruthy();
+    expect(
+      screen.getByRole("navigation", { name: "Mobile navigation" }),
+    ).toBeTruthy();
+    expect(screen.getAllByRole("navigation")).toHaveLength(2);
+  });
+
+  it("is hidden from 768 px by CSS and keeps the Figma 64x52 touch area", () => {
+    renderWithIntl(<TabBar current="home" />);
+    const nav = screen.getByRole("navigation");
+    expect(nav.className).toContain("md:hidden");
+    for (const link of within(nav).getAllByRole("link")) {
+      expect(link.className).toContain("h-[52px]");
+      expect(link.className).toContain("w-16");
+    }
+  });
+});
+
+describe("Breadcrumb", () => {
+  const items = [
+    { label: "Catalog", href: "/catalog" },
+    { label: "Marble", href: "/catalog?type=marble" },
+    { label: "Black Marble" },
+  ];
+
+  it("is a labelled navigation with an ordered list", () => {
+    renderWithIntl(<Breadcrumb items={items} />);
+    const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
+    const list = within(nav).getByRole("list");
+    expect(list.tagName).toBe("OL");
+    expect(within(list).getAllByRole("listitem")).toHaveLength(3);
+  });
+
+  it("Breadcrumb marks last item current", () => {
+    renderWithIntl(<Breadcrumb items={items} />);
+    const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
+    const links = within(nav).getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual([
+      "Catalog",
+      "Marble",
+    ]);
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      "/catalog",
+      "/catalog?type=marble",
+    ]);
+    const current = within(nav).getByText("Black Marble");
+    expect(current.getAttribute("aria-current")).toBe("page");
+    expect(current.closest("a")).toBeNull();
+    for (const link of links) {
+      expect(link.hasAttribute("aria-current")).toBe(false);
+    }
+  });
+
+  it("never links the last item, even when it has an href", () => {
+    renderWithIntl(
+      <Breadcrumb
+        items={[
+          { label: "Catalog", href: "/catalog" },
+          { label: "Black Marble", href: "/catalog/black-marble" },
+        ]}
+      />,
+    );
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.getByText("Black Marble").getAttribute("aria-current")).toBe(
+      "page",
+    );
+  });
+
+  it("renders a middle item without href as plain text", () => {
+    renderWithIntl(
+      <Breadcrumb
+        items={[
+          { label: "Catalog", href: "/catalog" },
+          { label: "Marble" },
+          { label: "Black Marble" },
+        ]}
+      />,
+    );
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.getByText("Marble").closest("a")).toBeNull();
+  });
+
+  it("hides the separators from assistive technology", () => {
+    renderWithIntl(<Breadcrumb items={items} />);
+    const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
+    const separators = Array.from(nav.querySelectorAll('[aria-hidden="true"]'));
+    expect(separators).toHaveLength(2);
+    for (const separator of separators) {
+      expect(separator.textContent).toBe("/");
+    }
+  });
+
+  it("works with a single item and in Russian", () => {
+    renderWithIntl(<Breadcrumb items={[{ label: "Каталог" }]} />, "ru");
+    const nav = screen.getByRole("navigation", { name: "Хлебные крошки" });
+    expect(within(nav).queryAllByRole("link")).toHaveLength(0);
+    expect(within(nav).getByText("Каталог").getAttribute("aria-current")).toBe(
+      "page",
+    );
+    expect(nav.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0);
+  });
+});
+
+describe("SiteFooter", () => {
+  const links = {
+    information: "/information",
+    about: "/about",
+    reviews: "/reviews",
+  };
+  const social = {
+    TG: "https://t.example/stone",
+    VK: "https://vk.example/stone",
+    IG: "https://ig.example/stone",
+    WA: "https://wa.example/stone",
+  };
+
+  it("is the contentinfo landmark with a labelled link list", () => {
+    renderWithIntl(<SiteFooter links={links} />);
+    const footer = screen.getByRole("contentinfo");
+    expect(footer.tagName).toBe("FOOTER");
+    const nav = within(footer).getByRole("navigation", { name: "Footer" });
+    expect(within(nav).getAllByRole("listitem")).toHaveLength(3);
+    expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
+      ["Information", "/information"],
+      ["About us", "/about"],
+      ["Reviews", "/reviews"],
+    ]);
+  });
+
+  it("shows the wordmark, copyright and privacy link", () => {
+    renderWithIntl(<SiteFooter privacyHref="/privacy" />);
+    const footer = screen.getByRole("contentinfo");
+    expect(within(footer).getByText("STONE")).toBeTruthy();
+    expect(
+      within(footer).getByText("© 2026 STONE. All rights reserved."),
+    ).toBeTruthy();
+    expect(
+      within(footer)
+        .getByRole("link", { name: "Privacy policy" })
+        .getAttribute("href"),
+    ).toBe("/privacy");
+  });
+
+  it("lists the four social links under Follow us", () => {
+    renderWithIntl(<SiteFooter social={social} />);
+    const group = screen.getByRole("list", { name: "Follow us" });
+    const links = within(group).getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
+      "TG, Telegram",
+      "VK, VKontakte",
+      "IG, Instagram",
+      "WA, WhatsApp",
+    ]);
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      social.TG,
+      social.VK,
+      social.IG,
+      social.WA,
+    ]);
+    expect(links.every((link) => !link.hasAttribute("aria-disabled"))).toBe(
+      true,
+    );
+  });
+
+  it("renders destinations that were not supplied as disabled, never as dead links", () => {
+    renderWithIntl(<SiteFooter links={{ about: "/about" }} />);
+    const footer = screen.getByRole("contentinfo");
+    // supplied: a real link
+    expect(
+      within(footer)
+        .getByRole("link", { name: "About us" })
+        .getAttribute("href"),
+    ).toBe("/about");
+    // missing: inert, announced as disabled, no href
+    for (const name of ["Information", "Reviews", "Privacy policy"]) {
+      const inert = within(footer).getByText(name).closest("[role=link]");
+      expect(inert?.getAttribute("aria-disabled"), name).toBe("true");
+      expect(inert?.hasAttribute("href"), name).toBe(false);
+    }
+    for (const label of ["TG", "VK", "IG", "WA"]) {
+      const inert = within(footer).getByText(label);
+      expect(inert.getAttribute("aria-disabled"), label).toBe("true");
+      expect(inert.hasAttribute("href"), label).toBe(false);
+    }
+  });
+
+  it("serves the desktop and the mobile layout from one DOM", () => {
+    renderWithIntl(<SiteFooter />);
+    const footer = screen.getByRole("contentinfo");
+    expect(footer.className).toContain("lg:");
+    expect(within(footer).getAllByText("STONE")).toHaveLength(1);
+  });
+
+  it("has distinct landmark names next to the header and the tab bar", () => {
+    renderWithIntl(
+      <>
+        <SiteHeader />
+        <SiteFooter />
+        <TabBar current="home" />
+      </>,
+    );
+    const names = screen
+      .getAllByRole("navigation")
+      .map((nav) => nav.getAttribute("aria-label"));
+    expect(names).toEqual(["Main", "Footer", "Mobile navigation"]);
+  });
+
+  it("is localized", () => {
+    renderWithIntl(<SiteFooter links={links} />, "ru");
+    const footer = screen.getByRole("contentinfo");
+    expect(
+      within(footer).getByRole("navigation", { name: "Нижняя навигация" }),
+    ).toBeTruthy();
+    expect(within(footer).getByRole("link", { name: "О нас" })).toBeTruthy();
+    expect(
+      within(footer).getByText("© 2026 STONE. Все права защищены."),
+    ).toBeTruthy();
+    expect(
+      within(footer).getByRole("list", { name: "Мы в соцсетях" }),
     ).toBeTruthy();
   });
 });
