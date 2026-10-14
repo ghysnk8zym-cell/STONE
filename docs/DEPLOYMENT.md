@@ -51,6 +51,8 @@ All variables are listed in `.env.example` and validated by `src/server/env.ts`.
 | `SITE_URL` | runtime                     | unset         | public base URL                  |
 | `PLATFORM` | runtime                     | `node`        | `cloudflare` selects the adapter |
 
+> **Production:** set `APP_ENV=production` on any real production deploy. The `/_styleguide` page returns 404 only when `APP_ENV=production`; if the variable is unset the guard fails open and the styleguide is reachable (it stays `noindex`).
+
 ## 4. Alternative hosting
 
 The application code does not depend on Cloudflare. Cloudflare-only files: `wrangler.jsonc`, `open-next.config.ts`, `scripts/*worker-size*`, `public/_headers`, and the `cf:*` scripts.
