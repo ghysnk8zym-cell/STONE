@@ -14,6 +14,7 @@ export type TextFieldProps = {
   /** Controlled value (the cost calculator); use instead of `defaultValue`. */
   value?: string;
   onChange?: (value: string) => void;
+  onBlur?: () => void;
   /** Soft-keyboard hint; `type="number"` implies "decimal". */
   inputMode?: "decimal" | "numeric" | "text";
   placeholder?: string;
@@ -95,6 +96,7 @@ export function TextField({
   defaultValue,
   value,
   onChange,
+  onBlur,
   inputMode,
   placeholder,
   required,
@@ -133,6 +135,7 @@ export function TextField({
           onChange={
             onChange ? (event) => onChange(event.target.value) : undefined
           }
+          onBlur={onBlur}
           placeholder={placeholder}
           required={required}
           autoComplete={autoComplete}

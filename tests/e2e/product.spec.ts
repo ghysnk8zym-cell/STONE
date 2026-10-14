@@ -65,6 +65,17 @@ test.describe("product", () => {
     );
   });
 
+  test("ru defaults are locale-formatted", async ({ page }) => {
+    await page.goto("/ru/catalog/black-marble");
+    await productReady(page, "ru");
+    await expect(
+      page.getByLabel(PRODUCT_RU.calculator.fields.area, { exact: true }),
+    ).toHaveValue("2,00");
+    await expect(page.getByTestId("calculator-total")).toHaveText(
+      /^528,00\s\$$/,
+    );
+  });
+
   test("clearing the area shows an error and a dash", async ({ page }) => {
     await page.goto("/en/catalog/black-marble");
     await productReady(page);
@@ -72,6 +83,7 @@ test.describe("product", () => {
       exact: true,
     });
     await field.fill("");
+    await field.blur();
     await expect(page.getByRole("main").getByRole("alert")).toHaveText(
       PRODUCT.calculator.error.invalid,
     );

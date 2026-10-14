@@ -25,13 +25,22 @@ type GalleryProps = {
   label: string;
 };
 
+/** Frame width at each layout: 726 px from 1440, then viewport minus (80 + 32 + 400) at 1024-1439, minus 64 from 768, minus 32 on phones. */
+function frameSizes(scale: number): string {
+  const px = (n: number) => `${Math.round(n * scale)}px`;
+  return [
+    `(min-width: 1440px) ${px(726)}`,
+    `(min-width: 1024px) calc((100vw - 512px) * ${scale})`,
+    `(min-width: 768px) calc((100vw - 64px) * ${scale})`,
+    `calc((100vw - 32px) * ${scale})`,
+  ].join(", ");
+}
+
+// the close-up image is `crop.size` % of the frame wide
 const MAIN_SIZES: Record<GalleryView["id"], (crop: GalleryCrop) => string> = {
-  full: () => FULL_MAIN_SIZES,
-  // the close-up image is `crop.size` % of the frame wide, so ask for that much (never above the largest file)
-  detail: (crop) => `${Math.round(crop.size)}vw`,
+  full: () => frameSizes(1),
+  detail: (crop) => frameSizes(crop.size / 100),
 };
-const FULL_MAIN_SIZES =
-  "(min-width: 1440px) 726px, (min-width: 1024px) 512px, (min-width: 768px) 704px, calc(100vw - 32px)";
 const THUMB_SIZES: Record<GalleryView["id"], (crop: GalleryCrop) => string> = {
   full: () => "200px",
   detail: (crop) => `${Math.round((200 * crop.size) / 100)}px`,

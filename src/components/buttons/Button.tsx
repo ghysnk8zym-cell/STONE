@@ -13,7 +13,13 @@ import { Icon, type IconName, type IconSize } from "../icons/Icon";
 export type InteractionState = "hover" | "focus" | "pressed";
 
 export type ButtonVariant =
-  "pill" | "primary" | "light" | "outline" | "graphite" | "save";
+  | "pill"
+  | "primary"
+  | "light"
+  | "outline"
+  | "graphite"
+  | "graphite-solid"
+  | "save";
 
 type CommonProps = {
   variant?: ButtonVariant;
@@ -66,7 +72,7 @@ const BASE =
 
 /*
  * Values come from the Figma component sets (Button/Pill 21:95, Primary 338:533, Light 430:479,
- * Outline 732:712, Graphite 733:6134, Save 779:546). Wherever Figma binds a variable (get_variable_defs)
+ * Outline 732:712, Graphite 733:6134, Save 779:546; graphite-solid = the product page "Buy now" instance of Graphite, whose fill is the opaque #4c5053 -> #414448 gradient). Wherever Figma binds a variable (get_variable_defs)
  * a token is used, including `ink/on-dark` on the Primary label. Fills of Primary, Light and Graphite
  * and the Light label are plain hex / rgba in Figma (no variable bound), so they stay arbitrary values. Hover / pressed of Outline, Graphite and Save are not drawn in Figma:
  * they use the closest tokens (documented in the Task 4 report).
@@ -107,6 +113,12 @@ const VARIANT: Record<ButtonVariant, string> = {
     FOCUS_RING,
     DISABLED_DIM,
   ),
+  "graphite-solid": cn(
+    "h-[46px] gap-2 rounded-full border border-[rgba(255,255,255,0.1)] bg-graphite-solid px-6 text-primary shadow-[0_8px_10px_rgba(20,23,26,0.35)] type-catalog-action",
+    "hov:brightness-110",
+    FOCUS_RING,
+    DISABLED_DIM,
+  ),
   save: cn(
     "h-11 gap-2 rounded-full border border-ink pr-[18px] pl-4 text-ink type-catalog-action",
     "hov:bg-overlay-tint-10",
@@ -130,6 +142,8 @@ const INERT: Record<ButtonVariant, string> = {
     "h-[46px] gap-2 rounded-full border border-ink px-6 text-ink type-catalog-action",
   graphite:
     "h-[46px] gap-2 rounded-full border border-surface-card-hover bg-linear-to-b from-[rgba(76,80,83,0.2)] to-[rgba(65,68,72,0.2)] px-6 text-primary shadow-[0_8px_10px_rgba(20,23,26,0.35)] type-catalog-action",
+  "graphite-solid":
+    "h-[46px] gap-2 rounded-full border border-[rgba(255,255,255,0.1)] bg-graphite-solid px-6 text-primary shadow-[0_8px_10px_rgba(20,23,26,0.35)] type-catalog-action",
   save: "h-11 gap-2 rounded-full border border-ink pr-[18px] pl-4 text-ink type-catalog-action",
 };
 
@@ -140,6 +154,7 @@ const ICON: Record<ButtonVariant, { size: IconSize; className?: string }> = {
   light: { size: 16 },
   outline: { size: 16 },
   graphite: { size: 16, className: "size-[18px]!" },
+  "graphite-solid": { size: 16 },
   save: { size: 24, className: "size-5!" },
 };
 

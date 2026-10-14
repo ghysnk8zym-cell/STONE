@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  within,
+} from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -120,6 +126,10 @@ describe("Calculator", () => {
     renderWithIntl(<Calculator unitCents={24000} isPlaceholder />);
     const field = screen.getByLabelText(/Surface area \(m²\)/);
     fireEvent.change(field, { target: { value: "" } });
+    // the total dashes at once, the error waits for blur or a pause
+    expect(screen.getByTestId("calculator-total").textContent).toBe("—");
+    expect(screen.queryByRole("alert")).toBeNull();
+    fireEvent.blur(field);
     expect(field.getAttribute("aria-invalid")).toBe("true");
     expect(screen.getByRole("alert").textContent).toBe(
       "Enter a number, e.g. 2.5",
@@ -131,9 +141,9 @@ describe("Calculator", () => {
 
   it("an out-of-range value names the limits", () => {
     renderWithIntl(<Calculator unitCents={24000} isPlaceholder />);
-    fireEvent.change(screen.getByLabelText(/Surface area \(m²\)/), {
-      target: { value: "20000" },
-    });
+    const field = screen.getByLabelText(/Surface area \(m²\)/);
+    fireEvent.change(field, { target: { value: "20000" } });
+    fireEvent.blur(field);
     expect(screen.getByRole("alert").textContent).toBe(
       "Enter a value from 0.01 to 10,000",
     );
@@ -146,12 +156,53 @@ describe("Calculator", () => {
     fireEvent.change(screen.getByLabelText("Height (m)"), {
       target: { value: "abc" },
     });
+    fireEvent.blur(screen.getByLabelText("Height (m)"));
     expect(
       screen.getByLabelText("Height (m)").getAttribute("aria-invalid"),
     ).toBe("true");
     expect(
       screen.getByLabelText("Length (m)").getAttribute("aria-invalid"),
     ).toBeNull();
+  });
+});
+
+describe("Calculator timing, locale and landmark", () => {
+  it("shows the error after a pause without blur", () => {
+    vi.useFakeTimers();
+    try {
+      renderWithIntl(<Calculator unitCents={24000} isPlaceholder />);
+      fireEvent.change(screen.getByLabelText(/Surface area \(m²\)/), {
+        target: { value: "x" },
+      });
+      expect(screen.queryByRole("alert")).toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(screen.getByRole("alert")).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("starts with locale-formatted defaults in ru (2,00 and 528,00 $)", () => {
+    renderWithIntl(<Calculator unitCents={24000} isPlaceholder />, "ru");
+    expect(screen.getByLabelText(/Площадь поверхности/)).toHaveProperty(
+      "value",
+      "2,00",
+    );
+    expect(
+      text(screen.getByTestId("calculator-total")).replace(/ | /g, " "),
+    ).toBe("528,00 $");
+    fireEvent.click(screen.getByRole("button", { name: "Размеры стены" }));
+    expect(screen.getByLabelText("Длина (м)")).toHaveProperty("value", "2,00");
+    expect(screen.getByLabelText("Высота (м)")).toHaveProperty("value", "1,00");
+  });
+
+  it("is a named region", () => {
+    renderWithIntl(<Calculator unitCents={24000} isPlaceholder />);
+    expect(
+      screen.getByRole("region", { name: "Cost calculator" }),
+    ).toBeTruthy();
   });
 });
 

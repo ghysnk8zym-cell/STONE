@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormatter, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { cn } from "@/components/cn";
 import { TextField } from "@/components/forms/TextField";
@@ -15,6 +15,7 @@ import {
 type Mode = "area" | "wall";
 
 const DASH = "—";
+const ERROR_DELAY_MS = 800;
 
 /*
  * Cost calculator (Figma Product/Calculator 779:628; modes Area 779:547, Wall dimensions 779:584).
@@ -35,8 +36,7 @@ const SEGMENT = cn(
   "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-full outline-0 type-catalog-action motion-hover",
   "focusv:outline-2 focusv:outline-offset-2 focusv:outline-ink-primary",
 );
-const SEGMENT_ON =
-  "bg-linear-to-b from-[#4c5053] to-[#414448] text-primary cursor-default";
+const SEGMENT_ON = "bg-graphite-solid text-primary cursor-default";
 const SEGMENT_OFF = "text-stone-catalog-ink hov:bg-overlay-tint-10";
 
 type Values = { area: string; length: string; height: string };
@@ -53,11 +53,44 @@ export function Calculator({
   const format = useFormatter();
 
   const [mode, setMode] = useState<Mode>("area");
+  const decimal = (n: number) =>
+    format.number(n, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const titleId = useId();
+
+  // Locale-formatted defaults ("2,00" in ru), the same text the server renders.
   const [values, setValues] = useState<Values>({
-    area: "2.00",
-    length: "2.00",
-    height: "1.00",
+    area: decimal(2),
+    length: decimal(2),
+    height: decimal(1),
   });
+
+  // An error is shown after the field loses focus or the user pauses typing, not on every keystroke;
+  // the total shows the dash at once.
+  const [revealed, setRevealed] = useState<Record<CalcField, boolean>>({
+    area: false,
+    length: false,
+    height: false,
+  });
+  // the field last edited; each edit restarts the pause timer below
+  const [lastEdit, setLastEdit] = useState<{
+    name: CalcField;
+    n: number;
+  } | null>(null);
+  useEffect(() => {
+    if (!lastEdit) return;
+    const id = setTimeout(
+      () => setRevealed((r) => ({ ...r, [lastEdit.name]: true })),
+      ERROR_DELAY_MS,
+    );
+    return () => clearTimeout(id);
+  }, [lastEdit]);
+  const reveal = (name: CalcField, on: boolean) =>
+    setRevealed((r) => ({ ...r, [name]: on }));
+  const edit = (name: CalcField, value: string) => {
+    setValues((v) => ({ ...v, [name]: value }));
+    reveal(name, false);
+    setLastEdit((e) => ({ name, n: (e?.n ?? 0) + 1 }));
+  };
 
   const result: CalcResult =
     mode === "area"
@@ -73,7 +106,8 @@ export function Calculator({
     `${format.number(m2, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${t("units.area")}`;
 
   const errorFor = (field: CalcField): string | undefined => {
-    if (result.ok || result.field !== field) return undefined;
+    if (result.ok || result.field !== field || !revealed[field])
+      return undefined;
     if (result.reason === "invalid") return t("error.invalid");
     const [min, max] = LIMITS[field];
     return t("error.range", {
@@ -92,7 +126,8 @@ export function Calculator({
       inputMode="decimal"
       autoComplete="off"
       value={values[name]}
-      onChange={(value) => setValues((v) => ({ ...v, [name]: value }))}
+      onChange={(value) => edit(name, value)}
+      onBlur={() => reveal(name, true)}
       error={errorFor(name)}
     />
   );
@@ -121,9 +156,15 @@ export function Calculator({
   ];
 
   return (
-    <section className="bg-stone-catalog-card border-stone-catalog-line flex w-full flex-col gap-5 rounded-[20px] border p-(--layout-panel-pad)">
+    <section
+      aria-labelledby={titleId}
+      className="bg-stone-catalog-card border-stone-catalog-line flex w-full flex-col gap-5 rounded-[20px] border p-(--layout-panel-pad)"
+    >
       <div className="flex flex-wrap items-center justify-between gap-x-4">
-        <h2 className="text-stone-catalog-ink type-catalog-product-name-lg">
+        <h2
+          id={titleId}
+          className="text-stone-catalog-ink type-catalog-product-name-lg"
+        >
           {t("title")}
         </h2>
         <p className="type-catalog-meta text-stone-catalog-secondary">

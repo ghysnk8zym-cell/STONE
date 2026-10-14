@@ -144,15 +144,9 @@ export default async function ProductPage({
               />
               <Calculator unitCents={product.priceCents} isPlaceholder />
               <div className="flex flex-col gap-4">
-                {/* Figma "[COPY] Action / Buy now": solid graphite gradient (not the 20 % Button/Graphite
-                    fill of the dark hero), white label, 46 px pill. Inert until checkout exists. */}
-                <span
-                  role="button"
-                  aria-disabled="true"
-                  className="type-catalog-action text-primary flex h-[46px] w-full cursor-default items-center justify-center rounded-full border border-[rgba(255,255,255,0.1)] bg-linear-to-b from-[#4c5053] to-[#414448] px-6 shadow-[0_8px_10px_rgba(20,23,26,0.35)] select-none"
-                >
+                <Button variant="graphite-solid" inert className="w-full">
                   {t("buyNow")}
-                </span>
+                </Button>
                 <Button variant="outline" inert className="w-full">
                   {t("addToCart")}
                 </Button>

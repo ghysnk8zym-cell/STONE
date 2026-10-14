@@ -185,6 +185,11 @@
   letter-spacing: 0;
 }
 
+/* Opaque graphite gradient (Figma product page: Buy now, calculator active segment). */
+@utility bg-graphite-solid {
+  background-image: linear-gradient(to bottom, #4c5053, #414448);
+}
+
 @utility type-catalog-action {
   font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 500;
