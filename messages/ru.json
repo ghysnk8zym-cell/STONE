@@ -44,6 +44,28 @@
     },
     "select": {
       "empty": "Нет вариантов"
+    },
+    "nav": {
+      "primary": "Основная навигация",
+      "home": "{name} — на главную",
+      "createYourStone": "Создать свой камень",
+      "cart": "Корзина",
+      "account": "Личный кабинет",
+      "menu": "Меню",
+      "openMenu": "Открыть меню",
+      "closeMenu": "Закрыть меню"
+    },
+    "languageSwitch": {
+      "label": "RU / EN — переключить язык на {language}",
+      "separator": "/",
+      "codes": {
+        "ru": "RU",
+        "en": "EN"
+      },
+      "languages": {
+        "ru": "русский",
+        "en": "английский"
+      }
     }
   }
 }

@@ -44,6 +44,28 @@
     },
     "select": {
       "empty": "No options"
+    },
+    "nav": {
+      "primary": "Main",
+      "home": "{name} — home",
+      "createYourStone": "Create Your Stone",
+      "cart": "Cart",
+      "account": "Account",
+      "menu": "Menu",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
+    },
+    "languageSwitch": {
+      "label": "RU / EN — switch language to {language}",
+      "separator": "/",
+      "codes": {
+        "ru": "RU",
+        "en": "EN"
+      },
+      "languages": {
+        "ru": "Russian",
+        "en": "English"
+      }
     }
   }
 }

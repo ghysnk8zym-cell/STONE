@@ -16,6 +16,12 @@ export type IconButtonProps = {
   state?: InteractionState;
   disabled?: boolean;
   onClick?: () => void;
+  /** Disclosure trigger (menu button): sets `aria-expanded`. */
+  expanded?: boolean;
+  /** Kind of popup the button opens (menu button: "dialog"): sets `aria-haspopup`. */
+  haspopup?: "dialog";
+  /** The link points at the page the user is on: sets `aria-current="page"` (no extra look in Figma). */
+  current?: boolean;
   /** Toggle state (heart): sets `aria-pressed`. */
   pressed?: boolean;
 };
@@ -59,6 +65,9 @@ export function IconButton({
   disabled = false,
   onClick,
   pressed,
+  expanded,
+  haspopup,
+  current = false,
 }: IconButtonProps) {
   const classes = TONE[tone];
   const glyph = <Icon name={icon} className={glyphClass(icon, tone)} />;
@@ -81,6 +90,7 @@ export function IconButton({
       <Link
         href={href}
         aria-label={label}
+        aria-current={current ? "page" : undefined}
         data-state={state}
         className={classes}
       >
@@ -94,6 +104,8 @@ export function IconButton({
       type="button"
       aria-label={label}
       aria-pressed={pressed}
+      aria-expanded={expanded}
+      aria-haspopup={haspopup}
       className={classes}
       data-state={state}
       disabled={disabled}

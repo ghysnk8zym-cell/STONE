@@ -46,6 +46,29 @@ describe("IconButton", () => {
     ).toBe(false);
   });
 
+  it("exposes disclosure state (expanded + haspopup) and the current page", () => {
+    const { rerender } = renderWithIntl(
+      <IconButton icon="menu" label="Open menu" expanded haspopup="dialog" />,
+    );
+    const button = screen.getByRole("button", { name: "Open menu" });
+    expect(button.getAttribute("aria-expanded")).toBe("true");
+    expect(button.getAttribute("aria-haspopup")).toBe("dialog");
+    rerender(
+      <IconButton icon="user" label="Account" href="/account" current />,
+    );
+    expect(
+      screen
+        .getByRole("link", { name: "Account" })
+        .getAttribute("aria-current"),
+    ).toBe("page");
+    rerender(<IconButton icon="user" label="Account" href="/account" />);
+    expect(
+      screen
+        .getByRole("link", { name: "Account" })
+        .hasAttribute("aria-current"),
+    ).toBe(false);
+  });
+
   it("calls onClick, but not when disabled", () => {
     const onClick = vi.fn();
     const { rerender } = renderWithIntl(
