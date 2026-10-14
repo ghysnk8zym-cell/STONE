@@ -13,5 +13,10 @@
   "notFound": {
     "title": "Страница не найдена",
     "back": "На главную"
+  },
+  "components": {
+    "button": {
+      "loading": "Загрузка"
+    }
   }
 }

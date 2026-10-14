@@ -13,5 +13,10 @@
   "notFound": {
     "title": "Page not found",
     "back": "Back to home"
+  },
+  "components": {
+    "button": {
+      "loading": "Loading"
+    }
   }
 }

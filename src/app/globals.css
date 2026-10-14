@@ -160,6 +160,15 @@
   letter-spacing: 0;
 }
 
+/* Figma text style "Catalog/Button" (Button/Primary label). Not in the variables snapshot. */
+@utility type-catalog-button {
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
 @utility type-catalog-field-value {
   font-family: var(--font-body, "Inter", system-ui, sans-serif);
   font-weight: 400;
