@@ -78,6 +78,13 @@ describe("ProductCard", () => {
     expect(heart.closest("a")).toBeNull();
   });
 
+  it("favoriteInert renders the heart as a disabled non-button", () => {
+    renderWithIntl(productCard({ favoriteInert: true }));
+    const heart = screen.getByRole("button", { name: /Black Marble/ });
+    expect(heart.tagName).toBe("SPAN");
+    expect(heart.getAttribute("aria-disabled")).toBe("true");
+  });
+
   it("the link overlay covers the whole card and the heart stays above it", () => {
     renderWithIntl(productCard());
     const link = screen.getByRole("link", { name: "Black Marble" });

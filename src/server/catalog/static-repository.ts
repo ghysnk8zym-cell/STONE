@@ -42,7 +42,11 @@ export function createStaticRepository(
     async list(query, l10n) {
       const found = products.filter((p) => matches(p, query, l10n));
       const byName = (a: Product, b: Product) =>
-        compareText(l10n.name(a.slug), l10n.name(b.slug), locale);
+        compareText(
+          l10n.name(a.slug),
+          l10n.name(b.slug),
+          l10n.locale ?? locale,
+        );
       switch (query.sort) {
         case "name-asc":
           return found.sort(byName);

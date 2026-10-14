@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { NextIntlClientProvider } from "next-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Badge } from "@/components/forms/Badge";
 import { SearchField } from "@/components/forms/SearchField";
 import { Select } from "@/components/forms/Select";
 import { TextField } from "@/components/forms/TextField";
+
+import en from "../../messages/en.json";
 
 import { renderWithIntl } from "./render";
 
@@ -236,6 +239,33 @@ function trigger() {
 }
 
 describe("Select", () => {
+  it("follows a changed defaultValue (URL navigation such as Back)", () => {
+    const view = renderWithIntl(
+      <Select
+        label="Material"
+        name="material"
+        options={MATERIALS}
+        defaultValue="marble"
+      />,
+    );
+    expect(trigger().textContent).toBe("Marble");
+    view.rerender(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <Select
+          label="Material"
+          name="material"
+          options={MATERIALS}
+          defaultValue="all"
+        />
+      </NextIntlClientProvider>,
+    );
+    expect(trigger().textContent).toBe("All materials");
+    const hidden = document.querySelector(
+      "input[type='hidden'][name='material']",
+    ) as HTMLInputElement;
+    expect(hidden.value).toBe("all");
+  });
+
   it("renders a labelled listbox button showing the first option", () => {
     renderWithIntl(
       <Select label="Material" name="material" options={MATERIALS} />,

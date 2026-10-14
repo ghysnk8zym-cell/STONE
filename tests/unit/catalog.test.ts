@@ -192,3 +192,51 @@ describe("discountPercent", () => {
     expect(pct("black-marble")).toBeUndefined();
   });
 });
+
+describe("catalog list sort locale", () => {
+  it("name sort uses the locale of the Localizer", async () => {
+    const names: Record<string, string> = {
+      "black-marble": "z",
+      "grey-marble": "ä",
+    };
+    const swedish: Localizer = {
+      name: (slug) => names[slug] ?? slug,
+      material: (m) => m,
+      locale: "sv",
+    };
+    const english: Localizer = { ...swedish, locale: "en" };
+    const only = { ...base, q: "marble" };
+    // Swedish sorts "ä" after "z", English sorts it next to "a"
+    expect((await catalog.list(only, swedish)).map((p) => p.slug)).toEqual([
+      "black-marble",
+      "grey-marble",
+    ]);
+    expect((await catalog.list(only, english)).map((p) => p.slug)).toEqual([
+      "grey-marble",
+      "black-marble",
+    ]);
+  });
+
+  it("sorts Cyrillic names in ru alphabetical order, Cyrillic order", async () => {
+    const names: Record<string, string> = {
+      "black-marble": "Чёрный мрамор",
+      "grey-marble": "Серый мрамор",
+      "taupe-rock": "Ясный камень",
+      "golden-rock": "Алый камень",
+    };
+    const ru: Localizer = {
+      name: (slug) => names[slug] ?? `я ${slug}`,
+      material: (m) => m,
+      locale: "ru",
+    };
+    const sorted = (await catalog.list(base, ru))
+      .map((p) => names[p.slug])
+      .filter(Boolean);
+    expect(sorted).toEqual([
+      "Алый камень",
+      "Серый мрамор",
+      "Чёрный мрамор",
+      "Ясный камень",
+    ]);
+  });
+});

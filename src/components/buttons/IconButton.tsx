@@ -9,8 +9,8 @@ export type IconButtonProps = {
   icon: IconName;
   /** Accessible name (aria-label). Required: the control has no visible text. */
   label: string;
-  /** `glass` on dark surfaces (header, menus), `light` for the catalog card heart. */
-  tone?: "glass" | "light";
+  /** `glass` on dark surfaces (header, menus), `light` for the catalog card heart, `ink` for the back button on the light catalog pages. */
+  tone?: "glass" | "light" | "ink";
   href?: string;
   /** Frozen interaction state, rendered as `data-state` (styleguide only). */
   state?: InteractionState;
@@ -45,6 +45,9 @@ const TONE = {
     "press:bg-stone-catalog-photo press:shadow-[inset_0_1px_3px_rgba(27,29,32,0.2)]",
     "disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45",
   ),
+  // Figma "Action / Back" (Catalog 1440 > Back row 1006:41371): 46 px, surface/nav-pill fill, 1 px text/ink border.
+  // Hover / focus / pressed are not drawn: same tint as the outline Button.
+  ink: "inline-flex size-[46px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-ink bg-surface-nav-pill text-ink outline-0 select-none motion-hover hov:bg-overlay-tint-10 focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus press:bg-overlay-tint-10 disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45",
 } as const;
 
 /** Inert look: the resting look of each tone, no hover / focus / pressed / dim. */
@@ -53,10 +56,11 @@ const INERT = {
     "inline-flex size-[46px] shrink-0 cursor-default items-center justify-center rounded-full border border-glass bg-surface-nav-pill text-icon-light select-none",
   light:
     "relative inline-flex size-9 shrink-0 cursor-default items-center justify-center rounded-full border border-stone-catalog-line bg-stone-catalog-card text-ink select-none before:absolute before:-inset-1 before:content-['']",
+  ink: "inline-flex size-[46px] shrink-0 cursor-default items-center justify-center rounded-full border border-ink bg-surface-nav-pill text-ink select-none",
 } as const;
 
 /** Figma: 22 px glyph in the 46 px button, except the User glyph (24) at rest; 20 px in the heart bubble. */
-function glyphClass(icon: IconName, tone: "glass" | "light") {
+function glyphClass(icon: IconName, tone: "glass" | "light" | "ink") {
   if (tone === "light") return "size-5!";
   return icon === "user" ? undefined : "size-[22px]!";
 }

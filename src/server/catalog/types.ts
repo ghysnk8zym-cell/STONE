@@ -79,6 +79,8 @@ export type CatalogQuery = {
 export type Localizer = {
   name(slug: string): string;
   material(m: Material): string;
+  /** BCP 47 tag used for name sorting (the request locale); the runtime default when omitted. */
+  locale?: string;
 };
 
 export interface CatalogRepository {

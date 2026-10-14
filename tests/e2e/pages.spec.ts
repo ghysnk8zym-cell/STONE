@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 import en from "../../messages/en.json";
@@ -92,8 +93,6 @@ test.describe("site shell", () => {
     });
   }
 
-  // The catalog page is built in a later task: until then `/ru/catalog` is the localised 404 inside
-  // the shell, which still renders the language switch. This test asserts the URL only.
   test("language switch keeps path and query", async ({ page }) => {
     await page.goto("/ru/catalog?material=marble");
     await hydrated(page);
@@ -116,6 +115,17 @@ test.describe("site shell", () => {
     }
 
     await expect(page).toHaveURL(/\/en\/catalog\?material=marble$/);
+    // the real catalog renders in en with the filter applied
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      en.pages.catalog.title,
+    );
+    await expect(
+      page.getByRole("button", {
+        name: `${en.pages.catalog.filters.material} ${en.catalog.material.marble}`,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("Showing 2 of 12")).toBeVisible();
+    await expect(page.getByRole("article")).toHaveCount(2);
   });
 });
 
@@ -327,5 +337,181 @@ test.describe("home", () => {
     const settled = await track.evaluate((el) => el.scrollLeft);
     expect(immediate).toBeGreaterThan(0);
     expect(immediate).toBe(settled);
+  });
+});
+
+/*
+ * Catalog page e2e (Phase 3, Task 6). Runs in the `desktop` (1440) and `mobile` (390) projects.
+ * The filter state lives in the URL; with JavaScript a change navigates (router.push), without it the
+ * form is a plain GET submitted with the Apply button.
+ */
+const CAT = ru.pages.catalog;
+const NAMES = ru.catalog.products;
+
+/** Waits for hydration: the no-JS Apply button hides itself once the client island is mounted. */
+async function catalogReady(page: Page) {
+  await expect(
+    page.getByRole("button", { name: CAT.applyFilters }),
+  ).toBeHidden();
+}
+
+async function pick(page: Page, field: string, option: string) {
+  await page.getByRole("button", { name: new RegExp(`^${field} `) }).click();
+  await page.getByRole("option", { name: option }).click();
+}
+
+const cards = (page: Page) => page.getByRole("article");
+
+test.describe("catalog", () => {
+  test("filter by material updates URL and grid", async ({ page }) => {
+    await page.goto("/ru/catalog");
+    await catalogReady(page);
+    await expect(cards(page)).toHaveCount(12);
+    await pick(page, CAT.filters.material, ru.catalog.material.marble);
+    await expect(page).toHaveURL(/\/ru\/catalog\?material=marble$/);
+    await expect(cards(page)).toHaveCount(2);
+    await expect(page.getByText("Показано 2 из 12")).toBeVisible();
+  });
+
+  test("search finds Чёрный мрамор in ru", async ({ page }) => {
+    await page.goto("/ru/catalog");
+    await catalogReady(page);
+    const field = page.getByRole("searchbox", { name: CAT.searchLabel });
+    await field.fill("чёрный");
+    await field.press("Enter");
+    await expect(page).toHaveURL(/q=/);
+    await expect(cards(page)).toHaveCount(1);
+    await expect(
+      cards(page).getByRole("link", { name: NAMES["black-marble"].name }),
+    ).toBeVisible();
+  });
+
+  test("sort by price ascending", async ({ page }) => {
+    await page.goto("/ru/catalog");
+    await catalogReady(page);
+    await pick(page, CAT.filters.sort, CAT.sort["price-asc"]);
+    await expect(page).toHaveURL(/sort=price-asc/);
+    await expect(cards(page).first().getByRole("link")).toHaveText(
+      NAMES["taupe-rock"].name,
+    );
+  });
+
+  test("Back restores the previous filter", async ({ page }) => {
+    await page.goto("/ru/catalog");
+    await catalogReady(page);
+    await pick(page, CAT.filters.material, ru.catalog.material.marble);
+    await expect(page).toHaveURL(/material=marble$/);
+    await pick(page, CAT.filters.color, ru.catalog.colorGroup.dark);
+    await expect(page).toHaveURL(/color=dark/);
+    await expect(cards(page)).toHaveCount(1);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/ru\/catalog\?material=marble$/);
+    await expect(cards(page)).toHaveCount(2);
+    await expect(
+      page.getByRole("button", {
+        name: `${CAT.filters.color} ${CAT.filters.allColors}`,
+      }),
+    ).toBeVisible();
+  });
+
+  test("empty result shows empty state and reset clears filters", async ({
+    page,
+  }) => {
+    await page.goto("/ru/catalog?material=marble&color=warm");
+    await expect(page.getByText(CAT.empty.title)).toBeVisible();
+    await expect(cards(page)).toHaveCount(0);
+    await expect(page.getByText("Показано 0 из 12")).toBeVisible();
+    await page.getByRole("link", { name: CAT.empty.reset }).click();
+    await expect(page).toHaveURL(/\/ru\/catalog$/);
+    await expect(cards(page)).toHaveCount(12);
+  });
+
+  test("invalid params render the catalog", async ({ page }) => {
+    const response = await page.goto("/ru/catalog?material=granite&sort=foo");
+    expect(response?.status()).toBe(200);
+    await expect(cards(page)).toHaveCount(12);
+  });
+
+  test("showing N of 12 and the placeholder price line are visible", async ({
+    page,
+  }) => {
+    await page.goto("/ru/catalog");
+    await expect(page.getByText("Показано 12 из 12")).toBeVisible();
+    await expect(page.getByText(CAT.placeholderPrices)).toBeVisible();
+  });
+
+  test("cards link to products, hearts and the custom order CTA are inert", async ({
+    page,
+  }) => {
+    await page.goto("/ru/catalog");
+    await expect(
+      page.locator('article a[href="/ru/catalog/black-marble"]'),
+    ).toHaveCount(1);
+    await expect(
+      page.locator("article [role=button][aria-disabled=true]"),
+    ).toHaveCount(12);
+    await expect(
+      page.getByRole("main").getByText(CAT.customOrder.cta),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("main").locator("a", { hasText: CAT.customOrder.cta }),
+    ).toHaveCount(0);
+  });
+
+  test("back button goes home", async ({ page }) => {
+    await page.goto("/ru/catalog");
+    await expect(page.getByRole("link", { name: CAT.back })).toHaveAttribute(
+      "href",
+      "/ru",
+    );
+  });
+
+  test("no horizontal overflow at 360 in ru", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/ru/catalog");
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  for (const locale of LOCALES) {
+    test(`axe has no critical or serious violations (${locale})`, async ({
+      page,
+    }) => {
+      await page.goto(`/${locale}/catalog`);
+      await catalogReady(page);
+      // The floating glass tab bar (shell, Task 4) sits over scrolling content, so its contrast depends on
+      // whatever photo is behind it; axe cannot resolve the blur and measures the photo. Shell concern.
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .exclude(`[aria-label="${MESSAGES[locale].components.tabBar.label}"]`)
+        .analyze();
+      const blocking = results.violations.filter(
+        (v) => v.impact === "critical" || v.impact === "serious",
+      );
+      expect(blocking.map((v) => `${v.id}: ${v.nodes[0]?.html}`)).toEqual([]);
+    });
+  }
+});
+
+test.describe("catalog without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("filters apply without JavaScript", async ({ page }) => {
+    await page.goto("/ru/catalog?sale=1");
+    await expect(cards(page)).toHaveCount(4);
+    // native fallback selects and the visible Apply button
+    await page
+      .getByLabel(CAT.filters.material, { exact: true })
+      .selectOption("slate");
+    await page.getByRole("button", { name: CAT.applyFilters }).click();
+    await expect(page).toHaveURL(/material=slate/);
+    await expect(page).toHaveURL(/sale=1/);
+    await expect(cards(page)).toHaveCount(1);
+    await expect(
+      cards(page).getByRole("link", { name: NAMES["graphite-rock"].name }),
+    ).toBeVisible();
   });
 });
