@@ -285,6 +285,12 @@
   backdrop-filter: blur(var(--effect-glass-background-blur));
 }
 
+/* Space the fixed mobile TabBar covers: bar height 68 + its bottom offset max(16, safe area) + 16
+   breathing room = 100 px. Use as `max-md:pb-tabbar` on the page wrapper (TabBar is hidden from md). */
+@utility pb-tabbar {
+  padding-bottom: calc(68px + max(16px, env(safe-area-inset-bottom)) + 16px);
+}
+
 /* Hover/focus colour changes use the motion tokens; reduced motion makes them instant. */
 @utility motion-hover {
   transition-property:

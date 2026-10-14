@@ -33,8 +33,8 @@ const TABS = [
  * "Blur/Glass background 24" (CSS blur 12), items spread with space-between. The component
  * description asks for 16 px above the bottom of the page, fixed while scrolling. Figma draws it
  * only on the 390 / 360 phone frames (Home 768 has none), so it is hidden from 768 (`md`); the
- * header carries the navigation from there. Pages need bottom padding of about 100 px so the bar
- * never covers content.
+ * header carries the navigation from there. Pages need bottom padding of 100 px so the bar never
+ * covers content: `max-md:pb-tabbar` (globals.css; docs/ARCHITECTURE.md, Layout notes for Phase 3).
  *
  * Item = Nav/Tab item 712:498 (Active 712:490, Default 712:494): 64x52 touch area, icon 24 over a
  * 12/16 label (Footer/Small, Inter 12), gap 4. Active: label text/primary, icon 100%. Default:

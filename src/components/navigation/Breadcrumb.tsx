@@ -22,11 +22,15 @@ const SEPARATOR = "/";
  * Figma draws no hover or focus: hover darkens the link to text/ink, focus is a 2 px ink-primary
  * outline (the focus ring the other light-surface components use: accent-focus is too faint on
  * the light page). Long trails wrap instead of overflowing the 358 px column at 390.
+ * Touch target: the 20 px text rows are not enlarged (Figma height), the link gets a 44 px hit
+ * area from a pseudo-element (12 px above and below, 4 px each side), so the focus outline on the
+ * link still hugs the text. Wrapped rows are 24 px apart (20 + 24 = 44), so hit areas never overlap.
  * The separators are real "/" text marked aria-hidden, so they look as drawn and stay out of the
  * accessible tree.
  */
 const LINK = cn(
-  "rounded-sm text-ink-secondary underline [text-underline-position:from-font] outline-0 motion-hover",
+  "relative rounded-sm text-ink-secondary underline [text-underline-position:from-font] outline-0 motion-hover",
+  "before:absolute before:-inset-x-1 before:-inset-y-3 before:content-['']",
   "hov:text-ink",
   "focusv:outline-2 focusv:outline-offset-2 focusv:outline-ink-primary",
 );
@@ -37,7 +41,7 @@ export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
 
   return (
     <nav aria-label={t("label")}>
-      <ol className="type-catalog-meta flex flex-wrap items-center gap-x-[10px]">
+      <ol className="type-catalog-meta flex flex-wrap items-center gap-x-[10px] gap-y-6">
         {items.map((item, index) => (
           <li
             key={`${index}-${item.label}`}

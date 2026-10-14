@@ -7,6 +7,9 @@ import {
   screen,
   within,
 } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { NextIntlClientProvider } from "next-intl";
 import { type ComponentProps, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -438,6 +441,23 @@ describe("Breadcrumb", () => {
     }
   });
 
+  it("gives ancestor links a 44 px hit area without changing the 20 px row", () => {
+    // Class-level check only: jsdom has no layout. The real geometry (hit area >= 44 px at 390,
+    // row height unchanged, no overlap when the trail wraps) is covered by Playwright in Task 9.
+    renderWithIntl(<Breadcrumb items={items} />);
+    const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
+    for (const link of within(nav).getAllByRole("link")) {
+      // 20 px text + 12 px above + 12 px below, drawn by a pseudo-element so the focus ring
+      // (outline on the link itself) still hugs the text
+      expect(link.className).toContain("relative");
+      expect(link.className).toContain("before:absolute");
+      expect(link.className).toContain("before:-inset-y-3");
+      expect(link.className).not.toMatch(/(^|\s)py-/);
+    }
+    // 20 px rows + 24 px row gap = 44 px pitch, so wrapped rows' hit areas do not overlap
+    expect(nav.querySelector("ol")?.className).toContain("gap-y-6");
+  });
+
   it("never links the last item, even when it has an href", () => {
     renderWithIntl(
       <Breadcrumb
@@ -609,5 +629,22 @@ describe("SiteFooter", () => {
     expect(
       within(footer).getByRole("list", { name: "Мы в соцсетях" }),
     ).toBeTruthy();
+  });
+});
+
+describe("TabBar page offset", () => {
+  it("exposes the space the fixed bar covers as a pb-tabbar utility (phones only)", () => {
+    const css = readFileSync(
+      join(process.cwd(), "src", "app", "globals.css"),
+      "utf8",
+    );
+    // bar 68 + bottom offset max(16, safe area) + 16 breathing room = 100 px
+    expect(css).toMatch(
+      /@utility pb-tabbar\s*\{\s*padding-bottom:\s*calc\(68px \+ max\(16px, env\(safe-area-inset-bottom\)\) \+ 16px\);/,
+    );
+    renderWithIntl(<TabBar current="home" />);
+    expect(screen.getByRole("navigation").className).toContain(
+      "bottom-[max(16px,env(safe-area-inset-bottom))]",
+    );
   });
 });
