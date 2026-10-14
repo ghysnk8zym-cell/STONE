@@ -336,6 +336,520 @@
       "usage": [
         "Hero:360"
       ]
+    },
+    {
+      "file": "images/products/black-marble-1",
+      "node": "782:11533",
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/black-marble-2",
+      "node": "782:11536",
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/grey-limestone-1",
+      "node": "784:13729",
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/grey-limestone-2",
+      "node": "784:13732",
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/grey-marble-1",
+      "node": "784:14492",
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/grey-marble-2",
+      "node": "784:14495",
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/taupe-rock-1",
+      "node": "784:15255",
+      "sourceWidth": 735,
+      "sourceHeight": 1306,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/taupe-rock-2",
+      "node": "784:15258",
+      "sourceWidth": 735,
+      "sourceHeight": 1306,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/graphite-rock-1",
+      "node": "784:16018",
+      "sourceWidth": 736,
+      "sourceHeight": 1308,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/graphite-rock-2",
+      "node": "784:16021",
+      "sourceWidth": 736,
+      "sourceHeight": 1308,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/split-limestone-1",
+      "node": "784:17979",
+      "sourceWidth": 1080,
+      "sourceHeight": 1920,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/split-limestone-2",
+      "node": "784:17982",
+      "sourceWidth": 1080,
+      "sourceHeight": 1920,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/concrete-paver-1",
+      "node": "784:18742",
+      "sourceWidth": 1001,
+      "sourceHeight": 2000,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/concrete-paver-2",
+      "node": "784:18745",
+      "sourceWidth": 1001,
+      "sourceHeight": 2000,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/golden-rock-1",
+      "node": "784:19505",
+      "sourceWidth": 736,
+      "sourceHeight": 1025,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/golden-rock-2",
+      "node": "784:19508",
+      "sourceWidth": 736,
+      "sourceHeight": 1025,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/charcoal-ledger-1",
+      "node": "784:20268",
+      "sourceWidth": 415,
+      "sourceHeight": 415,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/charcoal-ledger-2",
+      "node": "784:20271",
+      "sourceWidth": 415,
+      "sourceHeight": 415,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/graphite-stack-1",
+      "node": "784:21103",
+      "sourceWidth": 1200,
+      "sourceHeight": 1200,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/graphite-stack-2",
+      "node": "784:21106",
+      "sourceWidth": 1200,
+      "sourceHeight": 1200,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/silver-ledger-1",
+      "node": "784:21866",
+      "sourceWidth": 450,
+      "sourceHeight": 800,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/silver-ledger-2",
+      "node": "784:21869",
+      "sourceWidth": 450,
+      "sourceHeight": 800,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/products/rustic-split-1",
+      "node": "784:22629",
+      "sourceWidth": 415,
+      "sourceHeight": 415,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:main"
+      ]
+    },
+    {
+      "file": "images/products/rustic-split-2",
+      "node": "784:22632",
+      "sourceWidth": 415,
+      "sourceHeight": 415,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductGallery:thumb"
+      ]
+    },
+    {
+      "file": "images/works/marble-kitchen-countertop",
+      "node": "722:1349",
+      "sourceWidth": 562,
+      "sourceHeight": 941,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "CardShowcase:Work"
+      ]
+    },
+    {
+      "file": "images/works/natural-stone-fireplace-portal",
+      "node": "722:1350",
+      "sourceWidth": 736,
+      "sourceHeight": 977,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "CardShowcase:Work"
+      ]
+    },
+    {
+      "file": "images/works/bathroom-cladding",
+      "node": "722:1351",
+      "sourceWidth": 562,
+      "sourceHeight": 941,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "CardShowcase:Work"
+      ]
     }
   ],
   "icons": [

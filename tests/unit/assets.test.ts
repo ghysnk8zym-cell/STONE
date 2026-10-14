@@ -51,6 +51,65 @@ describe("image assets", () => {
   });
 });
 
+const PRODUCT_SLUGS = [
+  "black-marble",
+  "charcoal-ledger",
+  "concrete-paver",
+  "golden-rock",
+  "graphite-rock",
+  "graphite-stack",
+  "grey-limestone",
+  "grey-marble",
+  "rustic-split",
+  "silver-ledger",
+  "split-limestone",
+  "taupe-rock",
+];
+const LOW_RES = [
+  "charcoal-ledger",
+  "concrete-paver",
+  "golden-rock",
+  "graphite-rock",
+  "rustic-split",
+  "silver-ledger",
+  "taupe-rock",
+];
+const WORKS_IDS = [
+  "marble-kitchen-countertop",
+  "natural-stone-fireplace-portal",
+  "bathroom-cladding",
+];
+
+describe("page assets (Phase 3)", () => {
+  const byFile = new Map(manifest.images.map((image) => [image.file, image]));
+
+  it.each(PRODUCT_SLUGS)("%s has gallery images -1 and -2", (slug) => {
+    const first = byFile.get(`images/products/${slug}-1`);
+    const second = byFile.get(`images/products/${slug}-2`);
+    expect(first, `${slug}-1`).toBeDefined();
+    expect(second, `${slug}-2`).toBeDefined();
+    expect(second!.widths.length, `${slug}-2`).toBeGreaterThan(0);
+    // Never upscaled: the widest output is the widest requested width the source allows.
+    const widest = Math.max(
+      ...first!.requestedWidths.filter((w) => w <= first!.sourceWidth),
+    );
+    expect(Math.max(...first!.widths), `${slug}-1 widest`).toBe(widest);
+    // Figma sources narrower than 1024 px are low-res; they are listed explicitly so a
+    // regression (or a better source later) is noticed.
+    if (LOW_RES.includes(slug)) {
+      expect(first!.sourceWidth, `${slug}-1 low-res`).toBeLessThan(1024);
+    } else {
+      expect(first!.sourceWidth, `${slug}-1`).toBeGreaterThanOrEqual(1024);
+    }
+  });
+
+  it.each(WORKS_IDS)("works/%s exists", (id) => {
+    const image = byFile.get(`images/works/${id}`);
+    expect(image, id).toBeDefined();
+    expect(image!.widths.length, id).toBeGreaterThan(0);
+  });
+});
+
 describe("source hygiene", () => {
   it("no source file contains figma.com/api/mcp/asset", () => {
     const offenders = walk(join(root, "src")).filter((file) =>
