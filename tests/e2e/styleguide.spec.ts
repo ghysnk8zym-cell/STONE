@@ -31,9 +31,54 @@ const MESSAGES = { ru, en } as const;
 
 const qa = (page: Page, id: QaId): Locator => page.locator(`[data-qa="${id}"]`);
 
+/**
+ * Resolves once React has hydrated AND committed the page, so axe, the focus sweep (baseline
+ * styles) and clicks never run on the server HTML while hydration is still in flight.
+ *
+ * Signal: React attaches `__reactFiber$<id>` to a DOM node when it hydrates it. Two probes:
+ *  - the deepest last element of <main> (hydration walks the tree in document order, so the last
+ *    node having a fiber means every earlier node was reached; this also covers Suspense gaps), and
+ *  - the mobile-menu trigger button (the client island).
+ * Having a fiber is not yet "committed": hydration renders into the work-in-progress tree. So the
+ * fiber is walked up to its HostRoot (tag 3) and must be the root's `current` tree, which only
+ * happens after the commit. `goto` resolving (load event) says nothing about this: Next streams
+ * its JS and hydrates after `load`. Reads React internals (fiber `return`, `tag`, `stateNode.current`),
+ * stable in React 19; no production code is involved.
+ */
+async function hydrated(page: Page) {
+  await page.waitForFunction(
+    () => {
+      const main = document.querySelector("main");
+      if (!main) return false;
+      let last: Element = main;
+      while (last.lastElementChild) last = last.lastElementChild;
+      const probes = [
+        last,
+        main.querySelector('[data-qa="mobile-menu-trigger"] button'),
+      ];
+      return probes.every((el) => {
+        if (!el) return false;
+        const key = Object.keys(el).find((k) => k.startsWith("__reactFiber$"));
+        if (!key) return false;
+        type Fiber = {
+          return: Fiber | null;
+          tag: number;
+          stateNode: { current: Fiber };
+        };
+        let fiber = (el as unknown as Record<string, Fiber>)[key];
+        while (fiber.return) fiber = fiber.return;
+        return fiber.tag === 3 && fiber.stateNode.current === fiber;
+      });
+    },
+    undefined,
+    { timeout: 20_000 },
+  );
+}
+
 async function openStyleguide(page: Page, locale: Locale) {
   const response = await page.goto(`/${locale}/_styleguide`);
   expect(response?.status()).toBe(200);
+  await hydrated(page);
   return response!;
 }
 
@@ -496,8 +541,6 @@ test.describe("styleguide", () => {
     }) => {
       test.setTimeout(90_000);
       await openStyleguide(page, locale);
-      // Catalog photos are lazy: let them settle so image rules see the final DOM.
-      await page.waitForLoadState("load");
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
         .analyze();
@@ -672,11 +715,9 @@ test.describe("styleguide", () => {
     const trigger = qa(page, "mobile-menu-trigger").getByRole("button");
     const dialog = page.getByRole("dialog");
 
-    // The click only works once the island is hydrated; retry until the dialog is there.
-    await expect(async () => {
-      await trigger.click();
-      await expect(dialog).toBeVisible({ timeout: 1000 });
-    }).toPass({ timeout: 15_000 });
+    // openStyleguide waited for hydration, so the click handler is attached.
+    await trigger.click();
+    await expect(dialog).toBeVisible();
 
     // Focus is moved inside the dialog and stays there while tabbing.
     const insideDialog = () =>
