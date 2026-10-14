@@ -21,6 +21,19 @@ test.describe("smoke", { tag: "@smoke" }, () => {
     });
   }
 
+  // Valid against a deployed preview too: wrangler sets APP_ENV=preview, and the page is a 404 only
+  // when APP_ENV=production (that case is tested in styleguide.spec.ts, `production-guard` project).
+  for (const locale of ["ru", "en"] as const) {
+    test(`${locale} styleguide is served outside production`, async ({
+      page,
+    }) => {
+      const response = await page.goto(`/${locale}/_styleguide`);
+      expect(response?.status()).toBe(200);
+      await expect(page.locator("html")).toHaveAttribute("lang", locale);
+      await expect(page.locator("h1")).toHaveCount(1);
+    });
+  }
+
   test("responses are noindex by default", async ({ request }) => {
     const response = await request.get("/ru");
     expect(response.headers()["x-robots-tag"]).toContain("noindex");
