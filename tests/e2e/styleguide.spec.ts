@@ -657,6 +657,57 @@ test.describe("styleguide", () => {
     }
   });
 
+  test("tab bar fits inside its box at 360 and 375 wide", async ({
+    page,
+  }, testInfo) => {
+    test.skip(!isMobile(testInfo), "the tab bar is the phone navigation");
+    await openStyleguide(page, "ru");
+    for (const width of [360, 375, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      const nav = qa(page, "tab-bar-current-catalog").locator("nav");
+      const bar = (await nav.boundingBox())!;
+      const links = nav.getByRole("link");
+      await expect(links).toHaveCount(5);
+      for (let i = 0; i < 5; i++) {
+        const box = (await links.nth(i).boundingBox())!;
+        expect(box.x, `${width}: tab ${i} left`).toBeGreaterThanOrEqual(bar.x);
+        expect(
+          box.x + box.width,
+          `${width}: tab ${i} right`,
+        ).toBeLessThanOrEqual(bar.x + bar.width);
+      }
+      if (width === 390) {
+        expect((await links.nth(0).boundingBox())!.width).toBe(64);
+      }
+    }
+  });
+
+  test("hover styles apply only on hover-capable devices", async ({
+    page,
+  }, testInfo) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await openStyleguide(page, "ru");
+    const canHover = await page.evaluate(
+      () => matchMedia("(hover: hover)").matches,
+    );
+    expect(canHover).toBe(!isMobile(testInfo));
+    // Nav/Pill default example: hov:border-glass-strong hov:bg-surface-card-hover.
+    const target = qa(page, "nav-pill-default").locator("a, button").first();
+    const color = () =>
+      target.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return `${s.backgroundColor}|${s.borderTopColor}`;
+      });
+    const before = await color();
+    await target.hover();
+    if (canHover) {
+      await expect.poll(color).not.toBe(before);
+    } else {
+      await page.waitForTimeout(100);
+      expect(await color()).toBe(before);
+    }
+  });
+
   test.describe("reduced motion", () => {
     // The press ripple is the ::after of every `.ripple` component (globals.css `@utility ripple`):
     // `animation: ripple-expand` under the `press` variant, `animation: none` under prefers-reduced-motion.

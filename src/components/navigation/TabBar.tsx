@@ -44,7 +44,7 @@ const TABS = [
  * Colours are set per look (current / idle), never combined, because cn() is not twMerge.
  */
 const ITEM = cn(
-  "flex h-[52px] w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl py-1 type-footer-small whitespace-nowrap outline-0 motion-hover",
+  "flex h-[52px] w-full flex-col items-center justify-center gap-1 rounded-xl py-1 type-footer-small whitespace-nowrap outline-0 motion-hover",
   "focusv:outline-2 focusv:outline-accent-focus",
 );
 const IDLE = "text-secondary hov:text-primary";
@@ -60,7 +60,7 @@ export function TabBar({ current }: { current?: TabBarCurrent }) {
     >
       <ul className="flex h-[52px] items-center justify-between">
         {TABS.map(({ key, href, icon }) => (
-          <li key={key}>
+          <li key={key} className="max-w-16 min-w-0 flex-1">
             <Link
               href={href}
               aria-current={current === key ? "page" : undefined}

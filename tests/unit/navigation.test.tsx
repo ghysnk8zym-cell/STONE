@@ -401,7 +401,7 @@ describe("TabBar", () => {
     expect(nav.className).toContain("md:hidden");
     for (const link of within(nav).getAllByRole("link")) {
       expect(link.className).toContain("h-[52px]");
-      expect(link.className).toContain("w-16");
+      expect(link.parentElement?.className).toContain("max-w-16");
     }
   });
 });
