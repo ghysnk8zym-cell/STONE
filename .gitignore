@@ -80,3 +80,6 @@ next-env.d.ts
 !/docs/QA/phase-2/site-footer-1440-*.png
 !/docs/QA/phase-2/tab-bar-current-catalog-390-*.png
 !/docs/QA/phase-2/nav-pill-current-1440-*.png
+
+# Page-mode visual comparison output: only results.md and the curated *-triplet.jpg strips are kept (docs/QA/phase-3-pages.md)
+/docs/QA/phase-3/*.png

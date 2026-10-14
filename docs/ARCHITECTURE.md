@@ -52,6 +52,34 @@ Decisions and their reasoning live in `docs/adr/` (ADR-001 … ADR-005) and the 
 - Controls whose pages do not exist yet are inert (non-link `span`, `aria-disabled`), listed in `PHASE3_INERT` (`src/components/navigation/nav-items.ts`): header and menu Create Your Stone, Cart, account; tab bar Favorites, Cart, Sign in. Remove an entry when its page ships.
 - The "Sign in" tab links to `/account` until the sign-in screen exists (Figma gap, `docs/FIGMA-INVENTORY.md` section 5.1).
 
+## Pages, catalog data and the inert pattern (Phase 3)
+
+- Routes (all under `src/app/[locale]/(site)/`, locales `ru` and `en`, slugs identical in both, ADR-004):
+  `/` (home, `_home/` holds Hero, Backdrop and ShowcaseSection), `/catalog` (filters, search, sort and
+  grid, state in the URL query, works without JavaScript), `/catalog/[slug]` (product page with gallery and cost
+  calculator; unknown slug is a localised 404 through `(site)/not-found.tsx`, `[...rest]` catches other unknown paths).
+  `/_styleguide` stays outside the group. `/create-your-stone`, `/cart` and `/account` are not built (inert, below).
+- Catalog data: `src/server/catalog/` is a repository behind the `CatalogRepository` interface (`types.ts`:
+  `Product`, `CatalogQuery`, `Localizer`). `seed.ts` holds the 12 Figma products (prices are placeholders from
+  Figma, `discountPercent` is stored as drawn), `static-repository.ts` implements list/filter/sort/search/get on the
+  seed, `query.ts` parses and validates URL params (invalid values fall back to defaults), `index.ts` exports the
+  `catalog` singleton (`server-only`). Phase 4 swaps in a database-backed implementation without touching pages.
+  Colour filters use Figma groups (`ColorGroup`: dark, grey, light, warm) through `Product.colorGroup`.
+- Cost calculator: pure functions in `src/lib/calculator.ts` (area and wall modes, +10 % extra tiles, cents arithmetic,
+  limits 0.01 to 10 000 m2 and 0.01 to 100 m); the client island only holds input state. The server renders the
+  default estimate, so the page is complete without JavaScript.
+- Shell: `(site)/layout.tsx` owns the only `<main>`; pages never render their own.
+- Page surface attribute: a page on the light catalog surface marks its root element (a direct child of `<main>`)
+  with `data-page-surface="catalog"` (`(site)/page-surface.ts`); the shell then paints that cream surface behind
+  the translucent glass header and footer with a `has-[...]` rule, so they blend over it as in Figma. Home does not
+  set it (the backdrop photo sits behind them).
+- Inert pattern: a control whose destination does not exist yet renders in its default Figma look but as a
+  non-link element with `aria-disabled="true"`, no hover or press styles and out of the tab order (distinct from
+  `disabled`, which dims). Components take an `inert` prop (Button, IconButton, NavPill, SocialButton, TabBar tab,
+  MobileMenu item, footer links). The lists live in `PHASE3_INERT` (`src/components/navigation/nav-items.ts`); other
+  inert controls are page-local (hearts, Add to cart, Buy now, Save, Projects, custom-order CTA). Remove the entry
+  and the prop when the page ships (Phase 4).
+
 ## Motion
 
 Every shipped animation, its tokens (`src/styles/tokens/motion.css`) and its reduced-motion behaviour are listed in `docs/ANIMATIONS.md`.

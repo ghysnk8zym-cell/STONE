@@ -20,5 +20,8 @@ Status for every row: **default timings, Figma has no motion data, owner to appr
   move them into `motion.css` at the same time.
 - Animate `transform` and `opacity` only for anything new (CLAUDE.md section 5). The hover transition animates
   colour and shadow, which is a paint-only change on small elements.
+- Phase 3 pages added no new motion since the carousel row. Deliberately not animated: the cost-calculator mode
+  switch (Figma may use a smart-animate; not reproduced, owner checklist in `docs/QA/phase-3-pages.md`) and the
+  product gallery thumbnail swap (instant).
 - The styleguide (`/ru/_styleguide`, `/en/_styleguide`) shows frozen pressed states (`data-state="pressed"`), so
   the ripple can be reviewed without pressing a control.
