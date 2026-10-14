@@ -49,12 +49,14 @@ const DISABLED =
   "disabled:pointer-events-none aria-disabled:pointer-events-none";
 const DISABLED_DIM = "disabled:opacity-45 aria-disabled:opacity-45";
 
+/* Pills are single-line and fixed-height (Figma): a label longer than the column is truncated with an ellipsis
+   (the BASE root is max-w-full, the label span truncates, icons and spinner keep their size). */
 /* Keyboard focus ring for variants whose Figma component has no Focus state. */
 const FOCUS_RING =
   "focusv:outline-2 focusv:outline-accent-focus focusv:outline-offset-2";
 
 const BASE =
-  "inline-flex items-center justify-center whitespace-nowrap select-none cursor-pointer outline-0 motion-hover";
+  "inline-flex max-w-full min-w-0 items-center justify-center whitespace-nowrap select-none cursor-pointer outline-0 motion-hover";
 
 /*
  * Values come from the Figma component sets (Button/Pill 21:95, Primary 338:533, Light 430:479,
@@ -153,7 +155,7 @@ export function Button(props: ButtonProps) {
   const content = (
     <>
       {left ? <Icon name={left} {...icon} /> : null}
-      {children}
+      <span className="min-w-0 truncate">{children}</span>
       {loading ? (
         <>
           <span

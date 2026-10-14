@@ -239,7 +239,12 @@ export function Buttons() {
             </Button>
           </Example>
           <Example data-qa="button-long-label" caption={t("buttons.long")}>
-            <Button variant="pill">{t("buttons.longLabel")}</Button>
+            {/* Stress case: the 358 px column of the 390 layout; the pill must stay inside it. */}
+            <div className="w-[358px] max-w-full">
+              <Button variant="pill" iconRight="arrow">
+                {t("buttons.longLabel")}
+              </Button>
+            </div>
           </Example>
         </Group>
         <Group title={t("buttons.glass")}>

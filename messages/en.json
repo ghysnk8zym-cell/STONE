@@ -169,7 +169,7 @@
     },
     "buttons": {
       "label": "Request a sample",
-      "longLabel": "Order a free stone sample",
+      "longLabel": "Request a free sample of natural stone for your next project",
       "variants": {
         "pill": "Pill",
         "primary": "Primary",
@@ -181,7 +181,7 @@
       "extras": "Loading, link and long label",
       "loadingNote": "Loading exists only for submit buttons.",
       "asLink": "Primary as a link",
-      "long": "Longer label (Russian copy runs longer than English)",
+      "long": "Very long label in a 358 px column: stays on one line and truncates",
       "glass": "Icon buttons, glass tone",
       "lightTone": "Icon buttons, light tone (catalog heart)",
       "icons": {
@@ -253,7 +253,8 @@
       "mobileMenuTrigger": "Open the mobile menu (demo)",
       "mobileMenuNote": "The menu is a full-screen dialog: open it with the button, close it with Escape or the close button.",
       "pill": "Nav pill",
-      "pillLong": "Longest header label",
+      "pillLong": "Very long label in a 358 px column: stays on one line and truncates",
+      "pillLongLabel": "Create your own stone for a custom kitchen worktop design",
       "languageSwitch": "Language switch",
       "tabBar": "Tab bar (below 768 px)",
       "tabBarCurrent": "Catalog is current",

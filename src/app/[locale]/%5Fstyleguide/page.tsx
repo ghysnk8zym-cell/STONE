@@ -23,9 +23,13 @@ export async function generateMetadata({
   params,
 }: StyleguideProps): Promise<Metadata> {
   const { locale } = await params;
-  const title = hasLocale(routing.locales, locale)
-    ? (await getTranslations({ locale, namespace: "styleguide" }))("title")
-    : undefined;
+  // In production the page is a 404: do not put the styleguide title (or any styleguide copy) on it.
+  await connection();
+  const hidden = getServerEnv().APP_ENV === "production";
+  const title =
+    !hidden && hasLocale(routing.locales, locale)
+      ? (await getTranslations({ locale, namespace: "styleguide" }))("title")
+      : undefined;
   return { title, robots: { index: false, follow: false } };
 }
 

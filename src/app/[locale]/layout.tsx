@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import {
+  getMessages,
+  getTranslations,
+  setRequestLocale,
+} from "next-intl/server";
 
 import { fontVariables } from "@/app/fonts";
+import { clientMessages } from "@/i18n/client-messages";
 import { routing } from "@/i18n/routing";
 
 // Unknown locales are rejected below via hasLocale → notFound(). `dynamicParams = false`
@@ -29,11 +34,15 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
+  // Server components read every namespace through i18n/request.ts; the browser gets all but the internal ones.
+  const messages = clientMessages(await getMessages({ locale }));
 
   return (
     <html lang={locale} className={fontVariables}>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

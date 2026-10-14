@@ -63,10 +63,18 @@ describe("styleguide production guard", () => {
     vi.doMock("@/server/env", () => ({
       getServerEnv: () => ({ APP_ENV: "production" }),
     }));
-    const { default: Page } = await import("@/app/[locale]/%5Fstyleguide/page");
+    const { default: Page, generateMetadata } =
+      await import("@/app/[locale]/%5Fstyleguide/page");
     await expect(
       Page({ params: Promise.resolve({ locale: "ru" }) }),
     ).rejects.toMatchObject({ digest: expect.stringContaining("NEXT_HTTP") });
+
+    // The 404 must not carry the styleguide title either (the layout title applies instead).
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ locale: "ru" }),
+    });
+    expect(metadata.title).toBeUndefined();
+    expect(metadata.robots).toEqual({ index: false, follow: false });
   });
 
   it("marks the page noindex", () => {

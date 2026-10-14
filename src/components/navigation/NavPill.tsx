@@ -39,7 +39,7 @@ export type NavPillProps = CommonProps &
  * outline adds the second pixel, so the size never changes (same as the round glass buttons).
  */
 const BASE = cn(
-  "ripple inline-flex h-[46px] shrink-0 cursor-pointer items-center justify-center rounded-full border px-4 text-primary type-nav-link whitespace-nowrap outline-0 select-none motion-hover after:-z-10",
+  "ripple inline-flex h-[46px] max-w-full min-w-0 shrink-0 cursor-pointer items-center justify-center rounded-full border px-4 text-primary type-nav-link whitespace-nowrap outline-0 select-none motion-hover after:-z-10",
   "focusv:border-accent-focus focusv:outline-1 focusv:-outline-offset-1 focusv:outline-accent-focus",
   "disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45",
 );
@@ -78,7 +78,7 @@ export function NavPill(props: NavPillProps) {
           data-state={state}
           className={classes}
         >
-          {children}
+          <span className="min-w-0 truncate">{children}</span>
         </span>
       );
     }
@@ -90,7 +90,7 @@ export function NavPill(props: NavPillProps) {
         data-state={state}
         className={classes}
       >
-        {children}
+        <span className="min-w-0 truncate">{children}</span>
       </Link>
     );
   }
@@ -104,7 +104,7 @@ export function NavPill(props: NavPillProps) {
       onClick={props.onClick}
       className={classes}
     >
-      {children}
+      <span className="min-w-0 truncate">{children}</span>
     </button>
   );
 }

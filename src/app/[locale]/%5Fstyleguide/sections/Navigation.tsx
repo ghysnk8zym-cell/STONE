@@ -64,7 +64,7 @@ export function Navigation() {
 
         <Group title={n("mobileMenu")}>
           <Example data-qa="mobile-menu-trigger" caption={n("mobileMenuNote")}>
-            <MobileMenuDemo />
+            <MobileMenuDemo label={n("mobileMenuTrigger")} />
           </Example>
         </Group>
 
@@ -98,7 +98,10 @@ export function Navigation() {
             </NavPill>
           </Example>
           <Example data-qa="nav-pill-long-label" caption={n("pillLong")}>
-            <NavPill href="/">{nav("createYourStone")}</NavPill>
+            {/* Stress case: the 358 px column of the 390 layout; the pill must stay inside it. */}
+            <div className="w-[358px] max-w-full">
+              <NavPill href="/">{n("pillLongLabel")}</NavPill>
+            </div>
           </Example>
         </Group>
 
