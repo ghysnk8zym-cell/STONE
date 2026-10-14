@@ -493,6 +493,12 @@
       "save": "Save",
       "buyNow": "Buy now",
       "addToCart": "Add to cart",
+      "formatValue": "{w}×{h}×{d} mm",
+      "gallery": {
+        "label": "Product images",
+        "full": "Show the full image",
+        "detail": "Show a close-up"
+      },
       "calculator": {
         "title": "Cost calculator",
         "pricingNote": "Area pricing",

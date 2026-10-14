@@ -11,6 +11,11 @@ export type TextFieldProps = {
   /** Error message. Sets `aria-invalid` and is announced (role alert) and linked with `aria-describedby`. */
   error?: string;
   defaultValue?: string;
+  /** Controlled value (the cost calculator); use instead of `defaultValue`. */
+  value?: string;
+  onChange?: (value: string) => void;
+  /** Soft-keyboard hint; `type="number"` implies "decimal". */
+  inputMode?: "decimal" | "numeric" | "text";
   placeholder?: string;
   required?: boolean;
   autoComplete?: string;
@@ -88,6 +93,9 @@ export function TextField({
   tone = "dark",
   error,
   defaultValue,
+  value,
+  onChange,
+  inputMode,
   placeholder,
   required,
   autoComplete,
@@ -120,14 +128,18 @@ export function TextField({
           id={id}
           name={name}
           type={type}
-          defaultValue={defaultValue}
+          defaultValue={value === undefined ? defaultValue : undefined}
+          value={value}
+          onChange={
+            onChange ? (event) => onChange(event.target.value) : undefined
+          }
           placeholder={placeholder}
           required={required}
           autoComplete={autoComplete}
           disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
-          inputMode={type === "number" ? "decimal" : undefined}
+          inputMode={inputMode ?? (type === "number" ? "decimal" : undefined)}
           className={cn(
             "h-full min-w-0 flex-1 bg-transparent outline-0 disabled:cursor-not-allowed",
             styles.input,
