@@ -69,7 +69,7 @@ const VARIANT: Record<ButtonVariant, string> = {
   pill: cn(
     "ripple h-(--layout-control-h) gap-2 rounded-full border border-glass bg-surface-button pr-3.5 pl-4 text-primary type-button-label after:-z-10",
     "hov:border-glass-strong hov:bg-surface-card-hover",
-    "focusv:border-accent-focus focusv:outline-1 focusv:-outline-offset-1 focusv:outline-accent-focus",
+    "focusv:border-accent-focus focusv:outline-1 focusv:-outline-offset-2 focusv:outline-accent-focus",
     "press:border-glass-strong press:bg-surface-card-hover press:shadow-[inset_0_1px_3px_rgba(27,29,32,0.2)]",
     DISABLED_DIM,
   ),

@@ -13,7 +13,7 @@ import { cn } from "../cn";
 export const ROUND_GLASS = cn(
   "ripple inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full border border-glass outline-0 select-none motion-hover after:-z-10",
   "hov:border-glass-strong hov:bg-surface-card-hover",
-  "focusv:border-accent-focus focusv:outline-1 focusv:-outline-offset-1 focusv:outline-accent-focus",
+  "focusv:border-accent-focus focusv:outline-1 focusv:-outline-offset-2 focusv:outline-accent-focus",
   "press:border-glass-strong press:bg-surface-card-hover press:shadow-[inset_0_1px_3px_rgba(27,29,32,0.2)]",
   "disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45",
 );

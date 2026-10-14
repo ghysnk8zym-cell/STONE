@@ -41,8 +41,8 @@ const TONES = {
     ok: cn(
       "border-[rgba(255,255,255,0.4)]",
       "hov:border-[rgba(255,255,255,0.6)]",
-      "focusv:border-[rgba(255,255,255,0.9)] focusv:outline-1 focusv:-outline-offset-1 focusv:outline-[rgba(255,255,255,0.9)]",
-      "has-[input:focus-visible]:border-[rgba(255,255,255,0.9)] has-[input:focus-visible]:outline-1 has-[input:focus-visible]:-outline-offset-1 has-[input:focus-visible]:outline-[rgba(255,255,255,0.9)]",
+      "focusv:border-[rgba(255,255,255,0.9)] focusv:outline-1 focusv:-outline-offset-2 focusv:outline-[rgba(255,255,255,0.9)]",
+      "has-[input:focus-visible]:border-[rgba(255,255,255,0.9)] has-[input:focus-visible]:outline-1 has-[input:focus-visible]:-outline-offset-2 has-[input:focus-visible]:outline-[rgba(255,255,255,0.9)]",
     ),
     err: cn(
       "border-[#f0a8a0]",
