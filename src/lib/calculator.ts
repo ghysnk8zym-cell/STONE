@@ -40,7 +40,10 @@ function fromHundredths(h: number): number {
   return Number(`${h}e-2`);
 }
 
-function readField(field: CalcField, raw: string): { ok: true; value: number } | { ok: false; reason: "invalid" | "range" } {
+function readField(
+  field: CalcField,
+  raw: string,
+): { ok: true; value: number } | { ok: false; reason: "invalid" | "range" } {
   const value = parseDecimal(raw);
   if (value === null) return { ok: false, reason: "invalid" };
   const [min, max] = LIMITS[field];
@@ -59,9 +62,11 @@ export function calculate(input: CalcInput, unitCents: number): CalcResult {
     surfaceH = toHundredths(area.value);
   } else {
     const length = readField("length", input.length);
-    if (!length.ok) return { ok: false, field: "length", reason: length.reason };
+    if (!length.ok)
+      return { ok: false, field: "length", reason: length.reason };
     const height = readField("height", input.height);
-    if (!height.ok) return { ok: false, field: "height", reason: height.reason };
+    if (!height.ok)
+      return { ok: false, field: "height", reason: height.reason };
     surfaceH = toHundredths(length.value * height.value);
     if (surfaceH < 1) return { ok: false, field: "height", reason: "range" };
   }
@@ -79,5 +84,8 @@ export function calculate(input: CalcInput, unitCents: number): CalcResult {
 }
 
 export function formatArea(m2: number, locale: string): string {
-  return new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(m2);
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(m2);
 }

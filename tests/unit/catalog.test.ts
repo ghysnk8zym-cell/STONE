@@ -34,7 +34,9 @@ describe("catalog seed", () => {
     expect(await catalog.total()).toBe(12);
     expect((await catalog.getBySlug("black-marble"))?.priceCents).toBe(24000);
     expect((await catalog.getBySlug("charcoal-ledger"))?.priceCents).toBe(3800);
-    expect((await catalog.getBySlug("concrete-paver"))?.oldPriceCents).toBe(8800);
+    expect((await catalog.getBySlug("concrete-paver"))?.oldPriceCents).toBe(
+      8800,
+    );
   });
 
   it("every product has a catalog image key and a placeholder price", () => {
@@ -73,10 +75,16 @@ describe("catalog list", () => {
 
   it("search matches localised name and material, case-insensitive", async () => {
     const byMaterial = await catalog.list({ ...base, q: "МРАМОР" }, l10n);
-    expect(byMaterial.map((p) => p.slug)).toEqual(["black-marble", "grey-marble"]);
+    expect(byMaterial.map((p) => p.slug)).toEqual([
+      "black-marble",
+      "grey-marble",
+    ]);
 
     const byName = await catalog.list({ ...base, q: "ledger" }, l10n);
-    expect(byName.map((p) => p.slug)).toEqual(["charcoal-ledger", "silver-ledger"]);
+    expect(byName.map((p) => p.slug)).toEqual([
+      "charcoal-ledger",
+      "silver-ledger",
+    ]);
   });
 
   it("sorts by name using the localised name and by price", async () => {
@@ -90,7 +98,9 @@ describe("catalog list", () => {
     expect(desc.at(-1)?.slug).toBe("taupe-rock");
 
     const cheap = await catalog.list({ ...base, sort: "price-asc" }, l10n);
-    expect(cheap[0].priceCents).toBe(Math.min(...products.map((p) => p.priceCents)));
+    expect(cheap[0].priceCents).toBe(
+      Math.min(...products.map((p) => p.priceCents)),
+    );
     const dear = await catalog.list({ ...base, sort: "price-desc" }, l10n);
     expect(dear[0].slug).toBe("black-marble");
   });
@@ -109,7 +119,13 @@ describe("catalog list", () => {
       "sandstone",
       "slate",
     ]);
-    expect(facets.finishes).toEqual(["chipped", "honed", "polished", "smooth", "split-face"]);
+    expect(facets.finishes).toEqual([
+      "chipped",
+      "honed",
+      "polished",
+      "smooth",
+      "split-face",
+    ]);
     expect(facets.colors).toEqual(["dark", "grey", "light", "warm"]);
   });
 
@@ -129,7 +145,9 @@ describe("catalog list", () => {
 
 describe("parseCatalogQuery", () => {
   it("parseCatalogQuery drops unknown values", () => {
-    expect(parseCatalogQuery({ material: "granite", sort: "foo", sale: "yes" })).toEqual({
+    expect(
+      parseCatalogQuery({ material: "granite", sort: "foo", sale: "yes" }),
+    ).toEqual({
       sort: "name-asc",
     });
   });
@@ -160,7 +178,8 @@ describe("parseCatalogQuery", () => {
 });
 
 describe("discountPercent", () => {
-  const pct = (slug: string) => discountPercent(products.find((p) => p.slug === slug)!);
+  const pct = (slug: string) =>
+    discountPercent(products.find((p) => p.slug === slug)!);
 
   it("returns the Figma badge value", () => {
     expect(pct("concrete-paver")).toBe(15);

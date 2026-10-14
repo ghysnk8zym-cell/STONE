@@ -10,7 +10,20 @@ describe("parseDecimal", () => {
   });
 
   it("rejects malformed input", () => {
-    for (const bad of ["", "  ", "2,5,1", "2.5.1", "2,5.1", "abc", "1e3", "-2", "+2", "1 000", "1,000.5", "."]) {
+    for (const bad of [
+      "",
+      "  ",
+      "2,5,1",
+      "2.5.1",
+      "2,5.1",
+      "abc",
+      "1e3",
+      "-2",
+      "+2",
+      "1 000",
+      "1,000.5",
+      ".",
+    ]) {
       expect(parseDecimal(bad), bad).toBeNull();
     }
   });
@@ -29,9 +42,9 @@ describe("calculate", () => {
   });
 
   it("wall 2 x 1 equals area 2", () => {
-    expect(calculate({ mode: "wall", length: "2", height: "1" }, 24000)).toEqual(
-      calculate({ mode: "area", area: "2" }, 24000),
-    );
+    expect(
+      calculate({ mode: "wall", length: "2", height: "1" }, 24000),
+    ).toEqual(calculate({ mode: "area", area: "2" }, 24000));
   });
 
   it("charcoal 2 m² x 3800", () => {
@@ -40,18 +53,32 @@ describe("calculate", () => {
   });
 
   it("empty input is invalid", () => {
-    expect(calculate({ mode: "area", area: "" }, 24000)).toEqual({ ok: false, field: "area", reason: "invalid" });
+    expect(calculate({ mode: "area", area: "" }, 24000)).toEqual({
+      ok: false,
+      field: "area",
+      reason: "invalid",
+    });
   });
 
   it("0 and 10000.01 are out of range", () => {
-    expect(calculate({ mode: "area", area: "0" }, 100)).toEqual({ ok: false, field: "area", reason: "range" });
-    expect(calculate({ mode: "area", area: "10000.01" }, 100)).toEqual({ ok: false, field: "area", reason: "range" });
+    expect(calculate({ mode: "area", area: "0" }, 100)).toEqual({
+      ok: false,
+      field: "area",
+      reason: "range",
+    });
+    expect(calculate({ mode: "area", area: "10000.01" }, 100)).toEqual({
+      ok: false,
+      field: "area",
+      reason: "range",
+    });
     expect(calculate({ mode: "area", area: "10000" }, 100).ok).toBe(true);
     expect(calculate({ mode: "area", area: "0.01" }, 100).ok).toBe(true);
   });
 
   it("wall 101 m length is out of range on length", () => {
-    expect(calculate({ mode: "wall", length: "101", height: "2" }, 100)).toEqual({
+    expect(
+      calculate({ mode: "wall", length: "101", height: "2" }, 100),
+    ).toEqual({
       ok: false,
       field: "length",
       reason: "range",
@@ -59,7 +86,9 @@ describe("calculate", () => {
   });
 
   it("reports height when length is valid", () => {
-    expect(calculate({ mode: "wall", length: "2", height: "abc" }, 100)).toEqual({
+    expect(
+      calculate({ mode: "wall", length: "2", height: "abc" }, 100),
+    ).toEqual({
       ok: false,
       field: "height",
       reason: "invalid",
@@ -67,7 +96,9 @@ describe("calculate", () => {
   });
 
   it("wall 0.01 x 0.01 rounds below the minimum surface and is rejected", () => {
-    expect(calculate({ mode: "wall", length: "0.01", height: "0.01" }, 24000)).toEqual({
+    expect(
+      calculate({ mode: "wall", length: "0.01", height: "0.01" }, 24000),
+    ).toEqual({
       ok: false,
       field: "height",
       reason: "range",
@@ -76,7 +107,10 @@ describe("calculate", () => {
 
   it("throws RangeError for a non-integer or negative unit price", () => {
     for (const bad of [1.5, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(() => calculate({ mode: "area", area: "2" }, bad), String(bad)).toThrow(RangeError);
+      expect(
+        () => calculate({ mode: "area", area: "2" }, bad),
+        String(bad),
+      ).toThrow(RangeError);
     }
     expect(calculate({ mode: "area", area: "2" }, 0).ok).toBe(true);
   });

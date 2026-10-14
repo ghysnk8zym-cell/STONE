@@ -27,10 +27,21 @@ export type Color = (typeof COLORS)[number];
 export const COLOR_GROUPS = ["dark", "grey", "light", "warm"] as const;
 export type ColorGroup = (typeof COLOR_GROUPS)[number];
 
-export const FINISHES = ["polished", "honed", "split-face", "chipped", "smooth"] as const;
+export const FINISHES = [
+  "polished",
+  "honed",
+  "split-face",
+  "chipped",
+  "smooth",
+] as const;
 export type Finish = (typeof FINISHES)[number];
 
-export const SORTS = ["name-asc", "name-desc", "price-asc", "price-desc"] as const;
+export const SORTS = [
+  "name-asc",
+  "name-desc",
+  "price-asc",
+  "price-desc",
+] as const;
 export type CatalogSort = (typeof SORTS)[number];
 
 export type Product = {
@@ -78,6 +89,10 @@ export interface CatalogRepository {
   /** Products with an old price. */
   listPromo(): Promise<Product[]>;
   /** Values present in the data, sorted. */
-  facets(): Promise<{ materials: Material[]; colors: ColorGroup[]; finishes: Finish[] }>;
+  facets(): Promise<{
+    materials: Material[];
+    colors: ColorGroup[];
+    finishes: Finish[];
+  }>;
   total(): Promise<number>;
 }

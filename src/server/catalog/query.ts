@@ -11,7 +11,10 @@ function first(value: string | string[] | undefined): string | undefined {
 
 /** Parse URL search params; any unknown or stale value is dropped, never thrown. */
 export function parseCatalogQuery(params: Params): CatalogQuery {
-  const pick = <T extends string>(values: readonly [T, ...T[]], key: string): T | undefined => {
+  const pick = <T extends string>(
+    values: readonly [T, ...T[]],
+    key: string,
+  ): T | undefined => {
     const parsed = z.enum(values).safeParse(first(params[key]));
     return parsed.success ? parsed.data : undefined;
   };
@@ -24,7 +27,8 @@ export function parseCatalogQuery(params: Params): CatalogQuery {
   if (color) query.color = color;
   const finish = pick(FINISHES, "finish");
   if (finish) query.finish = finish;
-  if (z.enum(["1", "true"]).safeParse(first(params.sale)).success) query.sale = true;
+  if (z.enum(["1", "true"]).safeParse(first(params.sale)).success)
+    query.sale = true;
 
   const q = first(params.q)?.trim().slice(0, 100).trim();
   if (q) query.q = q;

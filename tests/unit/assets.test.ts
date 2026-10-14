@@ -51,7 +51,10 @@ describe("image assets", () => {
         .digest("hex");
       const width = output.match(/-(\d+)\.webp$/)![1];
       const key = `${width}:${hash}`;
-      expect(seen.get(key), `${output} duplicates ${seen.get(key)}`).toBeUndefined();
+      expect(
+        seen.get(key),
+        `${output} duplicates ${seen.get(key)}`,
+      ).toBeUndefined();
       seen.set(key, output);
     }
   });
@@ -88,43 +91,44 @@ const LOW_RES = [
   "silver-ledger",
   "taupe-rock",
 ];
-const WORKS_IDS = [
-  "natural-stone-fireplace-portal",
-];
+const WORKS_IDS = ["natural-stone-fireplace-portal"];
 
 describe("page assets (Phase 3)", () => {
   const byFile = new Map(manifest.images.map((image) => [image.file, image]));
 
   // The product gallery reuses images/catalog/<slug> (the Figma main image and the second
   // thumbnail are the same fill; the thumbnail is a CSS crop of it).
-  it.each(PRODUCT_SLUGS)("%s catalog image serves the product gallery", (slug) => {
-    const first = byFile.get(`images/catalog/${slug}`);
-    expect(first, slug).toBeDefined();
-    expect(first!.requestedWidths, slug).toContain(1440);
-    expect(first!.usage, slug).toContain("ProductGallery:main");
-    expect(
-      byFile.has(`images/products/${slug}-1`),
-      "no duplicate product files",
-    ).toBe(false);
-    // Never upscaled: the widest output is the widest requested width the source allows.
-    const widest = Math.max(
-      ...first!.requestedWidths.filter((w) => w <= first!.sourceWidth),
-    );
-    expect(Math.max(...first!.widths), `${slug}-1 widest`).toBe(widest);
-    for (const width of first!.widths) {
+  it.each(PRODUCT_SLUGS)(
+    "%s catalog image serves the product gallery",
+    (slug) => {
+      const first = byFile.get(`images/catalog/${slug}`);
+      expect(first, slug).toBeDefined();
+      expect(first!.requestedWidths, slug).toContain(1440);
+      expect(first!.usage, slug).toContain("ProductGallery:main");
       expect(
-        existsSync(join(root, "public", `${first!.file}-${width}.webp`)),
-        `${slug} ${width}`,
-      ).toBe(true);
-    }
-    // Figma sources narrower than 1024 px are low-res; they are listed explicitly so a
-    // regression (or a better source later) is noticed.
-    if (LOW_RES.includes(slug)) {
-      expect(first!.sourceWidth, `${slug}-1 low-res`).toBeLessThan(1024);
-    } else {
-      expect(first!.sourceWidth, `${slug}-1`).toBeGreaterThanOrEqual(1024);
-    }
-  });
+        byFile.has(`images/products/${slug}-1`),
+        "no duplicate product files",
+      ).toBe(false);
+      // Never upscaled: the widest output is the widest requested width the source allows.
+      const widest = Math.max(
+        ...first!.requestedWidths.filter((w) => w <= first!.sourceWidth),
+      );
+      expect(Math.max(...first!.widths), `${slug}-1 widest`).toBe(widest);
+      for (const width of first!.widths) {
+        expect(
+          existsSync(join(root, "public", `${first!.file}-${width}.webp`)),
+          `${slug} ${width}`,
+        ).toBe(true);
+      }
+      // Figma sources narrower than 1024 px are low-res; they are listed explicitly so a
+      // regression (or a better source later) is noticed.
+      if (LOW_RES.includes(slug)) {
+        expect(first!.sourceWidth, `${slug}-1 low-res`).toBeLessThan(1024);
+      } else {
+        expect(first!.sourceWidth, `${slug}-1`).toBeGreaterThanOrEqual(1024);
+      }
+    },
+  );
 
   it.each(WORKS_IDS)("works/%s exists", (id) => {
     const image = byFile.get(`images/works/${id}`);

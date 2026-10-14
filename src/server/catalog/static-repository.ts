@@ -1,4 +1,9 @@
-import type { CatalogQuery, CatalogRepository, Localizer, Product } from "./types";
+import type {
+  CatalogQuery,
+  CatalogRepository,
+  Localizer,
+  Product,
+} from "./types";
 
 function compareText(a: string, b: string, locale?: string): number {
   return a.localeCompare(b, locale, { sensitivity: "base" });
@@ -12,14 +17,19 @@ export function createStaticRepository(
   products: readonly Product[],
   locale?: string,
 ): CatalogRepository {
-  const matches = (p: Product, query: CatalogQuery, l10n: Localizer): boolean => {
+  const matches = (
+    p: Product,
+    query: CatalogQuery,
+    l10n: Localizer,
+  ): boolean => {
     if (query.material && p.material !== query.material) return false;
     if (query.color && p.colorGroup !== query.color) return false;
     if (query.finish && p.finish !== query.finish) return false;
     if (query.sale && p.oldPriceCents === undefined) return false;
     if (query.q) {
       const needle = query.q.toLocaleLowerCase();
-      const haystack = `${l10n.name(p.slug)} ${l10n.material(p.material)}`.toLocaleLowerCase();
+      const haystack =
+        `${l10n.name(p.slug)} ${l10n.material(p.material)}`.toLocaleLowerCase();
       if (!haystack.includes(needle)) return false;
     }
     return true;
@@ -39,9 +49,13 @@ export function createStaticRepository(
         case "name-desc":
           return found.sort((a, b) => byName(b, a));
         case "price-asc":
-          return found.sort((a, b) => a.priceCents - b.priceCents || byName(a, b));
+          return found.sort(
+            (a, b) => a.priceCents - b.priceCents || byName(a, b),
+          );
         case "price-desc":
-          return found.sort((a, b) => b.priceCents - a.priceCents || byName(a, b));
+          return found.sort(
+            (a, b) => b.priceCents - a.priceCents || byName(a, b),
+          );
       }
     },
     async getBySlug(slug) {
@@ -54,7 +68,8 @@ export function createStaticRepository(
       return pick(PROMO);
     },
     async facets() {
-      const sorted = <T extends string>(values: T[]) => [...new Set(values)].sort();
+      const sorted = <T extends string>(values: T[]) =>
+        [...new Set(values)].sort();
       return {
         materials: sorted(products.map((p) => p.material)),
         colors: sorted(products.map((p) => p.colorGroup)),
