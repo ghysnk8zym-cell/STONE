@@ -81,7 +81,13 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const material = (p: Product) => c(`material.${p.material}` as CatalogKey);
   const favorite = (p: Product) =>
     cc("productCard.favorite", { name: name(p) });
-  const format = (p: Product) => `${material(p)} · ${p.formatMm.join("×")} mm`;
+  const format = (p: Product) =>
+    c("meta" as CatalogKey, {
+      material: material(p),
+      w: p.formatMm[0],
+      h: p.formatMm[1],
+      d: p.formatMm[2],
+    });
 
   return (
     <div className="relative isolate overflow-clip md:-mt-[72px]">

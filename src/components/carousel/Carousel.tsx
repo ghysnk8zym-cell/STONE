@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Children,
   type ReactNode,
@@ -25,6 +26,8 @@ export type CarouselProps = {
 
 /** Tolerance for sub-pixel scroll positions on high-density screens. */
 const EDGE = 2;
+const FOCUSABLE =
+  'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /*
  * Figma Carousel (Home v2 722:1316 and siblings): arrow 44, gap 16, a track of cards with the layout
@@ -33,41 +36,53 @@ const EDGE = 2;
  *
  * CSS scroll-snap does the work (`snap-x snap-mandatory`, cards `snap-start`); the arrows only call
  * `scrollBy` by one card plus the gap. `behavior` is `smooth` unless the user prefers reduced motion
- * (then `auto`, an instant jump). Prev / next are `disabled` at the ends, tracked from the scroll
- * position (`scroll` + `ResizeObserver`). No autoplay. The list holds no focusable stop of its own:
- * the cards' links are the tab stops, and the browser scrolls a focused card into view.
+ * (then `auto`, an instant jump). At the ends the arrows are `aria-disabled` (same look as Figma's
+ * disabled arrow) rather than `disabled`, and clicks are ignored: the focused arrow stays focusable,
+ * so keyboard focus never drops to <body> when a step reaches the end. No autoplay.
+ * The scroller is a `div` around the `<ul>`. Cards with links give keyboard users their tab stops (the
+ * browser scrolls a focused card into view); a track without any focusable item (the works cards)
+ * becomes a focusable, labelled region so it can still be scrolled with the arrow keys.
  */
 export function Carousel({ label, itemClassName, children }: CarouselProps) {
-  const listRef = useRef<HTMLUListElement>(null);
+  const t = useTranslations("components.carousel");
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
+  const [needsFocusStop, setNeedsFocusStop] = useState(false);
 
   const update = useCallback(() => {
-    const list = listRef.current;
-    if (!list) return;
-    setAtStart(list.scrollLeft <= EDGE);
-    setAtEnd(list.scrollLeft + list.clientWidth >= list.scrollWidth - EDGE);
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    setAtStart(scroller.scrollLeft <= EDGE);
+    setAtEnd(
+      scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - EDGE,
+    );
   }, []);
 
   useEffect(() => {
     update();
-    const list = listRef.current;
-    if (!list || typeof ResizeObserver === "undefined") return;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    setNeedsFocusStop(scroller.querySelector(FOCUSABLE) === null);
+    if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(update);
-    observer.observe(list);
+    observer.observe(scroller);
     return () => observer.disconnect();
   }, [update]);
 
   const scroll = (direction: 1 | -1) => {
-    const list = listRef.current;
-    if (!list) return;
-    const first = list.querySelector("li");
-    const gap = Number.parseFloat(getComputedStyle(list).columnGap) || 0;
-    const step = (first?.offsetWidth ?? list.clientWidth) + gap;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    if (direction === -1 ? atStart : atEnd) return;
+    const first = scroller.querySelector("li");
+    const list = scroller.querySelector("ul");
+    const gap =
+      Number.parseFloat(getComputedStyle(list ?? scroller).columnGap) || 0;
+    const step = (first?.offsetWidth ?? scroller.clientWidth) + gap;
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    list.scrollBy({
+    scroller.scrollBy({
       left: direction * step,
       behavior: reduced ? "auto" : "smooth",
     });
@@ -82,28 +97,38 @@ export function Carousel({ label, itemClassName, children }: CarouselProps) {
       <span className="max-md:hidden">
         <CarouselArrow
           direction="prev"
-          disabled={atStart}
+          softDisabled={atStart}
           onClick={() => scroll(-1)}
         />
       </span>
-      <ul
-        ref={listRef}
+      <div
+        ref={scrollerRef}
         onScroll={update}
-        className={cn(
-          "flex min-w-0 flex-1 snap-x snap-mandatory [scrollbar-width:none] items-start gap-(--layout-card-gap) overflow-x-auto overflow-y-clip overscroll-x-contain [&::-webkit-scrollbar]:hidden",
-          "max-md:scroll-px-(--layout-panel-pad) max-md:px-(--layout-panel-pad)",
-        )}
+        role={needsFocusStop ? "region" : undefined}
+        aria-label={needsFocusStop ? t("scrollable", { label }) : undefined}
+        tabIndex={needsFocusStop ? 0 : undefined}
+        className="focus-visible:outline-accent-focus min-w-0 flex-1 snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overflow-y-clip overscroll-x-contain focus-visible:outline-2 focus-visible:outline-offset-2 max-md:scroll-px-(--layout-panel-pad) [&::-webkit-scrollbar]:hidden"
       >
-        {Children.toArray(children).map((child, index) => (
-          <li key={index} className={cn("shrink-0 snap-start", itemClassName)}>
-            {child}
-          </li>
-        ))}
-      </ul>
+        <ul
+          className={cn(
+            "flex w-max min-w-full items-start gap-(--layout-card-gap)",
+            "max-md:px-(--layout-panel-pad)",
+          )}
+        >
+          {Children.toArray(children).map((child, index) => (
+            <li
+              key={index}
+              className={cn("shrink-0 snap-start", itemClassName)}
+            >
+              {child}
+            </li>
+          ))}
+        </ul>
+      </div>
       <span className="max-md:hidden">
         <CarouselArrow
           direction="next"
-          disabled={atEnd}
+          softDisabled={atEnd}
           onClick={() => scroll(1)}
         />
       </span>

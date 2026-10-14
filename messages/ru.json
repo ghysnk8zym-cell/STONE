@@ -36,7 +36,8 @@
     },
     "carousel": {
       "prev": "Назад",
-      "next": "Вперёд"
+      "next": "Вперёд",
+      "scrollable": "{label}, прокручиваемый список"
     },
     "social": {
       "name": "{abbr}, {network}",
@@ -403,7 +404,8 @@
       "split-face": "Колотая",
       "chipped": "Рваный скол",
       "smooth": "Гладкая"
-    }
+    },
+    "meta": "{material} · {w}×{h}×{d} мм"
   },
   "pages": {
     "home": {

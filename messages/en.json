@@ -36,7 +36,8 @@
     },
     "carousel": {
       "prev": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "scrollable": "{label}, scrollable list"
     },
     "social": {
       "name": "{abbr}, {network}",
@@ -403,7 +404,8 @@
       "split-face": "Split face",
       "chipped": "Chipped",
       "smooth": "Smooth"
-    }
+    },
+    "meta": "{material} · {w}×{h}×{d} mm"
   },
   "pages": {
     "home": {

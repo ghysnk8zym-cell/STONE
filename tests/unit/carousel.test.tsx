@@ -44,6 +44,9 @@ function button(name: string) {
   return screen.getByRole("button", { name }) as HTMLButtonElement;
 }
 
+const off = (name: string) =>
+  button(name).getAttribute("aria-disabled") === "true";
+
 function setup() {
   renderWithIntl(
     <Carousel label="Catalog">
@@ -52,7 +55,7 @@ function setup() {
       <span>Three</span>
     </Carousel>,
   );
-  const list = screen.getByRole("list");
+  const list = screen.getByRole("list").parentElement as HTMLElement;
   // jsdom has no layout: a 300 px viewport over a 900 px track, items 280 px wide
   Object.defineProperty(list, "clientWidth", {
     value: 300,
@@ -62,7 +65,7 @@ function setup() {
     value: 900,
     configurable: true,
   });
-  for (const li of list.querySelectorAll("li")) {
+  for (const li of screen.getByRole("list").querySelectorAll("li")) {
     Object.defineProperty(li, "offsetWidth", {
       value: 280,
       configurable: true,
@@ -75,16 +78,16 @@ describe("Carousel", () => {
   it("disables prev at start", () => {
     const list = setup();
     fireEvent.scroll(list);
-    expect(button("Previous").disabled).toBe(true);
-    expect(button("Next").disabled).toBe(false);
+    expect(off("Previous")).toBe(true);
+    expect(off("Next")).toBe(false);
   });
 
   it("disables next at the end and enables prev away from the start", () => {
     const list = setup();
     list.scrollLeft = 600;
     fireEvent.scroll(list);
-    expect(button("Previous").disabled).toBe(false);
-    expect(button("Next").disabled).toBe(true);
+    expect(off("Previous")).toBe(false);
+    expect(off("Next")).toBe(true);
   });
 
   it("next scrolls by one item smoothly", () => {
@@ -105,6 +108,41 @@ describe("Carousel", () => {
     expect((scrollBy.mock.calls[0][0] as ScrollToOptions).behavior).toBe(
       "auto",
     );
+  });
+
+  it("keeps focus on the arrow after reaching the end", () => {
+    const list = setup();
+    fireEvent.scroll(list);
+    const next = button("Next");
+    next.focus();
+    list.scrollLeft = 600;
+    fireEvent.scroll(list);
+    expect(off("Next")).toBe(true);
+    expect(next.disabled).toBe(false);
+    expect(document.activeElement).toBe(next);
+    // a click on the exhausted arrow does nothing
+    scrollBy.mockClear();
+    fireEvent.click(next);
+    expect(scrollBy).not.toHaveBeenCalled();
+  });
+
+  it("makes a track without focusable items a labelled, focusable region", () => {
+    const list = setup();
+    const region = screen.getByRole("region", {
+      name: "Catalog, scrollable list",
+    });
+    expect(region).toBe(list);
+    expect(region.getAttribute("tabindex")).toBe("0");
+  });
+
+  it("leaves a track with links as a plain scroller (focusable items inside)", () => {
+    renderWithIntl(
+      <Carousel label="Promo">
+        <button type="button">One</button>
+        <button type="button">Two</button>
+      </Carousel>,
+    );
+    expect(screen.queryByRole("region")).toBeNull();
   });
 
   it("exposes the label as a named group", () => {

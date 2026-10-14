@@ -1,4 +1,5 @@
 import { getImageProps } from "next/image";
+import { preload } from "react-dom";
 import { useTranslations } from "next-intl";
 
 import { Icon } from "@/components/icons/Icon";
@@ -24,6 +25,19 @@ const SCENES = [
   { media: "(min-width: 1920px)", key: "1920", width: 1920, height: 630 },
 ] as const;
 
+/*
+ * LCP: from 1024 px the scene is the largest paint. A CSS background is only discovered after the
+ * stylesheet, so each wide layout gets a `<link rel="preload" as="image" imagesrcset media>` whose media
+ * query is exclusive of the others (a phone or tablet preloads nothing, and the 1x / 2x candidate the
+ * browser picks is the same one `image-set()` picks): still exactly one hero request. The >= 1920
+ * scene has no preload: Chromium's phone emulation evaluates `min-width: 1920px` link media as true
+ * at parse time and would request that image next to the real one (a second hero download).
+ */
+const PRELOAD_MEDIA: Record<string, string> = {
+  "1024": "(min-width: 1024px) and (max-width: 1439.98px)",
+  "1440": "(min-width: 1440px) and (max-width: 1919.98px)",
+};
+
 /** "a.webp 1x, b.webp 2x" (next/image srcset) -> image-set(url("a.webp") 1x, url("b.webp") 2x) */
 function imageSet(srcSet = "") {
   const entries = srcSet
@@ -44,6 +58,15 @@ function HeroScene() {
       width: scene.width,
       height: scene.height,
     }).props;
+    const media = PRELOAD_MEDIA[scene.key];
+    if (media && srcSet) {
+      preload(srcSet.split(" ")[0], {
+        as: "image",
+        imageSrcSet: srcSet,
+        fetchPriority: "high",
+        media,
+      });
+    }
     const rule = `.hero-scene{background-image:${imageSet(srcSet)}}`;
     return scene.media === null ? rule : `@media ${scene.media}{${rule}}`;
   }).join("");
@@ -77,6 +100,9 @@ function HeroScene() {
  * (971:28937) = the pill (fill rgba(88,92,96,.2) to rgba(74,77,81,.2)) with the 168x52 "Search panel"
  * 8 px below it, which holds the input. A native <details> toggles it (no JavaScript); the form
  * submits to /catalog?q=...
+ * At 390 the form is `invisible` (visibility: hidden): the pill is covered by the first panel, so it
+ * must not stay in the tab order or the accessibility tree (WCAG 2.4.11 Focus Not Obscured). The h1
+ * stays: it is text, not a control.
  */
 export function Hero({ locale }: { locale: Locale }) {
   const t = useTranslations("pages.home.hero");
@@ -98,7 +124,7 @@ export function Hero({ locale }: { locale: Locale }) {
           role="search"
           action={`/${locale}/catalog`}
           method="get"
-          className="relative has-[details[open]]:z-20"
+          className="relative has-[details[open]]:z-20 max-md:invisible"
         >
           <details className="group">
             <summary className="focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus hov:border-glass-strong motion-hover flex h-[46px] w-[168px] cursor-pointer list-none items-center justify-center gap-4 rounded-full border border-[rgba(255,255,255,0.1)] bg-linear-to-b from-[rgba(76,80,83,0.2)] to-[rgba(65,68,72,0.2)] text-[16px] leading-5 font-medium text-white outline-0 drop-shadow-[0_8px_10px_rgba(20,23,26,0.35)] select-none group-open:from-[rgba(88,92,96,0.2)]! group-open:to-[rgba(74,77,81,0.2)]! md:from-[#4c5053] md:to-[#414448] [&::-webkit-details-marker]:hidden">

@@ -676,14 +676,20 @@ describe("inert navigation (Phase 3)", () => {
         <Button href="/projects" inert iconRight="arrow">
           Projects
         </Button>
+        <Button inert iconRight="arrow">
+          Soon
+        </Button>
         <IconButton icon="user" label="Account" href="/account" inert />
         <NavPill href="/cart" inert>
           Cart
         </NavPill>
       </>,
     );
-    const items = [...container.querySelectorAll<HTMLElement>("[role=link]")];
-    expect(items).toHaveLength(3);
+    const items = [
+      ...container.querySelectorAll<HTMLElement>("[role=link], [role=button]"),
+    ];
+    expect(items).toHaveLength(4);
+    expect(container.querySelector("button, a")).toBeNull();
     for (const item of items) expectInert(item, item.textContent ?? "icon");
   });
 

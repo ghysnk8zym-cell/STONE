@@ -61,15 +61,20 @@ export function ShowcaseSection({
             <p className="type-catalog-meta text-secondary">{note}</p>
           )}
         </div>
-        <Button
-          variant="pill"
-          href={action.href ?? "/"}
-          inert={action.href === undefined}
-          iconRight="arrow"
-          className="shrink-0"
-        >
-          {action.label}
-        </Button>
+        {action.href === undefined ? (
+          <Button variant="pill" inert iconRight="arrow" className="shrink-0">
+            {action.label}
+          </Button>
+        ) : (
+          <Button
+            variant="pill"
+            href={action.href}
+            iconRight="arrow"
+            className="shrink-0"
+          >
+            {action.label}
+          </Button>
+        )}
       </div>
       <Carousel label={label} itemClassName={carouselClassName}>
         {children}

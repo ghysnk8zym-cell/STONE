@@ -171,17 +171,33 @@ test.describe("home", () => {
   test("hero search submits to the catalog with q", async ({
     page,
   }, testInfo) => {
-    // Figma 390 draws the 46 px hero under the first panel, so the Search pill is covered there
-    test.skip(
-      testInfo.project.name !== "desktop",
-      "the pill is covered by the catalog panel at 390 (Figma overlap)",
-    );
+    test.skip(testInfo.project.name !== "desktop", "phones: see next test");
     await page.goto("/ru");
     await page.getByText(HOME.hero.searchPlaceholder, { exact: true }).click();
     const field = page.getByRole("searchbox", { name: HOME.hero.searchLabel });
     await field.fill("marble");
     await field.press("Enter");
     await expect(page).toHaveURL(/\/ru\/catalog\?q=marble$/);
+  });
+
+  test("hero search pill is not in the tab order at 390", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile", "phone layout only");
+    await page.goto("/ru");
+    // Figma draws the catalog panel over the pill at 390: hidden, so never focusable while obscured
+    const pill = page.getByText(HOME.hero.searchPlaceholder, { exact: true });
+    await expect(pill).toBeHidden();
+    const reached: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press("Tab");
+      reached.push(
+        await page.evaluate(() => document.activeElement?.tagName ?? ""),
+      );
+    }
+    expect(reached).not.toContain("SUMMARY");
+    // the h1 stays available to assistive tech
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   });
 
   test("Offers links to /catalog?sale=1 and Open catalog to /catalog", async ({
@@ -199,7 +215,7 @@ test.describe("home", () => {
   test("Projects is inert", async ({ page }) => {
     await page.goto("/ru");
     await expect(
-      page.getByRole("link", { name: HOME.actions.projects }),
+      page.getByRole("button", { name: HOME.actions.projects }),
     ).toHaveAttribute("aria-disabled", "true");
     await expect(
       page.locator("a", { hasText: HOME.actions.projects }),
@@ -218,7 +234,7 @@ test.describe("home", () => {
     page,
   }, testInfo) => {
     await page.goto("/ru");
-    const hearts = page.locator("[role=button][aria-disabled=true]");
+    const hearts = page.locator("article [role=button][aria-disabled=true]");
     if (testInfo.project.name === "mobile") {
       await expect(hearts).toHaveCount(6);
       await expect(hearts.first()).toBeVisible();
@@ -272,20 +288,25 @@ test.describe("home", () => {
     const next = promo.getByRole("button", {
       name: ru.components.carousel.next,
     });
-    const track = promo.getByRole("list");
+    const track = promo.getByRole("list").locator("xpath=..");
 
-    await expect(prev).toBeDisabled();
-    await expect(next).toBeEnabled();
+    await expect(prev).toHaveAttribute("aria-disabled", "true");
+    await expect(next).not.toHaveAttribute("aria-disabled", "true");
     await next.click();
     await expect
       .poll(() => track.evaluate((el) => el.scrollLeft))
       .toBeGreaterThan(0);
     // 923 px of cards in a 774 px track: one step reaches the end
-    await expect(prev).toBeEnabled();
-    await expect(next).toBeDisabled();
+    await expect(prev).not.toHaveAttribute("aria-disabled", "true");
+    await expect(next).toHaveAttribute("aria-disabled", "true");
+    // keyboard: focus on the exhausted arrow stays there (it is aria-disabled, not disabled)
+    await prev.focus();
+    await prev.press("Enter");
+    await next.focus();
+    await expect(next).toBeFocused();
     await prev.click();
-    await expect(prev).toBeDisabled();
-    await expect(next).toBeEnabled();
+    await expect(prev).toHaveAttribute("aria-disabled", "true");
+    await expect(next).not.toHaveAttribute("aria-disabled", "true");
   });
 
   test("reduced motion scrolls instantly", async ({ page }, testInfo) => {
@@ -297,7 +318,7 @@ test.describe("home", () => {
     await page.setViewportSize({ width: 1024, height: 900 });
     await page.goto("/ru");
     const promo = page.getByRole("region", { name: HOME.sections.promo });
-    const track = promo.getByRole("list");
+    const track = promo.getByRole("list").locator("xpath=..");
     await promo
       .getByRole("button", { name: ru.components.carousel.next })
       .click();

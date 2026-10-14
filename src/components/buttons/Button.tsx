@@ -22,8 +22,9 @@ type CommonProps = {
   iconRight?: IconName;
   disabled?: boolean;
   /**
-   * Not built yet: the default look of the variant, rendered as a non-link `<span role="link"
-   * aria-disabled>` (only with `href`), no hover / pressed reaction, no 45 % dim.
+   * Not built yet: the default look of the variant, rendered as a non-interactive
+   * `<span role="link" | "button" aria-disabled>` (link when `href` is given, otherwise button): no
+   * navigation, no hover / pressed reaction, no 45 % dim, not focusable.
    */
   inert?: boolean;
   state?: InteractionState;
@@ -115,6 +116,9 @@ const VARIANT: Record<ButtonVariant, string> = {
   ),
 };
 
+const INERT_BASE =
+  "inline-flex max-w-full min-w-0 cursor-default items-center justify-center whitespace-nowrap select-none";
+
 /* Inert (not built yet): only the resting look of a variant; no hov / press / focus classes. */
 const INERT: Record<ButtonVariant, string> = {
   pill: "h-(--layout-control-h) gap-2 rounded-full border border-glass bg-surface-button pr-3.5 pl-4 text-primary type-button-label",
@@ -190,20 +194,29 @@ export function Button(props: ButtonProps) {
     </>
   );
 
+  if (inert && !disabled) {
+    return (
+      <span
+        role={props.href !== undefined ? "link" : "button"}
+        aria-disabled="true"
+        data-state={state}
+        className={cn(INERT_BASE, INERT[variant], className)}
+      >
+        {content}
+      </span>
+    );
+  }
+
   if (props.href !== undefined) {
     // A disabled link is not a link at all: no <a>/href, so it cannot be activated by a screen
     // reader, a programmatic click or "open in new tab".
-    if (disabled || inert) {
+    if (disabled) {
       return (
         <span
           role="link"
           aria-disabled="true"
           data-state={state}
-          className={
-            disabled
-              ? classes
-              : cn(BASE, INERT[variant], "cursor-default", className)
-          }
+          className={classes}
         >
           {content}
         </span>
