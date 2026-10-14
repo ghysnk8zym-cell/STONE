@@ -1,5 +1,8 @@
+// Client component: the loading state needs a click handler (see onClick below). Server components can still render it.
+"use client";
+
 import { useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 import { Link } from "@/i18n/navigation";
 
@@ -55,9 +58,9 @@ const BASE =
 
 /*
  * Values come from the Figma component sets (Button/Pill 21:95, Primary 338:533, Light 430:479,
- * Outline 732:712, Graphite 733:6134, Save 779:546). Pill, Outline and Save use STONE tokens.
- * Primary, Light and Graphite are hard-coded hex / rgba in Figma (no variable bound), so they stay
- * arbitrary values here. Hover / pressed of Outline, Graphite and Save are not drawn in Figma:
+ * Outline 732:712, Graphite 733:6134, Save 779:546). Wherever Figma binds a variable (get_variable_defs)
+ * a token is used, including `ink/on-dark` on the Primary label. Fills of Primary, Light and Graphite
+ * and the Light label are plain hex / rgba in Figma (no variable bound), so they stay arbitrary values. Hover / pressed of Outline, Graphite and Save are not drawn in Figma:
  * they use the closest tokens (documented in the Task 4 report).
  */
 const VARIANT: Record<ButtonVariant, string> = {
@@ -70,7 +73,7 @@ const VARIANT: Record<ButtonVariant, string> = {
   ),
   primary: cn(
     // 2px transparent border keeps the size equal to Figma while the focus border does not shift layout.
-    "gap-2.5 rounded-full border-2 border-transparent bg-[#1f2226] px-[26px] py-3 text-[#f5f5f3] shadow-[0_6px_8px_rgba(31,33,38,0.22)] type-catalog-button",
+    "gap-2.5 rounded-full border-2 border-transparent bg-[#1f2226] px-[26px] py-3 text-ink-on-dark shadow-[0_6px_8px_rgba(31,33,38,0.22)] type-catalog-button",
     "hov:bg-[#33373c]",
     "focusv:border-primary",
     "press:bg-[#121417] press:shadow-none",
@@ -137,6 +140,16 @@ export function Button(props: ButtonProps) {
   const icon = ICON[variant];
   const classes = cn(BASE, VARIANT[variant], DISABLED, className);
 
+  // A loading button stays focusable (aria-disabled, not `disabled`), so activation is blocked here:
+  // preventDefault also stops the implicit form submit from Enter / Space / click.
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    if (loading) {
+      event.preventDefault();
+      return;
+    }
+    props.onClick?.();
+  };
+
   const content = (
     <>
       {left ? <Icon name={left} {...icon} /> : null}
@@ -156,14 +169,22 @@ export function Button(props: ButtonProps) {
   );
 
   if (props.href !== undefined) {
+    // A disabled link is not a link at all: no <a>/href, so it cannot be activated by a screen
+    // reader, a programmatic click or "open in new tab".
+    if (disabled) {
+      return (
+        <span
+          role="link"
+          aria-disabled="true"
+          data-state={state}
+          className={classes}
+        >
+          {content}
+        </span>
+      );
+    }
     return (
-      <Link
-        href={props.href}
-        className={classes}
-        data-state={state}
-        aria-disabled={disabled ? "true" : undefined}
-        tabIndex={disabled ? -1 : undefined}
-      >
+      <Link href={props.href} className={classes} data-state={state}>
         {content}
       </Link>
     );
@@ -174,9 +195,10 @@ export function Button(props: ButtonProps) {
       type={props.type ?? "button"}
       className={classes}
       data-state={state}
-      disabled={disabled || loading}
+      disabled={disabled}
+      aria-disabled={loading ? "true" : undefined}
       aria-busy={loading ? "true" : undefined}
-      onClick={props.onClick}
+      onClick={handleClick}
     >
       {content}
     </button>
