@@ -4,23 +4,23 @@ Notes: the height delta is implementation height minus Figma height; a non-zero 
 
 | id              | route                       | width | mismatch % | impl WxH  | figma WxH | height delta |
 | --------------- | --------------------------- | ----- | ---------- | --------- | --------- | ------------ |
-| home            | /en                         | 1440  | 12.78      | 1440x2210 | 1440x2208 | +2           |
-| home            | /en                         | 1024  | 19.29      | 1024x2050 | 1024x2048 | +2           |
-| home            | /en                         | 768   | 25.81      | 768x2220  | 768x2219  | +1           |
-| home            | /en                         | 390   | 10.67      | 390x1672  | 390x1702  | -30          |
+| home            | /en                         | 1440  | 1.08       | 1440x2210 | 1440x2208 | +2           |
+| home            | /en                         | 1024  | 2.64       | 1024x2050 | 1024x2048 | +2           |
+| home            | /en                         | 768   | 10.64      | 768x2220  | 768x2219  | +1           |
+| home            | /en                         | 390   | 3.41       | 390x1696  | 390x1702  | -6           |
 | catalog         | /en/catalog                 | 1440  | 19.03      | 1440x2074 | 1440x2054 | +20          |
 | catalog         | /en/catalog                 | 1024  | 21.39      | 1024x2432 | 1024x2412 | +20          |
 | catalog         | /en/catalog                 | 768   | 21.53      | 768x3428  | 768x3408  | +20          |
-| catalog         | /en/catalog                 | 390   | 21.38      | 390x3380  | 390x3384  | -4           |
+| catalog         | /en/catalog                 | 390   | 21.82      | 390x3404  | 390x3384  | +20          |
 | black-marble    | /en/catalog/black-marble    | 1440  | 0.86       | 1440x1438 | 1440x1438 | 0            |
 | black-marble    | /en/catalog/black-marble    | 1024  | 1.26       | 1024x1446 | 1024x1446 | 0            |
-| black-marble    | /en/catalog/black-marble    | 768   | 4.24       | 768x2353  | 768x2361  | -8           |
-| black-marble    | /en/catalog/black-marble    | 390   | 6.94       | 390x2080  | 390x2105  | -25          |
+| black-marble    | /en/catalog/black-marble    | 768   | 1.39       | 768x2361  | 768x2361  | 0            |
+| black-marble    | /en/catalog/black-marble    | 390   | 6.74       | 390x2104  | 390x2105  | -1           |
 | charcoal-ledger | /en/catalog/charcoal-ledger | 1440  | 1.09       | 1440x1438 | 1440x1438 | 0            |
 | charcoal-ledger | /en/catalog/charcoal-ledger | 1024  | 1.42       | 1024x1498 | 1024x1498 | 0            |
-| charcoal-ledger | /en/catalog/charcoal-ledger | 768   | 4.38       | 768x2353  | 768x2361  | -8           |
-| charcoal-ledger | /en/catalog/charcoal-ledger | 390   | 6.65       | 390x2080  | 390x2105  | -25          |
+| charcoal-ledger | /en/catalog/charcoal-ledger | 768   | 1.54       | 768x2361  | 768x2361  | 0            |
+| charcoal-ledger | /en/catalog/charcoal-ledger | 390   | 6.45       | 390x2104  | 390x2105  | -1           |
 | concrete-paver  | /en/catalog/concrete-paver  | 1440  | 0.91       | 1440x1438 | 1440x1438 | 0            |
 | concrete-paver  | /en/catalog/concrete-paver  | 1024  | 1.15       | 1024x1446 | 1024x1446 | 0            |
-| concrete-paver  | /en/catalog/concrete-paver  | 768   | 4.10       | 768x2353  | 768x2361  | -8           |
-| concrete-paver  | /en/catalog/concrete-paver  | 390   | 6.64       | 390x2102  | 390x2127  | -25          |
+| concrete-paver  | /en/catalog/concrete-paver  | 768   | 1.25       | 768x2361  | 768x2361  | 0            |
+| concrete-paver  | /en/catalog/concrete-paver  | 390   | 6.44       | 390x2126  | 390x2127  | -1           |

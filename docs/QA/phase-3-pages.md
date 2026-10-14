@@ -1,4 +1,4 @@
-# Phase 3 pages: Figma visual comparison notes
+﻿# Phase 3 pages: Figma visual comparison notes
 
 Branch `feat/phase-3-pages`. Source of truth: Figma `1vEGuD9cYYFNynyByUGHwF` (read only).
 Raw output of the run: [`phase-3/results.md`](phase-3/results.md). Only a curated set of images is committed (see "Evidence").
@@ -42,42 +42,64 @@ Status "Accepted" means the difference is explained by the classes shown. Classe
 copy Figma does not (placeholder-price line, language switch); height = shift from that copy; glass = glass or
 backdrop approximation; font = text antialiasing; frame = Figma frame inconsistency; defect = see the defects list.
 
-| Page (route)                              | Width | Mismatch % | Height delta | Classification                                                                                             | Status            |
-| ----------------------------------------- | ----- | ---------- | ------------ | ---------------------------------------------------------------------------------------------------------- | ----------------- |
-| home (`/en`)                              | 1440  | 12.78      | +2           | glass (panel tone, footer), language switch, "Prices are illustrative" line, old-price frame, font; D1, D2 | Accepted + D1, D2 |
-| home                                      | 1024  | 19.29      | +2           | same as 1440; Figma Taupe Rock price $33 vs seed $32 (frame)                                               | Accepted + D1, D2 |
-| home                                      | 768   | 25.81      | +1           | same as 1440; hero reinterpretation as drawn; prev arrow disabled at the start (behaviour)                 | Accepted + D1, D2 |
-| home                                      | 390   | 10.67      | -30          | footer flat vs Figma gradient, tab bar reference (see below), "Prices are illustrative" line, hero covered | Accepted          |
-| catalog (`/en/catalog`)                   | 1440  | 19.03      | +20          | height (placeholder-price line, +20 px shifts the grid), language switch, font                             | Accepted          |
-| catalog                                   | 1024  | 21.39      | +20          | height (placeholder-price line), font                                                                      | Accepted          |
-| catalog                                   | 768   | 21.53      | +20          | height (placeholder-price line), font                                                                      | Accepted          |
-| catalog                                   | 390   | 21.38      | -4           | height (placeholder-price line), cards stretch to the row height (D3), tab bar reference                   | Accepted + D3     |
-| black-marble (`/en/catalog/black-marble`) | 1440  | 0.86       | 0            | font                                                                                                       | Accepted          |
-| black-marble                              | 1024  | 1.26       | 0            | font                                                                                                       | Accepted          |
-| black-marble                              | 768   | 4.24       | -8           | font; thumbnails to title gap 6 to 8 px tighter (D4)                                                       | Accepted + D4     |
-| black-marble                              | 390   | 6.94       | -25          | tab bar reference (flat grey, Figma), footer bottom band, font                                             | Accepted          |
-| charcoal-ledger                           | 1440  | 1.09       | 0            | font                                                                                                       | Accepted          |
-| charcoal-ledger                           | 1024  | 1.42       | 0            | font                                                                                                       | Accepted          |
-| charcoal-ledger                           | 768   | 4.38       | -8           | font; D4                                                                                                   | Accepted + D4     |
-| charcoal-ledger                           | 390   | 6.65       | -25          | tab bar reference, footer bottom band, font                                                                | Accepted          |
-| concrete-paver                            | 1440  | 0.91       | 0            | font                                                                                                       | Accepted          |
-| concrete-paver                            | 1024  | 1.15       | 0            | font                                                                                                       | Accepted          |
-| concrete-paver                            | 768   | 4.10       | -8           | font; D4                                                                                                   | Accepted + D4     |
-| concrete-paver                            | 390   | 6.64       | -25          | tab bar reference, footer bottom band, font                                                                | Accepted          |
+| Page (route)                              | Width | Mismatch % | Height delta | Classification                                                                                      | Status   |
+| ----------------------------------------- | ----- | ---------- | ------------ | --------------------------------------------------------------------------------------------------- | -------- |
+| home (`/en`)                              | 1440  | 1.08       | +2           | font; language switch; "Prices are illustrative" line; old-price frame; D1 fixed                    | Accepted |
+| home                                      | 1024  | 2.64       | +2           | same as 1440; Figma Taupe Rock price $33 vs seed $32 (frame); Prev arrow disabled at the start (D2) | Accepted |
+| home                                      | 768   | 10.64      | +1           | footer flat vs Figma glass over a fade (owner item), font, "Prices are illustrative" line           | Accepted |
+| home                                      | 390   | 3.41       | -6           | footer flat vs Figma gradient, hero covered by the catalog panel as drawn, tab bar reference        | Accepted |
+| catalog (`/en/catalog`)                   | 1440  | 19.03      | +20          | height (placeholder-price line, +20 px shifts the grid), language switch, font                      | Accepted |
+| catalog                                   | 1024  | 21.39      | +20          | height (placeholder-price line), font                                                               | Accepted |
+| catalog                                   | 768   | 21.53      | +20          | height (placeholder-price line), font                                                               | Accepted |
+| catalog                                   | 390   | 21.82      | +20          | height (placeholder-price line), tab bar reference; card heights match Figma (D3 withdrawn)         | Accepted |
+| black-marble (`/en/catalog/black-marble`) | 1440  | 0.86       | 0            | font                                                                                                | Accepted |
+| black-marble                              | 1024  | 1.26       | 0            | font                                                                                                | Accepted |
+| black-marble                              | 768   | 1.39       | 0            | font (D4 fixed: was 4.24 %, -8 px)                                                                  | Accepted |
+| black-marble                              | 390   | 6.74       | -1           | tab bar reference (flat grey in Figma), font (D5 fixed: was -25 px)                                 | Accepted |
+| charcoal-ledger                           | 1440  | 1.09       | 0            | font                                                                                                | Accepted |
+| charcoal-ledger                           | 1024  | 1.42       | 0            | font                                                                                                | Accepted |
+| charcoal-ledger                           | 768   | 1.54       | 0            | font (D4 fixed: was 4.38 %)                                                                         | Accepted |
+| charcoal-ledger                           | 390   | 6.45       | -1           | tab bar reference, font (D5 fixed)                                                                  | Accepted |
+| concrete-paver                            | 1440  | 0.91       | 0            | font                                                                                                | Accepted |
+| concrete-paver                            | 1024  | 1.15       | 0            | font                                                                                                | Accepted |
+| concrete-paver                            | 768   | 1.25       | 0            | font (D4 fixed: was 4.10 %)                                                                         | Accepted |
+| concrete-paver                            | 390   | 6.44       | -1           | tab bar reference, font (D5 fixed)                                                                  | Accepted |
 
-Every row above 5 % is explained: the home and catalog rows by the classes shown (they are layout-shift dominated, the
-catalog grid itself matches card for card at 1440), the three product 390 rows by the Figma tab bar reference and the
-25 px height of its bottom band. The product pages at 1440 and 1024 are within 1.5 % (text antialiasing only):
-gallery, specs, calculator, buttons, footer match.
+Every row above 5 % is explained: the catalog rows by the 20 px placeholder-price line that shifts the whole grid
+(the grid itself matches card for card), home 768 by the flat footer (the footer is 370 px tall there), and the three
+product 390 rows by the Figma tab bar reference (a baked flat grey, see Phase 2 notes). The product pages at 1440, 1024
+and 768 are within 1.6 % (text antialiasing only): gallery, specs, calculator, buttons, footer match.
 
-## Defects (for the lead, not fixed here)
+## Defects and their status
 
-| ID  | Page, component                                         | Figma node                                       | Expected (Figma)                                           | Actual                                                                                                                                                                                         | Severity             |
-| --- | ------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| D1  | Home, section panels (glass panel behind each carousel) | 722:1300 (1440), 722:1563 (1024), 724:1669 (768) | Panel fill darker: sampled rgb about 71,71,72 and 87,88,90 | Panel lighter: rgb 98,98,98 and 113,113,115 at the same pixels (about 27 levels), same photo behind; glass fill or blur weaker than Figma                                                      | Medium               |
-| D2  | Home, carousel arrows at 1440                           | 722:1300                                         | Prev and Next drawn enabled (white circle, dark arrow)     | Both arrows dimmed (disabled): the three cards fit, nothing to scroll. At 1024 and 768 Prev is dimmed at the start. Behaviour is deliberate in Carousel, but it differs from every Figma frame | Low (needs a ruling) |
-| D3  | Catalog at 390, product grid                            | 922:26324                                        | Cards keep their own height in a row                       | Cards stretch to the tallest card of the row (Concrete Paver row: neighbour card has empty space)                                                                                              | Low                  |
-| D4  | Product at 768, rhythm below the gallery                | 782:11639 (Black Marble)                         | Thumbnails to title about 6 to 8 px more, page 2361 px     | Page 2353 px (8 px shorter), title block starts higher                                                                                                                                         | Low                  |
+Found by the first run, handled in fix round 1 (root cause first, evidence below).
+
+| ID  | Page, component                            | Figma node                                     | Finding                                                                                             | Status                                                                                           |
+| --- | ------------------------------------------ | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| D1  | Home, section panels                       | 722:1310 (panel), 722:1300, 722:1563, 724:1669 | Panel about 27 levels lighter than Figma at the same pixels                                         | FIXED (cause below); home 1440 12.78 % to 1.08 %, 1024 19.29 % to 2.64 %                         |
+| D2  | Home, carousel arrows                      | 722:1317, 722:1325 (1440), 722:1300            | Arrows dimmed when nothing scrolls (1440) or at the start (Prev, 1024 and 768); Figma draws enabled | Kept: deliberate behaviour (a disabled control that cannot move). Owner checklist                |
+| D3  | Catalog grid at 390                        | 922:26324                                      | Reported "cards stretch to the row height"                                                          | WITHDRAWN, a misreading: the grid is already `items-start`; heights 318 / 340 vs Figma 316 / 338 |
+| D4  | Product at 768, gallery to title gap       | 782:11639 (Gallery 782:11645, Info 782:11650)  | Info block started 24 px under the thumbnails, Figma 32                                             | FIXED (`md:gap-8`); page now 2361 px like Figma; mismatch 4.24 % to 1.39 %                       |
+| D5  | Footer at 390 (new, found while fixing D4) | 782:11752 (370 px footer), 782:11727           | The 100 px tab-bar padding replaced the footer's own 24 px bottom padding (impl 446 px vs 470)      | FIXED (`pb-footer-tabbar` = 24 + 100); every 390 product page now within 1 px of Figma           |
+
+D1 root cause. The fill matches Figma exactly (`surface/panel` #1214168c, blur 12 = Figma radius 24, border, shadow, radius
+and the backdrop photo outside the panels within 3 to 5 levels). Inside the panel Figma is darker at every sampled point
+by the same factor: at (100,780) 71 vs 98, at (100,1250) 65 vs 89, at (1330,1250) 70 vs 99, at (1330,1700) 71 vs 101,
+which is an effective fill alpha of 0.70 instead of 0.55. The cause is the drop shadow `0 16 40 rgba(0,0,0,.35)`: Figma
+draws it THROUGH the translucent fill (it is visible behind the node), while CSS `box-shadow` is clipped inside the
+border box. Fix: `--effect-glass-panel-shadow-through: 0.28` and the `glass-panel-veil` utility (a 28 % black layer over
+the fill), applied to the home section panels. After: the same four points read 71 vs 71, 64 vs 65, 71 vs 70, 73 vs 71.
+Near the top edge the veil overshoots slightly (80 vs 87 at (700,690)) because the real shadow fades towards the edge.
+This is not the Phase 2 "blur 2x" question: the blur values were already equal. Guarded by an e2e test on the veil.
+
+D4 numbers (Figma 782:11639 against the page at 768, absolute y; layout identical except one gap): Product 158, Columns
+202, thumbnails 772.67 (gap 16 under the 554.67 image), thumbnails end 904.67, Info 936.67 (gap 32), Description +76,
+Specs +122 (193), Calculator +339 (503), Actions +866 (108), Main padding-bottom 80, Footer 370. Before the fix every item
+after the gallery sat 8 px higher (Info at 928.66). At 390 the gap is 24 in both (418.06 - 394.06), unchanged. Guarded by
+an e2e test (gap 32 at 768, 24 at 390).
+
+D5 numbers (Figma 782:11727): Footer instance 370 px at y 1634.06, band 100 px below it (tab bar at 2020, page ends
+2104). Implementation footer was 446 px (346 content + 100) because `pb-tabbar` replaced the footer's own `pb-6`.
 
 Not defects (Figma inconsistency, listed for the owner): the old price is struck through in the catalog frames but
 drawn plain in the home frames, while both use the same component (the implementation strikes through everywhere);
@@ -115,7 +137,7 @@ darker bar fill (about 0.80 alpha gives at least 4.5:1) or inactive labels at fu
 - Hero: 1440 backdrop upscaled from the 1440 source to the 1984 box; 1024 and 768 use their scene crops, 390 hero is
   covered by the catalog panel exactly as Figma draws it.
 - Mobile (390): the Figma tab bar reference is a baked flat render of a translucent fill (see Phase 2 notes), so the bar
-  never matches pixel for pixel; its bottom band is a lighter strip and 25 px taller in Figma.
+  never matches pixel for pixel; Figma draws the band below the footer lighter than the footer.
 - Photos: seven catalog images and the Works images exist only as 390 px sources and are soft on DPR 2 desktop cards.
 - Font rendering: thin outlines around every glyph in the diffs.
 
@@ -130,8 +152,8 @@ Phase 3:
       Keep, reword or replace with confirmed prices before launch.
 - [ ] Localised 404 (unknown product or path): not designed in Figma. Built from tokens inside the shell with a link
       back to the catalog; copy `pages.notFound`.
-- [ ] Russian copy: every ru string except the Figma tab labels is a draft. Includes the hero line, where «долговечность»
-      may be too long at 390 (fallback «прочность»), «Рваный скол», «Любая обработка», «Цена за м²», the calculator
+- [ ] Russian copy: every ru string except the Figma tab labels is a draft. Includes the hero line, where В«РґРѕР»РіРѕРІРµС‡РЅРѕСЃС‚СЊВ»
+      may be too long at 390 (fallback В«РїСЂРѕС‡РЅРѕСЃС‚СЊВ»), В«Р РІР°РЅС‹Р№ СЃРєРѕР»В», В«Р›СЋР±Р°СЏ РѕР±СЂР°Р±РѕС‚РєР°В», В«Р¦РµРЅР° Р·Р° РјВІВ», the calculator
       labels and the filter and sort labels. English colour and finish labels are derived from Figma ids.
 - [ ] Inert controls (default Figma look, non-link, `aria-disabled`, out of the tab order) until their pages exist:
       header and menu Create Your Stone, Cart, account; tab bar Favorites, Cart, Sign in; Projects; product hearts and
@@ -153,8 +175,9 @@ Phase 3:
 - [ ] 360 px: checked by e2e (no horizontal overflow in ru on catalog and product), not compared pixel for pixel.
 - [ ] Tab bar contrast: inactive labels are 3.7 to 4.05:1 over light backdrops (table above). Accept Figma's tokens, or
       darken the bar fill, or use full white labels.
-- [ ] D1 (home panel glass tone), D2 (home carousel arrows disabled when nothing scrolls), D3 (catalog cards stretch at
-      390), D4 (product 768 rhythm): fix or accept.
+- [ ] D2: the home carousel arrows are disabled when nothing can scroll (all three cards fit at 1440) and Prev at the start
+      (1024, 768); Figma frames 722:1300, 722:1563 and 724:1669 draw every arrow enabled (nodes 722:1317, 722:1325).
+      Kept as correct behaviour; confirm. D1, D4 and D5 are fixed, D3 was a misreading (see Defects).
 - [ ] Old price strike-through: kept on every card (catalog frames draw it, home frames do not).
 - [ ] Cost calculator: limits (area 0.01 to 10 000 m2, wall sides 0.01 to 100 m), +10 % extra tiles, default 2.00 m2;
       the mode switch has no animation (Figma may have a smart-animate); ru wraps the calculator header and total
@@ -163,13 +186,14 @@ Phase 3:
 Carried over from Phase 2 (still apply):
 
 - [ ] Motion timings are defaults (hover 180 ms, ripple 600 ms, carousel smooth scroll); Figma has no motion data.
-- [ ] Glass approximation values and the blur conversion rule (Figma blur radius = 2x CSS blur): settle one rule; D1 may
-      be related to it.
+- [ ] Glass approximation values and the blur conversion rule (Figma blur radius = 2x CSS blur): settle one rule. D1 showed
+      the panel blur was already equal; the difference was the shadow seen through the fill (now the `glass-panel-veil`
+      token, 0.28); the same effect may apply to other translucent shadowed glass (showcase work card).
 - [ ] Button, icon button, field, select and product card states chosen by the implementer (see Phase 2 list); primary
       button focus ring weak on light surfaces.
 - [ ] Header breakpoint: Full at 1280 and up, Compact below (Figma draws Compact at 1024, 768, 390, 360).
 - [ ] Mobile menu panel is not in Figma. Without JavaScript the compact header menu is inert between 768 and 1279 px.
-- [ ] Footer copyright "© 2026" is fixed text; ru strings in the header, footer and tab bar are drafts.
+- [ ] Footer copyright "В© 2026" is fixed text; ru strings in the header, footer and tab bar are drafts.
 - [ ] Cyrillic PT Serif in Lusitana roles: eyeball it on the real pages in ru.
 - [ ] Question O1 (graphite search panel look) and the hero search Open state taken from Search/Pill 21:108.
 - [ ] `APP_ENV=production` on any real production deploy (the styleguide is a 404 there).
@@ -179,14 +203,14 @@ Carried over from Phase 2 (still apply):
 From the task reviews, none blocks the phase:
 
 - T0: `LOW_RES` list is hard-coded in `assets.test.ts`.
-- T1: `Localizer` has no locale for `localeCompare` (the catalog passes the locale); no Cyrillic sort test; ё and е are
+- T1: `Localizer` has no locale for `localeCompare` (the catalog passes the locale); no Cyrillic sort test; С‘ and Рµ are
   not normalised in the repository itself (the search does it); enum params are case-sensitive; seed objects are shared
   by reference.
 - T2: ".5" is rejected, so the UI error copy should say "e.g. 0.5".
 - T3: "10 %" spacing in one string; the message test does not compare ICU arguments or `pages.*` coverage.
 - T5: the inert style lists duplicate the resting styles (drift risk); hero LCP preload only at 1024 and 1440; the 390
   hero search uses `max-md:invisible` instead of `inert`.
-- T7: the calculator live region can announce "—" up to 800 ms before the error text.
+- T7: the calculator live region can announce "вЂ”" up to 800 ms before the error text.
 
 ## Evidence
 
