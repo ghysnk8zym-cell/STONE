@@ -271,7 +271,9 @@
         390
       ],
       "usage": [
-        "CardShowcase:Work"
+        "CardShowcase:Work",
+        "CardShowcase:Work (Marble kitchen countertop)",
+        "CardShowcase:Work (Bathroom cladding)"
       ]
     },
     {
@@ -374,25 +376,6 @@
       ],
       "usage": [
         "Hero:360"
-      ]
-    },
-    {
-      "file": "images/works/marble-slab",
-      "node": "722:1349",
-      "sourceWidth": 562,
-      "sourceHeight": 941,
-      "requestedWidths": [
-        390,
-        768,
-        1024,
-        1440
-      ],
-      "widths": [
-        390
-      ],
-      "usage": [
-        "CardShowcase:Work (Marble kitchen countertop)",
-        "CardShowcase:Work (Bathroom cladding)"
       ]
     },
     {

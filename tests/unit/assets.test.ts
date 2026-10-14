@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -42,6 +43,19 @@ describe("image assets", () => {
     }
   });
 
+  it("no two manifest images resolve to byte-identical files at the same width", () => {
+    const seen = new Map<string, string>();
+    for (const output of outputs) {
+      const hash = createHash("sha256")
+        .update(readFileSync(join(root, "public", output)))
+        .digest("hex");
+      const width = output.match(/-(\d+)\.webp$/)![1];
+      const key = `${width}:${hash}`;
+      expect(seen.get(key), `${output} duplicates ${seen.get(key)}`).toBeUndefined();
+      seen.set(key, output);
+    }
+  });
+
   it("every Figma icon in the manifest exists", () => {
     for (const icon of manifest.icons) {
       const path = join(root, "public", "icons", `${icon.name}.svg`);
@@ -75,7 +89,6 @@ const LOW_RES = [
   "taupe-rock",
 ];
 const WORKS_IDS = [
-  "marble-slab", // shared by Marble kitchen countertop and Bathroom cladding
   "natural-stone-fireplace-portal",
 ];
 
@@ -98,6 +111,12 @@ describe("page assets (Phase 3)", () => {
       ...first!.requestedWidths.filter((w) => w <= first!.sourceWidth),
     );
     expect(Math.max(...first!.widths), `${slug}-1 widest`).toBe(widest);
+    for (const width of first!.widths) {
+      expect(
+        existsSync(join(root, "public", `${first!.file}-${width}.webp`)),
+        `${slug} ${width}`,
+      ).toBe(true);
+    }
     // Figma sources narrower than 1024 px are low-res; they are listed explicitly so a
     // regression (or a better source later) is noticed.
     if (LOW_RES.includes(slug)) {
