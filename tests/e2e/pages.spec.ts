@@ -579,3 +579,75 @@ test.describe("catalog shell surface", () => {
     near(blended.footer, [59, 60, 62]);
   });
 });
+
+/*
+ * Navigation flow e2e (Phase 3, Task 8). Runs in the `desktop` (1440) and `mobile` (390) projects.
+ */
+test.describe("navigation", () => {
+  test("navigation home в†’ catalog в†’ product в†’ breadcrumb в†’ catalog", async ({
+    page,
+  }, testInfo) => {
+    await page.goto("/en");
+    await expect(page.getByRole("banner")).toBeVisible();
+
+    // Home в†’ catalog: the hero action on desktop, the tab bar on phones (the hero is covered there).
+    if (testInfo.project.name === "mobile") {
+      await page
+        .getByRole("navigation", { name: en.components.tabBar.label })
+        .getByRole("link", { name: en.components.tabBar.catalog })
+        .click();
+    } else {
+      await page
+        .getByRole("link", { name: en.pages.home.actions.openCatalog })
+        .click();
+    }
+    await expect(page).toHaveURL(/\/en\/catalog$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      en.pages.catalog.title,
+    );
+
+    // Catalog в†’ product
+    await page.locator('article a[href="/en/catalog/black-marble"]').click();
+    await expect(page).toHaveURL(/\/en\/catalog\/black-marble$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Black Marble",
+    );
+
+    // Product в†’ breadcrumb в†’ catalog
+    const crumbs = page.getByRole("navigation", {
+      name: en.components.breadcrumb.label,
+    });
+    await crumbs
+      .getByRole("link", { name: en.pages.catalog.title, exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/en\/catalog$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      en.pages.catalog.title,
+    );
+    await expect(page.getByRole("article")).toHaveCount(12);
+  });
+
+  test("tab bar navigates home and catalog at 390", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile", "phone layout only");
+    const tabBar = page.getByRole("navigation", {
+      name: en.components.tabBar.label,
+    });
+
+    await page.goto("/en");
+    await tabBar
+      .getByRole("link", { name: en.components.tabBar.catalog })
+      .click();
+    await expect(page).toHaveURL(/\/en\/catalog$/);
+    await expect(
+      tabBar.getByRole("link", { name: en.components.tabBar.catalog }),
+    ).toHaveAttribute("aria-current", "page");
+
+    await tabBar.getByRole("link", { name: en.components.tabBar.home }).click();
+    await expect(page).toHaveURL(/\/en$/);
+    await expect(
+      tabBar.getByRole("link", { name: en.components.tabBar.home }),
+    ).toHaveAttribute("aria-current", "page");
+  });
+});
