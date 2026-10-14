@@ -54,6 +54,61 @@ describe("TextField", () => {
     expect(target!.getAttribute("role")).toBe("alert");
   });
 
+  // cn() is not twMerge: two border-colour classes on one element are resolved by CSS order, so the
+  // error state must select ONE border colour (and keep it on hover / focus), not add to the base one.
+  it.each([
+    {
+      tone: "dark" as const,
+      error: "#f0a8a0",
+      base: [
+        "border-[rgba(255,255,255,0.4)]",
+        "hov:border-[rgba(255,255,255,0.6)]",
+      ],
+      focus: [
+        "focusv:border-[rgba(255,255,255,0.9)]",
+        "focusv:outline-[rgba(255,255,255,0.9)]",
+      ],
+    },
+    {
+      tone: "light" as const,
+      error: "#a3362d",
+      base: ["border-stone-catalog-line", "hov:border-stone-catalog-secondary"],
+      focus: ["focusv:border-ink-primary", "focusv:outline-ink-primary"],
+    },
+  ])(
+    "$tone error state uses one red border colour and keeps it on hover and focus",
+    ({ tone, error, base, focus }) => {
+      const classesOf = (message?: string) => {
+        const { unmount } = renderWithIntl(
+          <TextField label="Email" name="email" tone={tone} error={message} />,
+        );
+        const box = screen.getByLabelText("Email").parentElement!;
+        const list = box.className.split(/\s+/);
+        unmount();
+        return list;
+      };
+      const ok = classesOf();
+      const bad = classesOf("Enter a valid email");
+
+      // Sanity: the normal state has the base / hover / focus colours and no error colour.
+      for (const cls of [...base, ...focus]) expect(ok).toContain(cls);
+      expect(ok.some((cls) => cls.includes(error))).toBe(false);
+
+      // Error state: error border + error hover + error focus border and ring.
+      expect(bad).toContain(`border-[${error}]`);
+      expect(bad).toContain(`hov:border-[${error}]`);
+      expect(bad).toContain(`focusv:border-[${error}]`);
+      expect(bad).toContain(`focusv:outline-[${error}]`);
+      expect(bad).toContain(`has-[input:focus-visible]:border-[${error}]`);
+      expect(bad).toContain(`has-[input:focus-visible]:outline-[${error}]`);
+
+      // ...and none of the base / hover / focus colours, which would compete with it.
+      for (const cls of [...base, ...focus]) expect(bad).not.toContain(cls);
+      const borderColours = bad.filter((cls) => /^border-(?!l|1)/.test(cls));
+      expect(borderColours).toEqual([`border-[${error}]`]);
+    },
+  );
+
   it("the unit joins the description and the error stays first", () => {
     renderWithIntl(
       <TextField

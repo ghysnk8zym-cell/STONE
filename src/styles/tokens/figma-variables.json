@@ -99,18 +99,6 @@
     "--stone-catalog-secondary": {
       "base": "#625d55"
     },
-    "--stone-catalog-radius-control": {
-      "base": 12
-    },
-    "--stone-catalog-space-4": {
-      "base": 4
-    },
-    "--stone-catalog-space-8": {
-      "base": 8
-    },
-    "--stone-catalog-space-12": {
-      "base": 12
-    },
     "--type-headline-size": {
       "768": 26,
       "1024": 26,

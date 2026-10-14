@@ -28,30 +28,47 @@ export type TextFieldProps = {
  * 1 px inset outline adds the second pixel, so the box never changes size. The light field has no
  * Focus in Figma: it takes the 2 px ink/primary border of Field/Select Focus. The ring is drawn on the
  * box (it wraps the unit cell too) and shows on keyboard focus only (`:focus-visible` on the input).
+ *
+ * `cn()` is not twMerge, so two border-colour classes on one element would be decided by CSS order.
+ * Each state therefore selects ONE set: `ok` (rest / hover / focus colours) or `err`. In the error
+ * state the border AND the focus ring stay red on hover and focus (no switch back to the base
+ * colour). Class names are written out in full so Tailwind can see them.
  */
 const TONES = {
   dark: {
     label: "text-label type-catalog-meta",
-    box: cn(
-      "h-15 rounded-[14px] border border-[rgba(255,255,255,0.4)] bg-[rgba(255,255,255,0.06)]",
+    shape: "h-15 rounded-[14px] border bg-[rgba(255,255,255,0.06)]",
+    ok: cn(
+      "border-[rgba(255,255,255,0.4)]",
       "hov:border-[rgba(255,255,255,0.6)]",
       "focusv:border-[rgba(255,255,255,0.9)] focusv:outline-1 focusv:-outline-offset-1 focusv:outline-[rgba(255,255,255,0.9)]",
       "has-[input:focus-visible]:border-[rgba(255,255,255,0.9)] has-[input:focus-visible]:outline-1 has-[input:focus-visible]:-outline-offset-1 has-[input:focus-visible]:outline-[rgba(255,255,255,0.9)]",
     ),
-    boxError: "border-[#f0a8a0]",
+    err: cn(
+      "border-[#f0a8a0]",
+      "hov:border-[#f0a8a0]",
+      "focusv:border-[#f0a8a0] focusv:outline-1 focusv:-outline-offset-1 focusv:outline-[#f0a8a0]",
+      "has-[input:focus-visible]:border-[#f0a8a0] has-[input:focus-visible]:outline-1 has-[input:focus-visible]:-outline-offset-1 has-[input:focus-visible]:outline-[#f0a8a0]",
+    ),
     input: "pr-6 pl-6 text-[18px] text-primary placeholder:text-[#a3a6ab]",
     unit: "border-glass text-secondary type-catalog-meta",
     error: "text-[#f0a8a0]",
   },
   light: {
     label: "text-stone-catalog-ink type-catalog-meta",
-    box: cn(
-      "h-13 rounded-[12px] border border-stone-catalog-line bg-stone-catalog-page",
+    shape: "h-13 rounded-[12px] border bg-stone-catalog-page",
+    ok: cn(
+      "border-stone-catalog-line",
       "hov:border-stone-catalog-secondary",
       "focusv:border-ink-primary focusv:outline-1 focusv:-outline-offset-1 focusv:outline-ink-primary",
       "has-[input:focus-visible]:border-ink-primary has-[input:focus-visible]:outline-1 has-[input:focus-visible]:-outline-offset-1 has-[input:focus-visible]:outline-ink-primary",
     ),
-    boxError: "border-[#a3362d]",
+    err: cn(
+      "border-[#a3362d]",
+      "hov:border-[#a3362d]",
+      "focusv:border-[#a3362d] focusv:outline-1 focusv:-outline-offset-1 focusv:outline-[#a3362d]",
+      "has-[input:focus-visible]:border-[#a3362d] has-[input:focus-visible]:outline-1 has-[input:focus-visible]:-outline-offset-1 has-[input:focus-visible]:outline-[#a3362d]",
+    ),
     input:
       "pr-3 pl-4 text-stone-catalog-ink type-catalog-field-value placeholder:text-stone-catalog-secondary",
     unit: "border-stone-catalog-line text-stone-catalog-secondary type-catalog-meta",
@@ -95,8 +112,8 @@ export function TextField({
         data-state={state}
         className={cn(
           "motion-hover flex w-full items-center overflow-clip outline-0 has-[input:disabled]:opacity-45",
-          styles.box,
-          error && styles.boxError,
+          styles.shape,
+          error ? styles.err : styles.ok,
         )}
       >
         <input

@@ -1,9 +1,5 @@
 /* Layout tokens, mobile-first (base = 390). Generated once from figma-variables.json; keep both in sync (tests/unit/tokens.test.ts). */
 :root {
-  --stone-catalog-radius-control: 12px;
-  --stone-catalog-space-4: 4px;
-  --stone-catalog-space-8: 8px;
-  --stone-catalog-space-12: 12px;
   --layout-header-pad-x: 16px;
   --layout-section-gap: 16px;
   --layout-margin: 16px;
