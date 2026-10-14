@@ -52,7 +52,19 @@
 
 /* State variants (D020/D030 contract). Each matches the real pseudo-class AND a data-state
    attribute so the styleguide can render a frozen state. Disabled elements never react. */
-@custom-variant hov (&:where(:hover:not(:disabled, [aria-disabled="true"]), [data-state="hover"]));
+/* Real :hover is guarded by (hover: hover) like Tailwind's built-in hover variant, so a tap on a touch
+   device does not leave the hover look stuck. The frozen [data-state="hover"] works everywhere. */
+@custom-variant hov {
+  @media (hover: hover) {
+    &:where(:hover:not(:disabled, [aria-disabled="true"])) {
+      @slot;
+    }
+  }
+
+  &:where([data-state="hover"]) {
+    @slot;
+  }
+}
 @custom-variant focusv (&:where(:focus-visible, [data-state="focus"]));
 @custom-variant press (&:where(:active:not(:disabled, [aria-disabled="true"]), [data-state="pressed"]));
 

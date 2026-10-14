@@ -250,6 +250,18 @@ describe("globals.css Tailwind wiring", () => {
     }
   });
 
+  it("guards real :hover with (hover: hover) but not the frozen data-state", () => {
+    const hov =
+      /@custom-variant hov \{([\s\S]*?)\n\}/.exec(globalsCss)?.[1] ?? "";
+    expect(hov).toMatch(
+      /@media \(hover: hover\)\s*\{[^}]*:hover:not\(:disabled, \[aria-disabled="true"\]\)/,
+    );
+    const media =
+      /@media \(hover: hover\)\s*\{[\s\S]*?\n  \}/.exec(hov)?.[0] ?? "";
+    expect(media).not.toContain("data-state");
+    expect(hov).toMatch(/\[data-state="hover"\]/);
+  });
+
   it("defines the hov, focusv and press variants", () => {
     expect(globalsCss).toMatch(/@custom-variant hov /);
     expect(globalsCss).toMatch(/@custom-variant focusv /);
