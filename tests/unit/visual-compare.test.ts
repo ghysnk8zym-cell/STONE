@@ -113,7 +113,9 @@ describe("buildPageJobs", () => {
       route: "",
       node: "1:1",
     });
-    expect(jobs.map((j) => j.key)).toContain("black-marble-768");
+    expect(jobs.map((j: { key: string }) => j.key)).toContain(
+      "black-marble-768",
+    );
   });
 
   it("orders each page from the widest to the narrowest screen", () => {
@@ -126,7 +128,9 @@ describe("buildPageJobs", () => {
   it("filters by page ids and by widths", () => {
     expect(buildPageJobs(pages, new Set(["home"]))).toHaveLength(2);
     expect(
-      buildPageJobs(pages, null, new Set([390])).map((j) => j.key),
+      buildPageJobs(pages, null, new Set([390])).map(
+        (j: { key: string }) => j.key,
+      ),
     ).toEqual(["home-390", "black-marble-390"]);
   });
 
@@ -134,7 +138,9 @@ describe("buildPageJobs", () => {
     const odd = {
       x: { route: "/x", screens: { "1920": "9:9", "390": "9:8" } },
     };
-    expect(buildPageJobs(odd, null).map((j) => j.width)).toEqual([390]);
+    expect(
+      buildPageJobs(odd, null).map((j: { width: number }) => j.width),
+    ).toEqual([390]);
   });
 
   it("rejects a page without a route", () => {
