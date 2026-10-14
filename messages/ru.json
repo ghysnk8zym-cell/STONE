@@ -29,6 +29,16 @@
       "ig": "Instagram",
       "wa": "WhatsApp"
     },
+    "price": {
+      "perSquareMetre": "/ м²",
+      "illustrative": "Ориентировочная цена"
+    },
+    "productCard": {
+      "imageComingSoon": "Изображение скоро появится",
+      "oldPrice": "Прежняя цена",
+      "discount": "Скидка",
+      "favorite": "Сохранить «{name}» в избранное"
+    },
     "search": {
       "placeholder": "Поиск материалов"
     },

@@ -7,4 +7,7 @@
   --effect-glass-card-blur: 16px;
   --effect-glass-card-shadow: 0 8px 28px #2a2e3312, 0 1px 4px #2a2e330a;
   --effect-glass-header-blur: 12px;
+  /* Figma effect styles "Light/Glass card hover" / "Light/Glass card pressed" (Card/Catalog product 337:556). */
+  --effect-glass-card-hover-shadow: 0 16px 40px #2a2e331f, 0 2px 8px #2a2e330f;
+  --effect-glass-card-pressed-shadow: 0 2px 8px #2a2e330d;
 }

@@ -29,6 +29,16 @@
       "ig": "Instagram",
       "wa": "WhatsApp"
     },
+    "price": {
+      "perSquareMetre": "/ m²",
+      "illustrative": "Illustrative price"
+    },
+    "productCard": {
+      "imageComingSoon": "Image coming soon",
+      "oldPrice": "Previous price",
+      "discount": "Discount",
+      "favorite": "Save {name} to favorites"
+    },
     "search": {
       "placeholder": "Search materials"
     },

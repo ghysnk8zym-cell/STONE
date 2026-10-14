@@ -137,6 +137,25 @@
   }
 }
 
+/* The two Figma styles behind type-catalog-product-name, one per fixed layout: "Catalog/Product name" (26/32)
+   and "Catalog refined/Product name mobile" (18/24). Used where the layout is chosen by a prop, not by the viewport
+   (Card/Showcase Desktop / Mobile). */
+@utility type-catalog-product-name-lg {
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 32px;
+  letter-spacing: 0;
+}
+
+@utility type-catalog-product-name-sm {
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+
 /* "Catalog refined/Meta" (14/20); "Catalog/Meta" (15/20) is the larger product-page variant. */
 @utility type-catalog-meta {
   font-family: var(--font-body, "Inter", system-ui, sans-serif);
