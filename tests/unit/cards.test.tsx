@@ -222,6 +222,46 @@ describe("ShowcaseCard", () => {
     expect(screen.getByText("Precise pattern matching")).toBeTruthy();
   });
 
+  it("a work card without href is not a link and keeps its title", () => {
+    renderWithIntl(
+      <ShowcaseCard
+        type="work"
+        layout="responsive"
+        title="Bathroom cladding"
+        subtitle="Full-height slabs"
+        image={{
+          ...SHOWCASE_IMAGE,
+          crop: {
+            className: "left-[-37%] top-[-200%] h-[333%] w-[174%]",
+            width: 562,
+            height: 941,
+          },
+        }}
+      />,
+    );
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
+    expect(
+      screen.getByRole("heading", { name: "Bathroom cladding" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("img").className).toContain("top-[-200%]");
+  });
+
+  it("responsive layout carries mobile classes with md: desktop overrides", () => {
+    const { container } = renderWithIntl(
+      <ShowcaseCard
+        type="product"
+        layout="responsive"
+        href="/catalog/black-marble"
+        title="Black Marble"
+        subtitle="Marble"
+        image={IMAGE}
+      />,
+    );
+    const html = container.innerHTML;
+    expect(html).toContain("h-[140px]");
+    expect(html).toContain("md:h-[220px]");
+  });
+
   it("promo type shows price, old price and the discount badge", () => {
     renderWithIntl(
       <ShowcaseCard

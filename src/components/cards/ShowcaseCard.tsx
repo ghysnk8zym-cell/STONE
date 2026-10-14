@@ -8,20 +8,31 @@ import { cn } from "../cn";
 import { DiscountBadge, PriceRow, type Price } from "./Price";
 
 type Common = {
-  /** Target of the whole card. */
-  href: string;
+  /** Target of the whole card. Omitted: the card is inert (no link), e.g. the Home works cards. */
+  href?: string;
   title: string;
   /** Material for product / promo ("Sandstone · 600×300×20 mm"), one-line description for work. */
   subtitle: string;
   /** `src` is an `assets/figma-manifest.json` key without extension ("images/showcase/work"). */
-  image: { src: string; alt: string };
+  image: {
+    src: string;
+    alt: string;
+    /**
+     * Work cards only: Figma draws the work photos as crops of one tall image (percentages of the
+     * media box, `h-[333.33%] w-[171.72%] left-[-35.86%] top-[-66.67%]`). `className` positions the
+     * `<Image>` absolutely inside the media (responsive variants allowed); `width` / `height` are the
+     * intrinsic size.
+     */
+    crop?: { className: string; width: number; height: number };
+  };
   /** `contain` for the wide slab shots Figma draws uncropped (Black Marble on the product card). */
   imageFit?: "cover" | "contain";
   /**
    * Fixed Figma layout: Desktop (353 px wide, 356 on Home v2 at 1440) or Mobile (148 / 240 / 280 px
-   * carousel cards). Chosen by the page; the card itself is as wide as its parent.
+   * carousel cards). Chosen by the page; the card itself is as wide as its parent. `responsive` is
+   * Mobile below 768 px and Desktop from 768 px (Home v2 switches at the same breakpoint) in one DOM.
    */
-  layout: "desktop" | "mobile";
+  layout: "desktop" | "mobile" | "responsive";
   /** Frozen interaction state, rendered as `data-state` (styleguide only). */
   state?: InteractionState;
   className?: string;
@@ -97,11 +108,28 @@ const LIGHT_LAYOUT = {
     media: { product: "h-[140px]", promo: "h-[190px]" },
     sizes: { product: "130px", promo: "222px" },
   },
+  responsive: {
+    card: "gap-[10px] p-2 md:gap-3 md:p-3",
+    title: "type-catalog-product-name-sm md:type-catalog-product-name-lg",
+    media: {
+      product: "h-[140px] md:h-[220px]",
+      promo: "h-[190px] md:h-[240px]",
+    },
+    sizes: {
+      product: "(min-width: 768px) 330px, 130px",
+      promo: "(min-width: 768px) 330px, 222px",
+    },
+  },
 } as const;
 
 const WORK_LAYOUT = {
   desktop: { media: "h-[300px]", panel: "px-5 py-4", sizes: "346px" },
   mobile: { media: "h-[240px]", panel: "px-3.5 py-3", sizes: "270px" },
+  responsive: {
+    media: "h-[240px] md:h-[300px]",
+    panel: "px-3.5 py-3 md:px-5 md:py-4",
+    sizes: "(min-width: 768px) 346px, 270px",
+  },
 } as const;
 
 /** Product / promo / work card of the Home v2 sections. Server-compatible, no state. */
@@ -120,13 +148,14 @@ export function ShowcaseCard({
   className,
 }: ShowcaseCardProps) {
   const titleId = useId();
-  const overlay = (
-    <Link
-      href={href}
-      aria-labelledby={titleId}
-      className="absolute inset-0 z-10 outline-0"
-    />
-  );
+  const overlay =
+    href === undefined ? null : (
+      <Link
+        href={href}
+        aria-labelledby={titleId}
+        className="absolute inset-0 z-10 outline-0"
+      />
+    );
 
   if (type === "work") {
     const work = WORK_LAYOUT[layout];
@@ -138,13 +167,24 @@ export function ShowcaseCard({
             work.media,
           )}
         >
-          <Image
-            src={image.src}
-            alt={image.alt}
-            fill
-            sizes={work.sizes}
-            className="object-cover"
-          />
+          {image.crop ? (
+            <Image
+              src={image.src}
+              alt={image.alt}
+              width={image.crop.width}
+              height={image.crop.height}
+              sizes={work.sizes}
+              className={cn("absolute max-w-none", image.crop.className)}
+            />
+          ) : (
+            <Image
+              src={image.src}
+              alt={image.alt}
+              fill
+              sizes={work.sizes}
+              className="object-cover"
+            />
+          )}
           <div
             className={cn(
               "border-glass bg-surface-panel relative flex flex-col gap-1 border-t wrap-break-word backdrop-blur-[12px]",

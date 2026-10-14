@@ -13,7 +13,8 @@ import type { Locale } from "@/i18n/routing";
  *   (`pnpm qa:visual` captures).
  * - The layout owns the single `<main>` landmark. Pages render their content only, never `<main>`.
  *   The localised 404 (`not-found.tsx` here) renders inside it, so unknown paths keep the shell.
- * - `max-md:pb-tabbar` reserves 100 px under the footer on phones for the fixed tab bar
+ * - The footer reserves 100 px under its content on phones (`reserveTabBar` -> `max-md:pb-tabbar`)
+ *   for the fixed tab bar, so the footer glass extends under the floating bar like in Figma
  *   (docs/ARCHITECTURE.md, Layout notes for Phase 3).
  * - Header, mobile menu and tab bar get `PHASE3_INERT`: Cart, account, Create Your Stone and
  *   Favorites have no pages yet and render as non-links.
@@ -26,10 +27,10 @@ export default async function SiteLayout({
   setRequestLocale(locale as Locale);
 
   return (
-    <div data-site-shell className="max-md:pb-tabbar flex min-h-dvh flex-col">
+    <div data-site-shell className="bg-surface-page flex min-h-dvh flex-col">
       <SiteHeader inert={PHASE3_INERT.nav} />
       <main className="flex flex-1 flex-col">{children}</main>
-      <SiteFooter />
+      <SiteFooter reserveTabBar />
       <ShellTabBar />
     </div>
   );
