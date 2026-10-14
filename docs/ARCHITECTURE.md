@@ -49,3 +49,7 @@ Decisions and their reasoning live in `docs/adr/` (ADR-001 … ADR-005) and the 
 - The `[locale]` layout mounts both `TabBar` and `SiteFooter` in Phase 3 (neither is mounted anywhere yet). The footer is full width; the bar floats above it.
 - `TabBar`'s `current` prop is optional: Figma's Product screen shows the bar with no active tab.
 - The "Sign in" tab links to `/account` until the sign-in screen exists (Figma gap, `docs/FIGMA-INVENTORY.md` section 5.1).
+
+## Motion
+
+Every shipped animation, its tokens (`src/styles/tokens/motion.css`) and its reduced-motion behaviour are listed in `docs/ANIMATIONS.md`.

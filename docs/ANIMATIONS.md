@@ -1,0 +1,23 @@
+# Animations
+
+Every motion shipped in the app. Tokens live in `src/styles/tokens/motion.css`. Figma has no recorded transitions
+for these components (`get_motion_context` returns no animated nodes), so all timings are STONE defaults.
+
+Status for every row: **default timings, Figma has no motion data, owner to approve.**
+
+| Name                    | Location                                                                                                                  | Trigger                                                         | Properties                                                               | Duration / easing                                                                       | Reduced motion                                                                      | PR                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------ |
+| Press ripple            | `src/app/globals.css` (`@utility ripple`, `@keyframes ripple-expand`)                                                     | `:active` or `[data-state="pressed"]` (the `press` variant)     | `transform` (scale 0.0267 to 1, ring 8 px to 300 px), `opacity` (1 to 0) | `--motion-ripple-duration` 600ms, `--motion-ripple-ease` cubic-bezier(0.2, 0, 0, 1)     | `animation: none`, duration token is 0ms                                            | Phase 2 design system PR |
+| Hover transitions       | `src/app/globals.css` (`@utility motion-hover`); used by buttons, pills, cards, fields, footer links, breadcrumb, tab bar | Hover, focus and state changes of the element (`hov`, `focusv`) | `background-color`, `border-color`, `color`, `box-shadow`, `opacity`     | `--motion-hover-duration` 180ms, `--motion-hover-ease` cubic-bezier(0.2, 0, 0, 1)       | `transition: none`, duration token is 0ms                                           | Phase 2 design system PR |
+| Loading spinner         | `src/components/buttons/Button.tsx` (`animate-spin`)                                                                      | Button `loading` prop (`aria-busy`)                             | `transform` (rotate), Tailwind `spin` keyframes                          | Tailwind default `animate-spin` (1s linear, infinite); not tokenised                    | `motion-reduce:animate-none` (spinner stops, `aria-busy` still announces the state) | Phase 2 design system PR |
+| Select chevron rotation | `src/components/forms/Select.tsx` (`transition-transform`, `group-aria-expanded:rotate-180`)                              | Select opened / closed (`aria-expanded`)                        | `transform` (rotate 0 to 180deg)                                         | Tailwind default `transition-transform` (150ms, default timing function); not tokenised | `motion-reduce:transition-none`                                                     | Phase 2 design system PR |
+| Mobile menu             | `src/components/navigation/HeaderMenuButton.tsx`                                                                          | Menu button click                                               | none                                                                     | Not animated: the panel opens and closes instantly                                      | n/a                                                                                 | n/a                      |
+
+## Notes for the owner
+
+- The spinner and the chevron use Tailwind defaults instead of tokens. If the owner approves different timings,
+  move them into `motion.css` at the same time.
+- Animate `transform` and `opacity` only for anything new (CLAUDE.md section 5). The hover transition animates
+  colour and shadow, which is a paint-only change on small elements.
+- The styleguide (`/ru/_styleguide`, `/en/_styleguide`) shows frozen pressed states (`data-state="pressed"`), so
+  the ripple can be reviewed without pressing a control.
