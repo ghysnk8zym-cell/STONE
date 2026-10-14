@@ -18,10 +18,7 @@ export function EmptyState({
   actions: { label: string; href: string }[];
 }) {
   return (
-    <div
-      role="status"
-      className="flex flex-col items-center gap-3 px-2 py-16 text-center"
-    >
+    <div className="flex flex-col items-center gap-3 px-2 py-16 text-center">
       <h2 className="type-catalog-product-name-lg text-stone-catalog-ink">
         {title}
       </h2>

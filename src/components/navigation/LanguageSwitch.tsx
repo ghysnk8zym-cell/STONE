@@ -8,6 +8,11 @@ import { type Locale, routing } from "@/i18n/routing";
 import { cn } from "../cn";
 import { NavPill } from "./NavPill";
 
+/* Not in Figma, so ours: full white instead of text/secondary (72 %), which was 3.3:1 on the grey glass header
+   over the light catalog pages (axe: nav pill over header is #747473, white is 4.7:1) and is higher on the dark header. The current language
+   is told apart by its underline. */
+const INACTIVE = "text-primary";
+
 type Query = Record<string, string | string[]>;
 
 /** Current query string as the object next-intl wants; repeated keys become arrays. */
@@ -58,7 +63,7 @@ export function LanguageSwitch({ onSwitch }: { onSwitch?: () => void }) {
         {routing.locales.map((code, index) => (
           <span key={code} className="contents">
             {index > 0 ? (
-              <span aria-hidden="true" className="text-secondary">
+              <span aria-hidden="true" className={INACTIVE}>
                 {t("separator")}
               </span>
             ) : null}
@@ -67,7 +72,7 @@ export function LanguageSwitch({ onSwitch }: { onSwitch?: () => void }) {
               className={cn(
                 code === locale
                   ? "text-primary underline decoration-1 underline-offset-4"
-                  : "text-secondary",
+                  : INACTIVE,
               )}
             >
               {t(`codes.${code}`)}

@@ -427,6 +427,40 @@ test.describe("catalog", () => {
     await expect(cards(page)).toHaveCount(12);
   });
 
+  test("the results counter is a polite live region that updates", async ({
+    page,
+  }) => {
+    await page.goto("/ru/catalog");
+    await catalogReady(page);
+    const live = page.locator("[aria-live=polite]");
+    await expect(live).toHaveText("Показано 12 из 12");
+    await pick(page, CAT.filters.material, ru.catalog.material.marble);
+    await expect(live).toHaveText("Показано 2 из 12");
+  });
+
+  test("only the fields are inside the search landmark", async ({ page }) => {
+    await page.goto("/ru/catalog");
+    const search = page.getByRole("search");
+    await expect(search).toHaveCount(1);
+    await expect(search.getByRole("searchbox")).toHaveCount(1);
+    await expect(search.getByRole("heading", { level: 1 })).toHaveCount(0);
+    await expect(search.locator("[aria-live]")).toHaveCount(0);
+  });
+
+  test("a filter change keeps the scroll position", async ({ page }) => {
+    await page.goto("/ru/catalog");
+    await catalogReady(page);
+    await page.evaluate(() => window.scrollTo(0, 250));
+    await pick(page, CAT.filters.sort, CAT.sort["price-asc"]);
+    await expect(page).toHaveURL(/sort=price-asc/);
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+  });
+
+  test("search matches ё typed as е", async ({ page }) => {
+    await page.goto("/ru/catalog?q=черный");
+    await expect(cards(page)).toHaveCount(1);
+  });
+
   test("invalid params render the catalog", async ({ page }) => {
     const response = await page.goto("/ru/catalog?material=granite&sort=foo");
     expect(response?.status()).toBe(200);
@@ -487,9 +521,6 @@ test.describe("catalog", () => {
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
         .exclude(`[aria-label="${MESSAGES[locale].components.tabBar.label}"]`)
-        // Faithful to Figma, the glass header is mid-grey on the light catalog page and the inactive language
-        // label (text/secondary, white 72%) is about 3.7:1 there: a known shell contrast finding, see the task 6 report.
-        .exclude("header")
         .analyze();
       const blocking = results.violations.filter(
         (v) => v.impact === "critical" || v.impact === "serious",

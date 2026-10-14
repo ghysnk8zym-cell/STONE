@@ -87,6 +87,22 @@ describe("catalog list", () => {
     ]);
   });
 
+  it("ru search folds ё to е on both sides", async () => {
+    const names: Record<string, string> = {
+      "black-marble": "Чёрный мрамор",
+      "grey-marble": "Серый мрамор",
+    };
+    const ru: Localizer = {
+      name: (slug) => names[slug] ?? slug,
+      material: (m) => m,
+    };
+    const find = async (q: string) =>
+      (await catalog.list({ ...base, q }, ru)).map((p) => p.slug);
+    expect(await find("черный")).toEqual(["black-marble"]);
+    expect(await find("ЧЁРНЫЙ")).toEqual(["black-marble"]);
+    expect(await find("чёрн")).toEqual(["black-marble"]);
+  });
+
   it("sorts by name using the localised name and by price", async () => {
     const reversed: Localizer = {
       ...l10n,

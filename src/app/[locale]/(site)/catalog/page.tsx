@@ -15,6 +15,7 @@ import {
   type Product,
 } from "@/server/catalog";
 
+import { PAGE_SURFACE_ATTR, PAGE_SURFACE_CATALOG } from "../page-surface";
 import { CatalogFilters, type FilterField } from "./CatalogFilters";
 import { CustomOrderBanner } from "./CustomOrderBanner";
 import { EmptyState } from "./EmptyState";
@@ -139,7 +140,7 @@ export default async function CatalogPage({
 
   return (
     <div
-      data-page-surface="catalog"
+      {...{ [PAGE_SURFACE_ATTR]: PAGE_SURFACE_CATALOG }}
       className="bg-stone-catalog-page flex-1 px-4 pt-6 pb-14 md:px-8 md:pt-8 md:pb-[72px] lg:px-10 lg:pt-10 lg:pb-20 min-[90rem]:px-20 min-[90rem]:pt-12 min-[90rem]:pb-24"
     >
       <div className="mx-auto flex w-full max-w-[1286px] flex-col">
@@ -155,7 +156,9 @@ export default async function CatalogPage({
             }
             results={
               <div className="type-catalog-meta text-stone-catalog-secondary flex flex-col">
-                <p>{t("showing", { shown: products.length, total })}</p>
+                <p aria-live="polite" aria-atomic="true">
+                  {t("showing", { shown: products.length, total })}
+                </p>
                 <p>{t("placeholderPrices")}</p>
               </div>
             }

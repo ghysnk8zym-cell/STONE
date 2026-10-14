@@ -124,7 +124,9 @@ export function CatalogFilters({
 
   const go = (override?: Record<string, string>) => {
     if (formRef.current) {
-      router.push(catalogHref(new FormData(formRef.current), override));
+      router.push(catalogHref(new FormData(formRef.current), override), {
+        scroll: false,
+      });
     }
   };
 
@@ -155,39 +157,38 @@ export function CatalogFilters({
     <form
       ref={formRef}
       method="get"
-      role="search"
-      aria-label={searchLabel}
-      className="flex flex-col gap-7"
+      className="grid grid-cols-1 gap-y-4 md:grid-cols-[1fr_480px] md:items-center"
       onSubmit={(event) => {
         if (!hydrated) return;
         event.preventDefault();
         go();
       }}
     >
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        {title}
-        <div className="w-full md:w-[480px] md:shrink-0">
-          <SearchField
-            name="q"
-            placeholder={searchPlaceholder}
-            label={searchLabel}
-            defaultValue={q}
-          />
+      {title}
+
+      {/* Only the fields are the search landmark (the h1 and the counter are outside it). */}
+      <div role="search" aria-label={searchLabel} className="contents">
+        <SearchField
+          name="q"
+          placeholder={searchPlaceholder}
+          label={searchLabel}
+          defaultValue={q}
+        />
+
+        {sale ? <input type="hidden" name="sale" value="1" /> : null}
+
+        {/* 16 row gap + 12 = Figma's 28 between the blocks */}
+        <div className="mt-3 grid grid-cols-2 gap-3 md:col-span-2 md:grid-cols-4 md:gap-4 lg:flex lg:items-end lg:justify-between">
+          <div className="contents lg:flex lg:gap-4">
+            {field("material", WIDTH)}
+            {field("color", WIDTH)}
+            {field("finish", WIDTH)}
+          </div>
+          {field("sort", SORT_WIDTH)}
         </div>
       </div>
 
-      {sale ? <input type="hidden" name="sale" value="1" /> : null}
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 lg:flex lg:items-end lg:justify-between">
-        <div className="contents lg:flex lg:gap-4">
-          {field("material", WIDTH)}
-          {field("color", WIDTH)}
-          {field("finish", WIDTH)}
-        </div>
-        {field("sort", SORT_WIDTH)}
-      </div>
-
-      <div className="relative">
+      <div className="relative mt-3 md:col-span-2">
         {results}
         {hydrated ? null : (
           <Button
