@@ -24,8 +24,8 @@ export type SiteFooterProps = {
    */
   social?: Partial<Record<SocialNetwork, string>>;
   /**
-   * Pages with the floating phone TabBar: the footer keeps 100 px under its content on phones
-   * (`pb-tabbar`) so the bar floats over the footer's own glass, as in Figma, instead of over a
+   * Pages with the floating phone TabBar: the footer keeps 100 px under its content (after its 24 px padding) on phones
+   * (`pb-footer-tabbar`: its own 24 px + the 100 px the bar covers) so the bar floats over the footer's own glass, as in Figma, instead of over a
    * page-background band below it.
    */
   reserveTabBar?: boolean;
@@ -119,7 +119,7 @@ export function SiteFooter({
     <footer
       className={cn(
         "glass-blur border-glass bg-surface-footer flex flex-col items-center gap-6 border-t px-(--layout-header-pad-x) pt-8 lg:items-start lg:gap-5 lg:pt-7",
-        reserveTabBar ? "max-md:pb-tabbar md:pb-6" : "pb-6",
+        reserveTabBar ? "max-md:pb-footer-tabbar md:pb-6" : "pb-6",
       )}
     >
       <div className="flex w-full flex-col items-center gap-6 lg:flex-row">

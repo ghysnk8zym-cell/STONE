@@ -55,7 +55,7 @@ test.describe("site shell", () => {
     );
     await expect(page.getByRole("contentinfo")).toHaveCSS(
       "padding-bottom",
-      "100px",
+      "124px",
     );
     // no page-background band under the footer: the footer ends at the bottom of the document
     const footerBottom = await page
@@ -649,5 +649,46 @@ test.describe("navigation", () => {
     await expect(
       tabBar.getByRole("link", { name: en.components.tabBar.home }),
     ).toHaveAttribute("aria-current", "page");
+  });
+});
+
+/*
+ * Fix round 1 (Phase 3, Task 8): findings of the page comparison.
+ */
+test.describe("home panel glass", () => {
+  test("each section panel darkens like the Figma shadow behind the translucent fill", async ({
+    page,
+  }) => {
+    // Figma draws the panel's drop shadow THROUGH the translucent fill (measured: backdrop under
+    // the panel is about 28 % darker than the same pixels under a CSS box-shadow, which is clipped
+    // inside the border box). The panel adds a 28 % black veil to match (docs/QA/phase-3-pages.md D1).
+    await page.goto("/en");
+    const panels = page.locator("section[aria-labelledby$='-heading']");
+    await expect(panels).toHaveCount(3);
+    for (let i = 0; i < 3; i += 1) {
+      await expect(panels.nth(i)).toHaveCSS(
+        "background-image",
+        "linear-gradient(rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.28))",
+      );
+    }
+  });
+});
+
+test.describe("catalog grid card heights", () => {
+  test("cards keep their own height at 390 (no stretch to the row)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile", "two-column grid at 390");
+    await page.goto("/en/catalog");
+    // Concrete Paver has a discount badge and an old price (taller), Golden Rock sits next to it.
+    const heightOf = async (name: string) =>
+      (await page
+        .getByRole("article")
+        .filter({ hasText: name })
+        .first()
+        .boundingBox())!.height;
+    const paver = await heightOf("Concrete Paver");
+    const golden = await heightOf("Golden Rock");
+    expect(paver).toBeGreaterThan(golden + 10);
   });
 });

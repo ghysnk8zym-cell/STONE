@@ -17,7 +17,7 @@ import type { Locale } from "@/i18n/routing";
  *   (Figma: header ~#666, footer ~#3b3c3e) the light surface must sit behind them too, not only behind <main>.
  * - The layout owns the single `<main>` landmark. Pages render their content only, never `<main>`.
  *   The localised 404 (`not-found.tsx` here) renders inside it, so unknown paths keep the shell.
- * - The footer reserves 100 px under its content on phones (`reserveTabBar` -> `max-md:pb-tabbar`)
+ * - The footer reserves 100 px under its content on phones (`reserveTabBar` -> `max-md:pb-footer-tabbar`)
  *   for the fixed tab bar, so the footer glass extends under the floating bar like in Figma
  *   (docs/ARCHITECTURE.md, Layout notes for Phase 3).
  * - Header, mobile menu and tab bar get `PHASE3_INERT`: Cart, account, Create Your Stone and

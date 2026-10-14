@@ -656,6 +656,22 @@ describe("TabBar page offset", () => {
       "bottom-[max(16px,env(safe-area-inset-bottom))]",
     );
   });
+
+  it("keeps the footer's own 24 px bottom padding above the tab bar space (Figma 370 px footer + 100 px band)", () => {
+    const css = readFileSync(
+      join(process.cwd(), "src", "app", "globals.css"),
+      "utf8",
+    );
+    expect(css.replace(/\s+/g, " ")).toContain(
+      "@utility pb-footer-tabbar { padding-bottom: calc( 24px + 68px + max(16px, env(safe-area-inset-bottom)) + 16px ); }",
+    );
+    const footer = readFileSync(
+      join(process.cwd(), "src", "components", "navigation", "SiteFooter.tsx"),
+      "utf8",
+    );
+    expect(footer).toContain("max-md:pb-footer-tabbar");
+    expect(footer).not.toContain("max-md:pb-tabbar");
+  });
 });
 
 describe("inert navigation (Phase 3)", () => {

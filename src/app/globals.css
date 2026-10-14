@@ -284,6 +284,14 @@
     inset 0 1px 0 0 var(--border-glass);
 }
 
+/* Add to a panel that also has bg-surface-panel: the Figma shadow seen through the translucent fill. */
+@utility glass-panel-veil {
+  background-image: linear-gradient(
+    rgb(0 0 0 / var(--effect-glass-panel-shadow-through)),
+    rgb(0 0 0 / var(--effect-glass-panel-shadow-through))
+  );
+}
+
 @utility glass-card {
   backdrop-filter: blur(var(--effect-glass-card-blur));
   box-shadow:
@@ -306,6 +314,14 @@
    breathing room = 100 px. Use as `max-md:pb-tabbar` on the page wrapper (TabBar is hidden from md). */
 @utility pb-tabbar {
   padding-bottom: calc(68px + max(16px, env(safe-area-inset-bottom)) + 16px);
+}
+
+/* The footer variant: its own 24 px bottom padding (Figma footer is 370 px at 390) plus the space the bar
+   covers (the 100 px band below the footer in the Figma screens). */
+@utility pb-footer-tabbar {
+  padding-bottom: calc(
+    24px + 68px + max(16px, env(safe-area-inset-bottom)) + 16px
+  );
 }
 
 /* Hover/focus colour changes use the motion tokens; reduced motion makes them instant. */

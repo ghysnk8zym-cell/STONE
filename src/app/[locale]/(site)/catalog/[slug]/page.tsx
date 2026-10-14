@@ -100,7 +100,7 @@ export default async function ProductPage({
               { label: name },
             ]}
           />
-          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-8 min-[90rem]:grid-cols-[minmax(0,1fr)_520px] min-[90rem]:gap-10">
+          <div className="flex flex-col gap-6 md:gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-8 min-[90rem]:grid-cols-[minmax(0,1fr)_520px] min-[90rem]:gap-10">
             <Gallery
               image={product.image}
               alt={name}

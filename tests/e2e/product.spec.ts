@@ -188,3 +188,24 @@ test.describe("product without JavaScript", () => {
     );
   });
 });
+
+test.describe("product spacing (Figma 782:11639, 782:11727)", () => {
+  for (const [width, gap] of [
+    [768, 32],
+    [390, 24],
+  ] as const) {
+    test(`thumbnails to title gap is ${gap} at ${width}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/en/catalog/black-marble");
+      const thumb = await page
+        .getByRole("button", { name: PRODUCT.gallery.detail })
+        .boundingBox();
+      // the title row (the heading's parent) starts the info block
+      const title = await page
+        .getByRole("heading", { level: 1 })
+        .locator("..")
+        .boundingBox();
+      expect(Math.round(title!.y - (thumb!.y + thumb!.height))).toBe(gap);
+    });
+  }
+});
