@@ -1,0 +1,35 @@
+/* Colour tokens (Figma variable names). Generated once from figma-variables.json; keep both in sync (tests/unit/tokens.test.ts). */
+:root {
+  --surface-page: #1b1d20;
+  --surface-header: #1214169e;
+  --surface-panel: #1214168c;
+  --surface-card: #ffffff0f;
+  --surface-card-hover: #ffffff1a;
+  --surface-button: #ffffff14;
+  --surface-nav-pill: #ffffff14;
+  --surface-footer: #141618d1;
+  --surface-selected: #ffffff29;
+  --border-glass: #ffffff1f;
+  --border-glass-strong: #ffffff3d;
+  --border-ink: #1b1c1e29;
+  --divider-light: #ffffff66;
+  --overlay-tint-10: #1011111a;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffffb8;
+  --text-label: #ffffffcc;
+  --text-ink: #1b1c1e;
+  --text-ink-secondary: #3a3d41;
+  --ink-on-dark: #f5f5f3;
+  --ink-primary: #1f2226;
+  --icon-light: #ffffff;
+  --icon-ink: #111827;
+  --accent-focus: #9db4c0;
+  --success-ink: #56634e;
+  --success-bg: #e1e6da;
+  --stone-catalog-page: #f3f0eb;
+  --stone-catalog-card: #f8f5f0;
+  --stone-catalog-photo: #e9e4dd;
+  --stone-catalog-line: #d8d1c8;
+  --stone-catalog-ink: #292722;
+  --stone-catalog-secondary: #625d55;
+}

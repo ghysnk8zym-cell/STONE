@@ -55,3 +55,28 @@ next-env.d.ts
 
 # local tool caches
 /.impeccable/
+
+# Figma source rasters (re-download via assets/figma-manifest.json node ids)
+/assets/source/
+
+# Visual comparison output: only results.md and the curated triplets listed in docs/QA/phase-2-components.md are kept
+/docs/QA/phase-2/*.png
+!/docs/QA/phase-2/button-pill-default-1440-*.png
+!/docs/QA/phase-2/button-primary-default-1440-*.png
+!/docs/QA/phase-2/button-light-default-1440-*.png
+!/docs/QA/phase-2/button-light-hover-1440-*.png
+!/docs/QA/phase-2/button-graphite-default-1440-*.png
+!/docs/QA/phase-2/icon-button-glass-menu-1440-*.png
+!/docs/QA/phase-2/icon-button-glass-user-hover-1440-*.png
+!/docs/QA/phase-2/carousel-arrow-prev-default-1440-*.png
+!/docs/QA/phase-2/social-button-tg-focus-1440-*.png
+!/docs/QA/phase-2/text-field-light-unit-1440-*.png
+!/docs/QA/phase-2/search-field-graphite-default-1440-*.png
+!/docs/QA/phase-2/select-closed-1440-*.png
+!/docs/QA/phase-2/product-card-default-1440-*.png
+!/docs/QA/phase-2/showcase-card-promo-desktop-1440-*.png
+!/docs/QA/phase-2/showcase-card-work-desktop-1440-*.png
+!/docs/QA/phase-2/site-header-desktop-1440-*.png
+!/docs/QA/phase-2/site-footer-1440-*.png
+!/docs/QA/phase-2/tab-bar-current-catalog-390-*.png
+!/docs/QA/phase-2/nav-pill-current-1440-*.png

@@ -1,0 +1,19 @@
+/* Motion tokens.
+   Figma has no recorded transitions for Nav/Pill (21:79) or Button/Pill (21:95): get_motion_context
+   returns no animated nodes for the component sets or their Hover / RippleStart / RippleEnd variants.
+   Only the ripple geometry is known (ring grows from 8 px to 300 px, RippleStart -> RippleEnd).
+   The durations and easings below are STONE defaults, pending owner approval from the styleguide.
+   Figma "Reduced" variants map to prefers-reduced-motion: reduce (no ripple, instant states). */
+:root {
+  --motion-hover-duration: 180ms;
+  --motion-hover-ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ripple-duration: 600ms;
+  --motion-ripple-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-hover-duration: 0ms;
+    --motion-ripple-duration: 0ms;
+  }
+}

@@ -1,0 +1,673 @@
+{
+  "figmaFile": "1vEGuD9cYYFNynyByUGHwF",
+  "doc": "references = Figma screenshots (1:1 CSS px, get_screenshot) compared by scripts/visual-compare.mjs; skipped = (id, width) pairs that are not compared, with the reason. Glass and shadowed nodes were captured with contentsOnly (isolated node, transparent margin). box = layout size of the node and offset = its top-left corner inside the PNG, for PNGs larger than the node because a shadow or focus ring bleeds out of it. The card, field and showcase PNGs are opaque and were captured without contentsOnly. See the header of the script.",
+  "references": {
+    "button-pill-default-1440": {
+      "node": "21:80",
+      "note": "Button/Pill State=Default"
+    },
+    "button-pill-default-390": {
+      "node": "21:80",
+      "note": "Button/Pill State=Default; same component at 390",
+      "sameAs": "button-pill-default-1440"
+    },
+    "button-pill-hover-1440": {
+      "node": "21:85",
+      "note": "Button/Pill State=Hover"
+    },
+    "button-pill-hover-390": {
+      "node": "21:85",
+      "note": "Button/Pill State=Hover; same component at 390",
+      "sameAs": "button-pill-hover-1440"
+    },
+    "button-pill-focus-1440": {
+      "node": "21:90",
+      "note": "Button/Pill State=Focus",
+      "box": [96, 40],
+      "offset": [2, 0]
+    },
+    "button-pill-focus-390": {
+      "node": "21:90",
+      "note": "Button/Pill State=Focus; same component at 390",
+      "sameAs": "button-pill-focus-1440",
+      "box": [96, 40],
+      "offset": [2, 0]
+    },
+    "button-pill-pressed-1440": {
+      "node": "116:49",
+      "note": "Button/Pill State=ReducedPressed (the static pressed look; Ripple frames are animation steps)"
+    },
+    "button-pill-pressed-390": {
+      "node": "116:49",
+      "note": "Button/Pill State=ReducedPressed (the static pressed look; Ripple frames are animation steps); same component at 390",
+      "sameAs": "button-pill-pressed-1440"
+    },
+    "button-pill-disabled-1440": {
+      "node": "116:40",
+      "note": "Button/Pill State=Disabled"
+    },
+    "button-pill-disabled-390": {
+      "node": "116:40",
+      "note": "Button/Pill State=Disabled; same component at 390",
+      "sameAs": "button-pill-disabled-1440"
+    },
+    "button-primary-default-1440": {
+      "node": "338:508",
+      "note": "Button/Primary State=Default",
+      "box": [137, 48],
+      "offset": [16, 10]
+    },
+    "button-primary-default-390": {
+      "node": "338:508",
+      "note": "Button/Primary State=Default; same component at 390",
+      "sameAs": "button-primary-default-1440",
+      "box": [137, 48],
+      "offset": [16, 10]
+    },
+    "button-primary-hover-1440": {
+      "node": "338:513",
+      "note": "Button/Primary State=Hover",
+      "box": [137, 48],
+      "offset": [16, 10]
+    },
+    "button-primary-hover-390": {
+      "node": "338:513",
+      "note": "Button/Primary State=Hover; same component at 390",
+      "sameAs": "button-primary-hover-1440",
+      "box": [137, 48],
+      "offset": [16, 10]
+    },
+    "button-primary-focus-1440": {
+      "node": "338:523",
+      "note": "Button/Primary State=Focus",
+      "box": [141, 52],
+      "offset": [3, 3]
+    },
+    "button-primary-focus-390": {
+      "node": "338:523",
+      "note": "Button/Primary State=Focus; same component at 390",
+      "sameAs": "button-primary-focus-1440",
+      "box": [141, 52],
+      "offset": [3, 3]
+    },
+    "button-primary-pressed-1440": {
+      "node": "338:518",
+      "note": "Button/Primary State=Pressed"
+    },
+    "button-primary-pressed-390": {
+      "node": "338:518",
+      "note": "Button/Primary State=Pressed; same component at 390",
+      "sameAs": "button-primary-pressed-1440"
+    },
+    "button-primary-disabled-1440": {
+      "node": "338:528",
+      "note": "Button/Primary State=Disabled"
+    },
+    "button-primary-disabled-390": {
+      "node": "338:528",
+      "note": "Button/Primary State=Disabled; same component at 390",
+      "sameAs": "button-primary-disabled-1440"
+    },
+    "button-light-default-1440": {
+      "node": "430:471",
+      "note": "Button/Light State=Default (440 wide in Figma, content width in code)"
+    },
+    "button-light-default-390": {
+      "node": "430:471",
+      "note": "Button/Light State=Default (440 wide in Figma, content width in code); same component at 390",
+      "sameAs": "button-light-default-1440"
+    },
+    "button-light-hover-1440": {
+      "node": "430:473",
+      "note": "Button/Light State=Hover",
+      "box": [440, 60],
+      "offset": [18, 12]
+    },
+    "button-light-hover-390": {
+      "node": "430:473",
+      "note": "Button/Light State=Hover; same component at 390",
+      "sameAs": "button-light-hover-1440",
+      "box": [440, 60],
+      "offset": [18, 12]
+    },
+    "button-light-focus-1440": {
+      "node": "430:477",
+      "note": "Button/Light State=Focus",
+      "box": [440, 60],
+      "offset": [3, 3]
+    },
+    "button-light-focus-390": {
+      "node": "430:477",
+      "note": "Button/Light State=Focus; same component at 390",
+      "sameAs": "button-light-focus-1440",
+      "box": [440, 60],
+      "offset": [3, 3]
+    },
+    "button-light-pressed-1440": {
+      "node": "430:475",
+      "note": "Button/Light State=Pressed"
+    },
+    "button-light-pressed-390": {
+      "node": "430:475",
+      "note": "Button/Light State=Pressed; same component at 390",
+      "sameAs": "button-light-pressed-1440"
+    },
+    "button-outline-default-1440": {
+      "node": "732:712",
+      "note": "Button/Outline (single state)"
+    },
+    "button-outline-default-390": {
+      "node": "732:712",
+      "note": "Button/Outline (single state); same component at 390",
+      "sameAs": "button-outline-default-1440"
+    },
+    "button-graphite-default-1440": {
+      "node": "733:6134",
+      "note": "Button/Graphite (single state, arrow hidden in the master)",
+      "box": [120, 46],
+      "offset": [20, 12]
+    },
+    "button-graphite-default-390": {
+      "node": "733:6134",
+      "note": "Button/Graphite (single state, arrow hidden in the master); same component at 390",
+      "sameAs": "button-graphite-default-1440",
+      "box": [120, 46],
+      "offset": [20, 12]
+    },
+    "button-save-default-1440": {
+      "node": "779:546",
+      "note": "Button/Save (single state)"
+    },
+    "button-save-default-390": {
+      "node": "779:546",
+      "note": "Button/Save (single state); same component at 390",
+      "sameAs": "button-save-default-1440"
+    },
+    "icon-button-glass-menu-1440": {
+      "node": "21:116",
+      "note": "Icon button Icon=Menu, State=Default"
+    },
+    "icon-button-glass-menu-390": {
+      "node": "21:116",
+      "note": "Icon button Icon=Menu, State=Default; same component at 390",
+      "sameAs": "icon-button-glass-menu-1440"
+    },
+    "icon-button-glass-close-1440": {
+      "node": "21:121",
+      "note": "Icon button Icon=Close, State=Default"
+    },
+    "icon-button-glass-close-390": {
+      "node": "21:121",
+      "note": "Icon button Icon=Close, State=Default; same component at 390",
+      "sameAs": "icon-button-glass-close-1440"
+    },
+    "icon-button-glass-user-default-1440": {
+      "node": "732:500",
+      "note": "Icon button Icon=User, State=Default"
+    },
+    "icon-button-glass-user-default-390": {
+      "node": "732:500",
+      "note": "Icon button Icon=User, State=Default; same component at 390",
+      "sameAs": "icon-button-glass-user-default-1440"
+    },
+    "icon-button-glass-user-hover-1440": {
+      "node": "732:503",
+      "note": "Icon button Icon=User, State=Hover"
+    },
+    "icon-button-glass-user-hover-390": {
+      "node": "732:503",
+      "note": "Icon button Icon=User, State=Hover; same component at 390",
+      "sameAs": "icon-button-glass-user-hover-1440"
+    },
+    "carousel-arrow-prev-default-1440": {
+      "node": "712:481",
+      "note": "Carousel/Arrow Direction=Prev"
+    },
+    "carousel-arrow-prev-default-390": {
+      "node": "712:481",
+      "note": "Carousel/Arrow Direction=Prev; same component at 390",
+      "sameAs": "carousel-arrow-prev-default-1440"
+    },
+    "carousel-arrow-next-default-1440": {
+      "node": "712:485",
+      "note": "Carousel/Arrow Direction=Next"
+    },
+    "carousel-arrow-next-default-390": {
+      "node": "712:485",
+      "note": "Carousel/Arrow Direction=Next; same component at 390",
+      "sameAs": "carousel-arrow-next-default-1440"
+    },
+    "social-button-tg-default-1440": {
+      "node": "21:109",
+      "note": "Social/Button State=Default"
+    },
+    "social-button-tg-default-390": {
+      "node": "21:109",
+      "note": "Social/Button State=Default; same component at 390",
+      "sameAs": "social-button-tg-default-1440"
+    },
+    "social-button-tg-hover-1440": {
+      "node": "21:111",
+      "note": "Social/Button State=Hover"
+    },
+    "social-button-tg-hover-390": {
+      "node": "21:111",
+      "note": "Social/Button State=Hover; same component at 390",
+      "sameAs": "social-button-tg-hover-1440"
+    },
+    "social-button-tg-focus-1440": {
+      "node": "21:113",
+      "note": "Social/Button State=Focus",
+      "box": [44, 44],
+      "offset": [2, 0]
+    },
+    "social-button-tg-focus-390": {
+      "node": "21:113",
+      "note": "Social/Button State=Focus; same component at 390",
+      "sameAs": "social-button-tg-focus-1440",
+      "box": [44, 44],
+      "offset": [2, 0]
+    },
+    "social-button-tg-pressed-1440": {
+      "node": "117:56",
+      "note": "Social/Button State=ReducedPressed (the static pressed look; Ripple frames are animation steps)"
+    },
+    "social-button-tg-pressed-390": {
+      "node": "117:56",
+      "note": "Social/Button State=ReducedPressed (the static pressed look; Ripple frames are animation steps); same component at 390",
+      "sameAs": "social-button-tg-pressed-1440"
+    },
+    "social-button-tg-disabled-1440": {
+      "node": "117:50",
+      "note": "Social/Button State=Disabled"
+    },
+    "social-button-tg-disabled-390": {
+      "node": "117:50",
+      "note": "Social/Button State=Disabled; same component at 390",
+      "sameAs": "social-button-tg-disabled-1440"
+    },
+    "text-field-dark-default-1440": {
+      "node": "430:480",
+      "note": "Input/Dark State=Default"
+    },
+    "text-field-dark-default-390": {
+      "node": "430:480",
+      "note": "Input/Dark State=Default; same component at 390",
+      "sameAs": "text-field-dark-default-1440"
+    },
+    "text-field-dark-focus-1440": {
+      "node": "430:492",
+      "note": "Input/Dark State=Focus"
+    },
+    "text-field-dark-focus-390": {
+      "node": "430:492",
+      "note": "Input/Dark State=Focus; same component at 390",
+      "sameAs": "text-field-dark-focus-1440"
+    },
+    "text-field-light-unit-1440": {
+      "node": "779:541",
+      "note": "Product/Field (draws the unit cell)"
+    },
+    "text-field-light-unit-390": {
+      "node": "779:541",
+      "note": "Product/Field (draws the unit cell); same component at 390",
+      "sameAs": "text-field-light-unit-1440"
+    },
+    "search-field-light-default-1440": {
+      "node": "922:25500",
+      "note": "Catalog 1440 > Search"
+    },
+    "search-field-light-default-390": {
+      "node": "922:26330",
+      "note": "Catalog 390 > Search"
+    },
+    "search-field-graphite-default-1440": {
+      "node": "971:28941",
+      "note": "Search panel inside Search/Pill Tone=Graphite State=Open",
+      "box": [168, 52],
+      "offset": [24, 16]
+    },
+    "search-field-graphite-default-390": {
+      "node": "971:28941",
+      "note": "Search panel inside Search/Pill Tone=Graphite State=Open; same component at 390",
+      "sameAs": "search-field-graphite-default-1440",
+      "box": [168, 52],
+      "offset": [24, 16]
+    },
+    "select-closed-1440": {
+      "node": "922:25505",
+      "note": "Catalog 1440 > Field / Material"
+    },
+    "select-closed-390": {
+      "node": "922:26335",
+      "note": "Catalog 390 > Field / Material"
+    },
+    "badge-discount-1440": {
+      "node": "713:549",
+      "note": "Badge inside Card / Concrete Paver"
+    },
+    "badge-discount-390": {
+      "node": "713:549",
+      "note": "Badge inside Card / Concrete Paver; same component at 390",
+      "sameAs": "badge-discount-1440"
+    },
+    "product-card-default-1440": {
+      "node": "922:25514",
+      "note": "Catalog 1440 > Card / Black Marble"
+    },
+    "product-card-default-390": {
+      "node": "922:26344",
+      "note": "Catalog 390 > Card / Black Marble"
+    },
+    "product-card-discount-1440": {
+      "node": "922:25516",
+      "note": "Catalog 1440 > Card / Concrete Paver"
+    },
+    "product-card-discount-390": {
+      "node": "922:26346",
+      "note": "Catalog 390 > Card / Concrete Paver"
+    },
+    "showcase-card-product-desktop-1440": {
+      "node": "713:499",
+      "note": "Card/Showcase Type=Product, Layout=Desktop"
+    },
+    "showcase-card-product-desktop-390": {
+      "node": "713:499",
+      "note": "Card/Showcase Type=Product, Layout=Desktop; same component at 390",
+      "sameAs": "showcase-card-product-desktop-1440"
+    },
+    "showcase-card-product-mobile-1440": {
+      "node": "713:530",
+      "note": "Card/Showcase Type=Product, Layout=Mobile"
+    },
+    "showcase-card-product-mobile-390": {
+      "node": "713:530",
+      "note": "Card/Showcase Type=Product, Layout=Mobile; same component at 390",
+      "sameAs": "showcase-card-product-mobile-1440"
+    },
+    "showcase-card-promo-desktop-1440": {
+      "node": "713:509",
+      "note": "Card/Showcase Type=Promo, Layout=Desktop"
+    },
+    "showcase-card-promo-desktop-390": {
+      "node": "713:509",
+      "note": "Card/Showcase Type=Promo, Layout=Desktop; same component at 390",
+      "sameAs": "showcase-card-promo-desktop-1440"
+    },
+    "showcase-card-promo-mobile-1440": {
+      "node": "713:540",
+      "note": "Card/Showcase Type=Promo, Layout=Mobile"
+    },
+    "showcase-card-promo-mobile-390": {
+      "node": "713:540",
+      "note": "Card/Showcase Type=Promo, Layout=Mobile; same component at 390",
+      "sameAs": "showcase-card-promo-mobile-1440"
+    },
+    "showcase-card-work-desktop-1440": {
+      "node": "713:524",
+      "note": "Card/Showcase Type=Work, Layout=Desktop"
+    },
+    "showcase-card-work-desktop-390": {
+      "node": "713:524",
+      "note": "Card/Showcase Type=Work, Layout=Desktop; same component at 390",
+      "sameAs": "showcase-card-work-desktop-1440"
+    },
+    "showcase-card-work-mobile-1440": {
+      "node": "713:555",
+      "note": "Card/Showcase Type=Work, Layout=Mobile"
+    },
+    "showcase-card-work-mobile-390": {
+      "node": "713:555",
+      "note": "Card/Showcase Type=Work, Layout=Mobile; same component at 390",
+      "sameAs": "showcase-card-work-mobile-1440"
+    },
+    "site-header-desktop-1440": {
+      "node": "732:539",
+      "note": "Header/Full + Account (Full layout, >= 1280)"
+    },
+    "site-header-compact-390": {
+      "node": "716:1064",
+      "note": "Home v2 390 > Layout / Header (Compact layout)"
+    },
+    "nav-pill-default-1440": {
+      "node": "21:73",
+      "note": "Nav/Pill State=Default"
+    },
+    "nav-pill-default-390": {
+      "node": "21:73",
+      "note": "Nav/Pill State=Default; same component at 390",
+      "sameAs": "nav-pill-default-1440"
+    },
+    "nav-pill-hover-1440": {
+      "node": "21:75",
+      "note": "Nav/Pill State=Hover"
+    },
+    "nav-pill-hover-390": {
+      "node": "21:75",
+      "note": "Nav/Pill State=Hover; same component at 390",
+      "sameAs": "nav-pill-hover-1440"
+    },
+    "nav-pill-focus-1440": {
+      "node": "21:77",
+      "note": "Nav/Pill State=Focus",
+      "box": [107, 46],
+      "offset": [2, 0]
+    },
+    "nav-pill-focus-390": {
+      "node": "21:77",
+      "note": "Nav/Pill State=Focus; same component at 390",
+      "sameAs": "nav-pill-focus-1440",
+      "box": [107, 46],
+      "offset": [2, 0]
+    },
+    "nav-pill-pressed-1440": {
+      "node": "118:56",
+      "note": "Nav/Pill State=ReducedPressed (the static pressed look; Ripple frames are animation steps)"
+    },
+    "nav-pill-pressed-390": {
+      "node": "118:56",
+      "note": "Nav/Pill State=ReducedPressed (the static pressed look; Ripple frames are animation steps); same component at 390",
+      "sameAs": "nav-pill-pressed-1440"
+    },
+    "nav-pill-current-1440": {
+      "node": "344:483",
+      "note": "Nav/Pill State=Current"
+    },
+    "nav-pill-current-390": {
+      "node": "344:483",
+      "note": "Nav/Pill State=Current; same component at 390",
+      "sameAs": "nav-pill-current-1440"
+    },
+    "nav-pill-disabled-1440": {
+      "node": "118:50",
+      "note": "Nav/Pill State=Disabled"
+    },
+    "nav-pill-disabled-390": {
+      "node": "118:50",
+      "note": "Nav/Pill State=Disabled; same component at 390",
+      "sameAs": "nav-pill-disabled-1440"
+    },
+    "tab-bar-current-catalog-390": {
+      "node": "922:26785",
+      "note": "Catalog 390 > Nav / Tab bar (Catalog current). The Figma tab labels are Russian, so this one is compared on /ru. Reference unreliable: opaque baked render (grey 103,103,103), see the QA doc",
+      "caveat": "reference unreliable — opaque baked render; see QA doc",
+      "locale": "ru"
+    },
+    "site-footer-1440": {
+      "node": "722:1354",
+      "note": "Home v2 1440 > Layout / Footer"
+    },
+    "site-footer-390": {
+      "node": "716:1253",
+      "note": "Home v2 390 > Layout / Footer"
+    },
+    "breadcrumb-default-1440": {
+      "node": "779:529",
+      "note": "Product/Breadcrumb"
+    },
+    "breadcrumb-default-390": {
+      "node": "779:529",
+      "note": "Product/Breadcrumb; same component at 390",
+      "sameAs": "breadcrumb-default-1440"
+    }
+  },
+  "skipped": {
+    "tokens-colors-1440": "no Figma reference (styleguide documentation block, not a Figma component)",
+    "tokens-colors-390": "no Figma reference (styleguide documentation block, not a Figma component)",
+    "tokens-type-1440": "no Figma reference (styleguide documentation block, not a Figma component)",
+    "tokens-type-390": "no Figma reference (styleguide documentation block, not a Figma component)",
+    "tokens-effects-1440": "no Figma reference (styleguide documentation block, not a Figma component)",
+    "tokens-effects-390": "no Figma reference (styleguide documentation block, not a Figma component)",
+    "button-light-disabled-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-light-disabled-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-outline-hover-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-outline-hover-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-outline-focus-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-outline-focus-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-outline-pressed-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-outline-pressed-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-outline-disabled-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-outline-disabled-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-graphite-hover-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-graphite-hover-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-graphite-focus-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-graphite-focus-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-graphite-pressed-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-graphite-pressed-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-graphite-disabled-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-graphite-disabled-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-save-hover-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-save-hover-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-save-focus-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-save-focus-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-save-pressed-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-save-pressed-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-save-disabled-1440": "no Figma reference (Figma draws this button variant without that state)",
+    "button-save-disabled-390": "no Figma reference (Figma draws this button variant without that state)",
+    "button-primary-loading-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "button-primary-loading-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "button-primary-link-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "button-primary-link-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "button-long-label-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "button-long-label-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-glass-search-1440": "no Figma reference (Figma's Icon button draws Menu, Close, Back and User only)",
+    "icon-button-glass-search-390": "no Figma reference (Figma's Icon button draws Menu, Close, Back and User only)",
+    "icon-button-glass-bag-1440": "no Figma reference (Figma's Icon button draws Menu, Close, Back and User only)",
+    "icon-button-glass-bag-390": "no Figma reference (Figma's Icon button draws Menu, Close, Back and User only)",
+    "icon-button-glass-heart-1440": "no Figma reference (Figma's Icon button draws Menu, Close, Back and User only)",
+    "icon-button-glass-heart-390": "no Figma reference (Figma's Icon button draws Menu, Close, Back and User only)",
+    "icon-button-glass-user-focus-1440": "no Figma reference (Figma draws Focus, Pressed and Disabled for Menu, Close and Back, not for User)",
+    "icon-button-glass-user-focus-390": "no Figma reference (Figma draws Focus, Pressed and Disabled for Menu, Close and Back, not for User)",
+    "icon-button-glass-user-pressed-1440": "no Figma reference (Figma draws Focus, Pressed and Disabled for Menu, Close and Back, not for User)",
+    "icon-button-glass-user-pressed-390": "no Figma reference (Figma draws Focus, Pressed and Disabled for Menu, Close and Back, not for User)",
+    "icon-button-glass-user-disabled-1440": "no Figma reference (Figma draws Focus, Pressed and Disabled for Menu, Close and Back, not for User)",
+    "icon-button-glass-user-disabled-390": "no Figma reference (Figma draws Focus, Pressed and Disabled for Menu, Close and Back, not for User)",
+    "icon-button-light-heart-default-1440": "no usable Figma reference (the Heart node 713:520 renders as an empty 1x1 image through get_screenshot)",
+    "icon-button-light-heart-default-390": "no usable Figma reference (the Heart node 713:520 renders as an empty 1x1 image through get_screenshot)",
+    "icon-button-light-heart-hover-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-light-heart-hover-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-light-heart-focus-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-light-heart-focus-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-light-heart-pressed-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-light-heart-pressed-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-light-heart-disabled-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-light-heart-disabled-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-light-heart-favorite-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "icon-button-light-heart-favorite-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "carousel-arrow-prev-hover-1440": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-prev-hover-390": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-prev-focus-1440": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-prev-focus-390": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-prev-pressed-1440": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-prev-pressed-390": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-prev-disabled-1440": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-prev-disabled-390": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-next-hover-1440": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-next-hover-390": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-next-focus-1440": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-next-focus-390": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-next-pressed-1440": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-next-pressed-390": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-next-disabled-1440": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "carousel-arrow-next-disabled-390": "no Figma reference (Figma draws only the resting Prev and Next arrows)",
+    "social-button-vk-default-1440": "no standalone Figma node (drawn only as nested instances inside the footer, which get_screenshot cannot address; covered by site-footer)",
+    "social-button-vk-default-390": "no standalone Figma node (drawn only as nested instances inside the footer, which get_screenshot cannot address; covered by site-footer)",
+    "social-button-ig-default-1440": "no standalone Figma node (drawn only as nested instances inside the footer, which get_screenshot cannot address; covered by site-footer)",
+    "social-button-ig-default-390": "no standalone Figma node (drawn only as nested instances inside the footer, which get_screenshot cannot address; covered by site-footer)",
+    "social-button-wa-default-1440": "no standalone Figma node (drawn only as nested instances inside the footer, which get_screenshot cannot address; covered by site-footer)",
+    "social-button-wa-default-390": "no standalone Figma node (drawn only as nested instances inside the footer, which get_screenshot cannot address; covered by site-footer)",
+    "text-field-dark-error-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "text-field-dark-error-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "text-field-dark-disabled-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "text-field-dark-disabled-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "text-field-light-default-1440": "no Figma reference (Product/Field is drawn once, with the unit cell: compared as text-field-light-unit)",
+    "text-field-light-default-390": "no Figma reference (Product/Field is drawn once, with the unit cell: compared as text-field-light-unit)",
+    "text-field-light-focus-1440": "no Figma reference (Product/Field is drawn once, with the unit cell: compared as text-field-light-unit)",
+    "text-field-light-focus-390": "no Figma reference (Product/Field is drawn once, with the unit cell: compared as text-field-light-unit)",
+    "text-field-light-error-1440": "no Figma reference (Product/Field is drawn once, with the unit cell: compared as text-field-light-unit)",
+    "text-field-light-error-390": "no Figma reference (Product/Field is drawn once, with the unit cell: compared as text-field-light-unit)",
+    "text-field-light-disabled-1440": "no Figma reference (Product/Field is drawn once, with the unit cell: compared as text-field-light-unit)",
+    "text-field-light-disabled-390": "no Figma reference (Product/Field is drawn once, with the unit cell: compared as text-field-light-unit)",
+    "search-field-light-hover-1440": "no Figma reference (the Catalog Search field is drawn in one state)",
+    "search-field-light-hover-390": "no Figma reference (the Catalog Search field is drawn in one state)",
+    "search-field-light-focus-1440": "no Figma reference (the Catalog Search field is drawn in one state)",
+    "search-field-light-focus-390": "no Figma reference (the Catalog Search field is drawn in one state)",
+    "search-field-light-disabled-1440": "no Figma reference (the Catalog Search field is drawn in one state)",
+    "search-field-light-disabled-390": "no Figma reference (the Catalog Search field is drawn in one state)",
+    "select-hover-1440": "no Figma reference for the implemented look (drawn only on the stale master Field/Select 338:507, a white glass pill that Task 6 deliberately does not follow)",
+    "select-hover-390": "no Figma reference for the implemented look (drawn only on the stale master Field/Select 338:507, a white glass pill that Task 6 deliberately does not follow)",
+    "select-focus-1440": "no Figma reference for the implemented look (drawn only on the stale master Field/Select 338:507, a white glass pill that Task 6 deliberately does not follow)",
+    "select-focus-390": "no Figma reference for the implemented look (drawn only on the stale master Field/Select 338:507, a white glass pill that Task 6 deliberately does not follow)",
+    "select-open-1440": "no Figma reference for the implemented look (drawn only on the stale master Field/Select 338:507, a white glass pill that Task 6 deliberately does not follow)",
+    "select-open-390": "no Figma reference for the implemented look (drawn only on the stale master Field/Select 338:507, a white glass pill that Task 6 deliberately does not follow)",
+    "select-disabled-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "select-disabled-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "product-card-hover-1440": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "product-card-hover-390": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "product-card-focus-1440": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "product-card-focus-390": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "product-card-pressed-1440": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "product-card-pressed-390": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "product-card-favorite-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "product-card-favorite-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "product-card-no-image-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "product-card-no-image-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "product-card-long-name-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "product-card-long-name-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "showcase-card-promo-desktop-hover-1440": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-promo-desktop-hover-390": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-promo-desktop-focus-1440": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-promo-desktop-focus-390": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-promo-desktop-pressed-1440": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-promo-desktop-pressed-390": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-work-desktop-hover-1440": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-work-desktop-hover-390": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-work-desktop-focus-1440": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-work-desktop-focus-390": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-work-desktop-pressed-1440": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "showcase-card-work-desktop-pressed-390": "no Figma reference (the live cards draw no hover, focus or pressed state)",
+    "site-header-desktop-390": "hidden at this width (visible from 1280 px)",
+    "site-header-compact-1440": "hidden at this width (visible below 1280 px)",
+    "mobile-menu-trigger-1440": "not a component frame: a button wrapper (its visual is icon-button-glass-menu, compared separately)",
+    "mobile-menu-trigger-390": "not a component frame: a button wrapper (its visual is icon-button-glass-menu, compared separately)",
+    "nav-pill-long-label-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "nav-pill-long-label-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "language-switch-1440": "no Figma reference (Figma draws no language switch)",
+    "language-switch-390": "no Figma reference (Figma draws no language switch)",
+    "tab-bar-current-catalog-1440": "hidden at this width (the tab bar is visible below 768 px)",
+    "tab-bar-none-1440": "hidden at this width (the tab bar is visible below 768 px)",
+    "tab-bar-none-390": "no Figma reference captured for a tab bar without a current tab (inert visual copy)",
+    "breadcrumb-long-1440": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "breadcrumb-long-390": "no Figma reference (implementer-chosen state or variant: Figma does not draw it)",
+    "approval-fonts-1440": "no Figma reference (owner approval block, not a component)",
+    "approval-fonts-390": "no Figma reference (owner approval block, not a component)",
+    "approval-language-switch-1440": "no Figma reference (owner approval block, not a component)",
+    "approval-language-switch-390": "no Figma reference (owner approval block, not a component)",
+    "approval-loading-button-1440": "no Figma reference (owner approval block, not a component)",
+    "approval-loading-button-390": "no Figma reference (owner approval block, not a component)",
+    "approval-glass-1440": "no Figma reference (owner approval block, not a component)",
+    "approval-glass-390": "no Figma reference (owner approval block, not a component)",
+    "approval-checklist-1440": "no Figma reference (owner approval block, not a component)",
+    "approval-checklist-390": "no Figma reference (owner approval block, not a component)"
+  }
+}

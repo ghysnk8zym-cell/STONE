@@ -41,3 +41,15 @@ Decisions and their reasoning live in `docs/adr/` (ADR-001 … ADR-005) and the 
 - Environment is read via `process.env` and validated in `src/server/env.ts`.
 - Next.js is pinned to `16.3.8`: Next 16.4.0 crashes on Workers with `Unexpected loadManifest(/.next/server/preview-props.json)` until OpenNext ships the fix (opennextjs/opennextjs-cloudflare#1448, PR #1356). The `cloudflare` CI job smoke-tests the built Worker in workerd, so an upgrade that breaks the runtime fails CI.
 - `cacheComponents` is off until OpenNext supports it on Workers (see ADR-001 and the Phase 1 plan ledger notes in the PR).
+
+## Layout notes for Phase 3
+
+- `TabBar` is `position: fixed` at the bottom of the viewport on phones: visible below 768 px (`md:hidden`), 358 x 68, 16 px above the bottom edge or the safe-area inset, whichever is larger.
+- Pages and layouts that render it need 100 px of bottom padding (bar 68 + bottom offset `max(16px, env(safe-area-inset-bottom))` + 16 px breathing room). Use the `pb-tabbar` utility from `src/app/globals.css`, phones only: `max-md:pb-tabbar`.
+- The `[locale]` layout mounts both `TabBar` and `SiteFooter` in Phase 3 (neither is mounted anywhere yet). The footer is full width; the bar floats above it.
+- `TabBar`'s `current` prop is optional: Figma's Product screen shows the bar with no active tab.
+- The "Sign in" tab links to `/account` until the sign-in screen exists (Figma gap, `docs/FIGMA-INVENTORY.md` section 5.1).
+
+## Motion
+
+Every shipped animation, its tokens (`src/styles/tokens/motion.css`) and its reduced-motion behaviour are listed in `docs/ANIMATIONS.md`.

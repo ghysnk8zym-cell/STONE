@@ -1,0 +1,416 @@
+{
+  "source": "Figma 1vEGuD9cYYFNynyByUGHwF, get_variable_defs, captured 2026-10-14 (read-only)",
+  "breakpoints": ["base", "768", "1024", "1440", "1920", "max389"],
+  "breakpointNotes": "base = 390 screens; max389 = 360 screen (applies below 390 px); 768/1024/1440/1920 apply from that min-width. Values are the effective value at that breakpoint. Pixel values are numbers (px); colours are Figma hex.",
+  "variables": {
+    "--surface-page": {
+      "base": "#1b1d20"
+    },
+    "--surface-header": {
+      "base": "#1214169e"
+    },
+    "--surface-panel": {
+      "base": "#1214168c"
+    },
+    "--surface-card": {
+      "base": "#ffffff0f"
+    },
+    "--surface-card-hover": {
+      "base": "#ffffff1a"
+    },
+    "--surface-button": {
+      "base": "#ffffff14"
+    },
+    "--surface-nav-pill": {
+      "base": "#ffffff14"
+    },
+    "--surface-footer": {
+      "base": "#141618d1"
+    },
+    "--surface-selected": {
+      "base": "#ffffff29"
+    },
+    "--border-glass": {
+      "base": "#ffffff1f"
+    },
+    "--border-glass-strong": {
+      "base": "#ffffff3d"
+    },
+    "--border-ink": {
+      "base": "#1b1c1e29"
+    },
+    "--divider-light": {
+      "base": "#ffffff66"
+    },
+    "--overlay-tint-10": {
+      "base": "#1011111a"
+    },
+    "--text-primary": {
+      "base": "#ffffff"
+    },
+    "--text-secondary": {
+      "base": "#ffffffb8"
+    },
+    "--text-label": {
+      "base": "#ffffffcc"
+    },
+    "--text-ink": {
+      "base": "#1b1c1e"
+    },
+    "--text-ink-secondary": {
+      "base": "#3a3d41"
+    },
+    "--ink-on-dark": {
+      "base": "#f5f5f3"
+    },
+    "--ink-primary": {
+      "base": "#1f2226"
+    },
+    "--icon-light": {
+      "base": "#ffffff"
+    },
+    "--icon-ink": {
+      "base": "#111827"
+    },
+    "--accent-focus": {
+      "base": "#9db4c0"
+    },
+    "--success-ink": {
+      "base": "#56634e"
+    },
+    "--success-bg": {
+      "base": "#e1e6da"
+    },
+    "--stone-catalog-page": {
+      "base": "#f3f0eb"
+    },
+    "--stone-catalog-card": {
+      "base": "#f8f5f0"
+    },
+    "--stone-catalog-photo": {
+      "base": "#e9e4dd"
+    },
+    "--stone-catalog-line": {
+      "base": "#d8d1c8"
+    },
+    "--stone-catalog-ink": {
+      "base": "#292722"
+    },
+    "--stone-catalog-secondary": {
+      "base": "#625d55"
+    },
+    "--type-headline-size": {
+      "768": 26,
+      "1024": 26,
+      "1440": 28,
+      "1920": 32,
+      "base": 22,
+      "max389": 20
+    },
+    "--type-headline-lh": {
+      "768": 32,
+      "1024": 32,
+      "1440": 34,
+      "1920": 40,
+      "base": 28,
+      "max389": 26
+    },
+    "--type-title-size": {
+      "768": 18,
+      "1024": 18,
+      "1440": 18,
+      "1920": 20,
+      "base": 17,
+      "max389": 16
+    },
+    "--type-title-lh": {
+      "768": 24,
+      "1024": 24,
+      "1440": 24,
+      "1920": 28,
+      "base": 24,
+      "max389": 22
+    },
+    "--type-body-size": {
+      "768": 14,
+      "1024": 14,
+      "1440": 14,
+      "1920": 15,
+      "base": 14,
+      "max389": 13
+    },
+    "--type-body-lh": {
+      "768": 20,
+      "1024": 20,
+      "1440": 20,
+      "1920": 22,
+      "base": 20,
+      "max389": 19
+    },
+    "--type-footer-size": {
+      "768": 14,
+      "1024": 14,
+      "1440": 15,
+      "1920": 16,
+      "base": 13,
+      "max389": 13
+    },
+    "--type-logo-size": {
+      "768": 24,
+      "1024": 24,
+      "1440": 26,
+      "1920": 30,
+      "base": 22,
+      "max389": 20
+    },
+    "--type-nav-size": {
+      "768": 20,
+      "1024": 20,
+      "1440": 22,
+      "1920": 24,
+      "base": 18,
+      "max389": 18
+    },
+    "--layout-header-pad-x": {
+      "768": 32,
+      "1024": 40,
+      "1440": 24,
+      "1920": 40,
+      "base": 16,
+      "max389": 16
+    },
+    "--layout-section-gap": {
+      "768": 20,
+      "1024": 24,
+      "1440": 24,
+      "1920": 24,
+      "base": 16,
+      "max389": 16
+    },
+    "--layout-margin": {
+      "768": 32,
+      "1024": 40,
+      "1440": 77,
+      "1920": 317,
+      "base": 16,
+      "max389": 16
+    },
+    "--layout-control-h": {
+      "768": 44,
+      "1024": 40,
+      "1440": 40,
+      "1920": 40,
+      "base": 44,
+      "max389": 44
+    },
+    "--layout-panel-pad": {
+      "768": 20,
+      "1024": 24,
+      "1440": 24,
+      "1920": 28,
+      "base": 16,
+      "max389": 16
+    },
+    "--layout-card-gap": {
+      "768": 16,
+      "1024": 16,
+      "1440": 24,
+      "1920": 24,
+      "base": 12,
+      "max389": 12
+    },
+    "--layout-main-top": {
+      "768": 24,
+      "1024": 32,
+      "1440": 32,
+      "1920": 40,
+      "base": 20
+    },
+    "--layout-footer-link-gap": {
+      "768": 24,
+      "1024": 24,
+      "1440": 44,
+      "1920": 44,
+      "base": 24,
+      "max389": 24
+    }
+  },
+  "textStyles": {
+    "Brand/Logo": {
+      "family": "Lusitana",
+      "size": "var(--type-logo-size)",
+      "lineHeight": 32,
+      "letterSpacingPercent": 10,
+      "weight": 400,
+      "utility": "type-brand-logo"
+    },
+    "Nav/Link": {
+      "family": "Lusitana",
+      "size": "var(--type-nav-size)",
+      "lineHeight": 28,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-nav-link"
+    },
+    "Nav/Menu": {
+      "family": "Lusitana",
+      "size": 28,
+      "lineHeight": 36,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-nav-menu"
+    },
+    "Button/Label": {
+      "family": "Inter",
+      "size": 14,
+      "lineHeight": 20,
+      "letterSpacingPercent": 0,
+      "weight": 500,
+      "utility": "type-button-label"
+    },
+    "Hero/Headline": {
+      "family": "Inter",
+      "size": "var(--type-headline-size)",
+      "lineHeight": "var(--type-headline-lh)",
+      "letterSpacingPercent": 14,
+      "weight": 400,
+      "utility": "type-hero-headline"
+    },
+    "Section/Label": {
+      "family": "Inter",
+      "size": 12,
+      "lineHeight": 16,
+      "letterSpacingPercent": 12,
+      "weight": 600,
+      "utility": "type-section-label"
+    },
+    "Card/Title": {
+      "family": "Inter",
+      "size": "var(--type-title-size)",
+      "lineHeight": "var(--type-title-lh)",
+      "letterSpacingPercent": 0,
+      "weight": 600,
+      "utility": "type-card-title"
+    },
+    "Body/M": {
+      "family": "Inter",
+      "size": "var(--type-body-size)",
+      "lineHeight": "var(--type-body-lh)",
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-body-m"
+    },
+    "Catalog refined/Product name mobile": {
+      "family": "Lusitana",
+      "size": 18,
+      "lineHeight": 24,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-product-name"
+    },
+    "Catalog/Product name": {
+      "family": "Lusitana",
+      "size": 26,
+      "lineHeight": 32,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-product-name"
+    },
+    "Catalog refined/Meta": {
+      "family": "Inter",
+      "size": 14,
+      "lineHeight": 20,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-meta"
+    },
+    "Catalog/Meta": {
+      "family": "Inter",
+      "size": 15,
+      "lineHeight": 20,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-meta-lg"
+    },
+    "Catalog/Action": {
+      "family": "Inter",
+      "size": 15,
+      "lineHeight": 20,
+      "letterSpacingPercent": 0,
+      "weight": 500,
+      "utility": "type-catalog-action"
+    },
+    "Catalog/Field value": {
+      "family": "Inter",
+      "size": 16,
+      "lineHeight": 22,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-field-value"
+    },
+    "Catalog/Page title 44": {
+      "family": "Lusitana",
+      "size": 44,
+      "lineHeight": 52,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-page-title"
+    },
+    "Catalog/Page title 72": {
+      "family": "Lusitana",
+      "size": 72,
+      "lineHeight": 80,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-page-title"
+    },
+    "Catalog/Page title 56": {
+      "family": "Lusitana",
+      "size": 56,
+      "lineHeight": 64,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-page-title-56"
+    },
+    "Catalog/Product title 40": {
+      "family": "Lusitana",
+      "size": 40,
+      "lineHeight": 48,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-product-title"
+    },
+    "Catalog refined/Section": {
+      "family": "Lusitana",
+      "size": 20,
+      "lineHeight": 28,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-catalog-section"
+    },
+    "Footer/Link": {
+      "family": "Lusitana",
+      "size": "var(--type-footer-size)",
+      "lineHeight": 20,
+      "letterSpacingPercent": 12,
+      "weight": 400,
+      "utility": "type-footer-link"
+    },
+    "Footer/Small": {
+      "family": "Inter",
+      "size": 12,
+      "lineHeight": 16,
+      "letterSpacingPercent": 0,
+      "weight": 400,
+      "utility": "type-footer-small"
+    }
+  },
+  "effects": {
+    "Surface/Glass panel": "--effect-glass-panel-blur: 24px; --effect-glass-panel-shadow: 0 16px 40px #00000059",
+    "Surface/Glass card": "--effect-glass-card-blur: 16px; --effect-glass-card-shadow: 0 8px 28px #2a2e3312, 0 1px 4px #2a2e330a",
+    "Blur/Glass header": "--effect-glass-header-blur: 12px",
+    "Blur/Glass background 24": "--effect-glass-background-blur: 12px",
+    "Light/Glass card hover": "--effect-glass-card-hover-shadow: 0 16px 40px #2a2e331f, 0 2px 8px #2a2e330f",
+    "Light/Glass card pressed": "--effect-glass-card-pressed-shadow: 0 2px 8px #2a2e330d"
+  }
+}
