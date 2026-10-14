@@ -50,8 +50,13 @@ describe("catalog list", () => {
     const marble = await catalog.list({ ...base, material: "marble" }, l10n);
     expect(marble.map((p) => p.slug)).toEqual(["black-marble", "grey-marble"]);
 
-    const black = await catalog.list({ ...base, color: "black" }, l10n);
-    expect(black.map((p) => p.slug)).toEqual(["black-marble"]);
+    const black = await catalog.list({ ...base, color: "dark" }, l10n);
+    expect(black.map((p) => p.slug)).toEqual([
+      "black-marble",
+      "charcoal-ledger",
+      "graphite-rock",
+      "graphite-stack",
+    ]);
 
     const honed = await catalog.list({ ...base, finish: "honed" }, l10n);
     expect(honed.map((p) => p.slug)).toEqual(["grey-limestone"]);
@@ -105,16 +110,19 @@ describe("catalog list", () => {
       "slate",
     ]);
     expect(facets.finishes).toEqual(["chipped", "honed", "polished", "smooth", "split-face"]);
-    expect(facets.colors).toEqual([...facets.colors].sort());
+    expect(facets.colors).toEqual(["dark", "grey", "light", "warm"]);
   });
 
-  it("listFeatured returns catalog products and listPromo only discounted ones", async () => {
-    expect((await catalog.listFeatured()).length).toBeGreaterThan(0);
-    expect((await catalog.listPromo()).map((p) => p.slug).sort()).toEqual([
-      "concrete-paver",
+  it("listFeatured and listPromo follow the Home v2 order", async () => {
+    expect((await catalog.listFeatured()).map((p) => p.slug)).toEqual([
+      "black-marble",
+      "grey-limestone",
+      "grey-marble",
+    ]);
+    expect((await catalog.listPromo()).map((p) => p.slug)).toEqual([
+      "taupe-rock",
       "graphite-rock",
       "split-limestone",
-      "taupe-rock",
     ]);
   });
 });
@@ -152,12 +160,16 @@ describe("parseCatalogQuery", () => {
 });
 
 describe("discountPercent", () => {
-  it("discountPercent of Concrete Paver = 15", () => {
-    const paver = products.find((p) => p.slug === "concrete-paver")!;
-    expect(discountPercent(paver)).toBe(15);
+  const pct = (slug: string) => discountPercent(products.find((p) => p.slug === slug)!);
+
+  it("returns the Figma badge value", () => {
+    expect(pct("concrete-paver")).toBe(15);
+    expect(pct("graphite-rock")).toBe(25);
+    expect(pct("split-limestone")).toBe(20);
+    expect(pct("taupe-rock")).toBe(20);
   });
 
   it("is undefined without an old price", () => {
-    expect(discountPercent(products.find((p) => p.slug === "black-marble")!)).toBeUndefined();
+    expect(pct("black-marble")).toBeUndefined();
   });
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { COLORS, FINISHES, MATERIALS, SORTS } from "./types";
+import { COLOR_GROUPS, FINISHES, MATERIALS, SORTS } from "./types";
 import type { CatalogQuery, Product } from "./types";
 
 type Params = Record<string, string | string[] | undefined>;
@@ -20,7 +20,7 @@ export function parseCatalogQuery(params: Params): CatalogQuery {
 
   const material = pick(MATERIALS, "material");
   if (material) query.material = material;
-  const color = pick(COLORS, "color");
+  const color = pick(COLOR_GROUPS, "color");
   if (color) query.color = color;
   const finish = pick(FINISHES, "finish");
   if (finish) query.finish = finish;
@@ -32,8 +32,7 @@ export function parseCatalogQuery(params: Params): CatalogQuery {
   return query;
 }
 
-/** round((old - price) / old * 100); undefined when there is no old price. */
+/** The Figma badge value stored in the seed. */
 export function discountPercent(p: Product): number | undefined {
-  if (p.oldPriceCents === undefined || p.oldPriceCents <= 0) return undefined;
-  return Math.round(((p.oldPriceCents - p.priceCents) / p.oldPriceCents) * 100);
+  return p.discountPercent;
 }

@@ -4,13 +4,17 @@ function compareText(a: string, b: string, locale?: string): number {
   return a.localeCompare(b, locale, { sensitivity: "base" });
 }
 
+// Home v2 1440 (722:1300) order.
+const FEATURED = ["black-marble", "grey-limestone", "grey-marble"];
+const PROMO = ["taupe-rock", "graphite-rock", "split-limestone"];
+
 export function createStaticRepository(
   products: readonly Product[],
   locale?: string,
 ): CatalogRepository {
   const matches = (p: Product, query: CatalogQuery, l10n: Localizer): boolean => {
     if (query.material && p.material !== query.material) return false;
-    if (query.color && p.color !== query.color) return false;
+    if (query.color && p.colorGroup !== query.color) return false;
     if (query.finish && p.finish !== query.finish) return false;
     if (query.sale && p.oldPriceCents === undefined) return false;
     if (query.q) {
@@ -20,6 +24,9 @@ export function createStaticRepository(
     }
     return true;
   };
+
+  const pick = (slugs: string[]) =>
+    slugs.flatMap((slug) => products.find((p) => p.slug === slug) ?? []);
 
   return {
     async list(query, l10n) {
@@ -41,16 +48,16 @@ export function createStaticRepository(
       return products.find((p) => p.slug === slug) ?? null;
     },
     async listFeatured() {
-      return [...products];
+      return pick(FEATURED);
     },
     async listPromo() {
-      return products.filter((p) => p.oldPriceCents !== undefined);
+      return pick(PROMO);
     },
     async facets() {
       const sorted = <T extends string>(values: T[]) => [...new Set(values)].sort();
       return {
         materials: sorted(products.map((p) => p.material)),
-        colors: sorted(products.map((p) => p.color)),
+        colors: sorted(products.map((p) => p.colorGroup)),
         finishes: sorted(products.map((p) => p.finish)),
       };
     },

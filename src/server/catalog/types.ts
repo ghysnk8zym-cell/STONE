@@ -23,6 +23,10 @@ export const COLORS = [
 ] as const;
 export type Color = (typeof COLORS)[number];
 
+// Groups of the Catalog Color filter dropdown (Figma 922:25562).
+export const COLOR_GROUPS = ["dark", "grey", "light", "warm"] as const;
+export type ColorGroup = (typeof COLOR_GROUPS)[number];
+
 export const FINISHES = ["polished", "honed", "split-face", "chipped", "smooth"] as const;
 export type Finish = (typeof FINISHES)[number];
 
@@ -33,12 +37,16 @@ export type Product = {
   slug: string;
   material: Material;
   color: Color;
+  /** Catalog filter group for `color`. */
+  colorGroup: ColorGroup;
   finish: Finish;
   /** length x width x thickness, mm */
   formatMm: readonly [number, number, number];
   /** price per m2, integer cents */
   priceCents: number;
   oldPriceCents?: number;
+  /** Badge value stored verbatim from Figma (not computed). */
+  discountPercent?: number;
   isPlaceholder: true;
   /** manifest key `images/catalog/<slug>`: cards and the product page main image. */
   image: string;
@@ -50,7 +58,7 @@ export type Product = {
 
 export type CatalogQuery = {
   material?: Material;
-  color?: Color;
+  color?: ColorGroup;
   finish?: Finish;
   sale?: true;
   sort: CatalogSort;
@@ -70,6 +78,6 @@ export interface CatalogRepository {
   /** Products with an old price. */
   listPromo(): Promise<Product[]>;
   /** Values present in the data, sorted. */
-  facets(): Promise<{ materials: Material[]; colors: Color[]; finishes: Finish[] }>;
+  facets(): Promise<{ materials: Material[]; colors: ColorGroup[]; finishes: Finish[] }>;
   total(): Promise<number>;
 }

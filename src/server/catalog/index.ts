@@ -10,12 +10,13 @@ export type {
   CatalogRepository,
   CatalogSort,
   Color,
+  ColorGroup,
   Finish,
   Localizer,
   Material,
   Product,
 } from "./types";
-export { COLORS, FINISHES, MATERIALS, SORTS } from "./types";
+export { COLORS, COLOR_GROUPS, FINISHES, MATERIALS, SORTS } from "./types";
 export { seed as products };
 
 /** The static implementation; Phase 4 swaps in a database-backed repository. */
