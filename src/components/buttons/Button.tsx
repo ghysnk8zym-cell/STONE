@@ -83,7 +83,7 @@ const VARIANT: Record<ButtonVariant, string> = {
   ),
   light: cn(
     "h-[60px] gap-2 rounded-[14px] border-2 border-transparent bg-[#f2f3f5] px-6 text-[20px] leading-normal font-medium text-[#1f2226]",
-    "hov:bg-white hov:shadow-[0_6px_9px_rgba(0,0,0,0.25)]",
+    "hov:bg-[#ffffff] hov:shadow-[0_6px_9px_rgba(0,0,0,0.25)]",
     "focusv:border-[#1f2226]",
     "press:bg-[#dbdee3] press:shadow-none",
     DISABLED_DIM,
