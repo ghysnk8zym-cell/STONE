@@ -66,6 +66,21 @@ describe("calculate", () => {
     });
   });
 
+  it("wall 0.01 x 0.01 rounds below the minimum surface and is rejected", () => {
+    expect(calculate({ mode: "wall", length: "0.01", height: "0.01" }, 24000)).toEqual({
+      ok: false,
+      field: "height",
+      reason: "range",
+    });
+  });
+
+  it("throws RangeError for a non-integer or negative unit price", () => {
+    for (const bad of [1.5, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => calculate({ mode: "area", area: "2" }, bad), String(bad)).toThrow(RangeError);
+    }
+    expect(calculate({ mode: "area", area: "2" }, 0).ok).toBe(true);
+  });
+
   it("1.005 m² rounds to 1.01", () => {
     const r = calculate({ mode: "area", area: "1.005" }, 100);
     expect(r.ok && r.surfaceM2).toBe(1.01);
@@ -76,5 +91,6 @@ describe("formatArea", () => {
   it("formats with two fraction digits per locale", () => {
     expect(formatArea(2.2, "en")).toBe("2.20");
     expect(formatArea(2.2, "ru")).toBe("2,20");
+    expect(formatArea(2.2, "ru-RU")).toBe("2,20");
   });
 });

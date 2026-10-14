@@ -49,6 +49,9 @@ function readField(field: CalcField, raw: string): { ok: true; value: number } |
 }
 
 export function calculate(input: CalcInput, unitCents: number): CalcResult {
+  if (!Number.isInteger(unitCents) || unitCents < 0) {
+    throw new RangeError("unitCents must be a non-negative integer");
+  }
   let surfaceH: number;
   if (input.mode === "area") {
     const area = readField("area", input.area);
@@ -60,6 +63,7 @@ export function calculate(input: CalcInput, unitCents: number): CalcResult {
     const height = readField("height", input.height);
     if (!height.ok) return { ok: false, field: "height", reason: height.reason };
     surfaceH = toHundredths(length.value * height.value);
+    if (surfaceH < 1) return { ok: false, field: "height", reason: "range" };
   }
 
   const extraH = toHundredths((surfaceH * EXTRA_RATE) / 100);
