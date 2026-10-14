@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup } from "@testing-library/react";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -52,6 +52,20 @@ describe("Icon", () => {
     );
     expect((container.firstElementChild as HTMLElement).className).toContain(
       "text-red",
+    );
+  });
+
+  it("has a forced-colors fallback so the mask does not vanish", () => {
+    const css = readFileSync(
+      join(process.cwd(), "src", "app", "globals.css"),
+      "utf8",
+    );
+    expect(css).toMatch(
+      /@media \(forced-colors: active\)\s*\{\s*\.icon-mask\s*\{[^}]*forced-color-adjust:\s*none;[^}]*background-color:\s*CanvasText\s*!important/,
+    );
+    const { container } = renderWithIntl(<Icon name="menu" />);
+    expect((container.firstElementChild as HTMLElement).className).toContain(
+      "icon-mask",
     );
   });
 

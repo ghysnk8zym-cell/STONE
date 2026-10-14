@@ -362,3 +362,12 @@
     }
   }
 }
+
+/* Icons are CSS masks painted with currentColor (inline background-color). Forced-colors mode would
+   otherwise replace that fill and show a solid box or nothing; paint the glyph with the system text colour. */
+@media (forced-colors: active) {
+  .icon-mask {
+    forced-color-adjust: none;
+    background-color: CanvasText !important;
+  }
+}

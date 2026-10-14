@@ -48,7 +48,7 @@ export function Icon({ name, size = 24, className }: IconProps) {
   return (
     <span
       aria-hidden="true"
-      className={cn("inline-block shrink-0", className)}
+      className={cn("icon-mask inline-block shrink-0", className)}
       style={style}
     />
   );
