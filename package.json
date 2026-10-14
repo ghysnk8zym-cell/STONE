@@ -17,7 +17,8 @@
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare deploy",
     "cf:upload": "opennextjs-cloudflare upload",
-    "cf:size": "node scripts/check-worker-size.mjs"
+    "cf:size": "node scripts/check-worker-size.mjs",
+    "images": "node scripts/optimize-images.mjs"
   },
   "dependencies": {
     "next": "16.3.8",

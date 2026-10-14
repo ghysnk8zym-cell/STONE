@@ -1,0 +1,395 @@
+{
+  "fileKey": "1vEGuD9cYYFNynyByUGHwF",
+  "images": [
+    {
+      "file": "images/catalog/black-marble",
+      "node": "922:25514",
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "ProductCard",
+        "CardShowcase:Product"
+      ]
+    },
+    {
+      "file": "images/catalog/charcoal-ledger",
+      "node": "922:25515",
+      "sourceWidth": 415,
+      "sourceHeight": 415,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/concrete-paver",
+      "node": "922:25516",
+      "sourceWidth": 1001,
+      "sourceHeight": 2000,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390,
+        768
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/golden-rock",
+      "node": "922:25517",
+      "sourceWidth": 736,
+      "sourceHeight": 1025,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/graphite-rock",
+      "node": "922:25518",
+      "sourceWidth": 736,
+      "sourceHeight": 1308,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/graphite-stack",
+      "node": "922:25519",
+      "sourceWidth": 1200,
+      "sourceHeight": 1200,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/grey-limestone",
+      "node": "922:25520",
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/grey-marble",
+      "node": "922:25521",
+      "sourceWidth": 1536,
+      "sourceHeight": 1024,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/rustic-split",
+      "node": "922:25522",
+      "sourceWidth": 415,
+      "sourceHeight": 415,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/silver-ledger",
+      "node": "922:25523",
+      "sourceWidth": 450,
+      "sourceHeight": 800,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/split-limestone",
+      "node": "922:25524",
+      "sourceWidth": 1080,
+      "sourceHeight": 1920,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "ProductCard"
+      ]
+    },
+    {
+      "file": "images/catalog/taupe-rock",
+      "node": "922:25525",
+      "sourceWidth": 735,
+      "sourceHeight": 1306,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "ProductCard",
+        "CardShowcase:Promo"
+      ]
+    },
+    {
+      "file": "images/showcase/work",
+      "node": "713:524",
+      "sourceWidth": 562,
+      "sourceHeight": 941,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390
+      ],
+      "usage": [
+        "CardShowcase:Work"
+      ]
+    },
+    {
+      "file": "images/hero/scene-1920",
+      "node": "296:523",
+      "sourceWidth": 1920,
+      "sourceHeight": 630,
+      "requestedWidths": [
+        1920
+      ],
+      "widths": [
+        1920
+      ],
+      "usage": [
+        "Hero:1920"
+      ]
+    },
+    {
+      "file": "images/hero/scene-1440",
+      "node": "21:27",
+      "sourceWidth": 2880,
+      "sourceHeight": 1260,
+      "requestedWidths": [
+        1440,
+        1920
+      ],
+      "widths": [
+        1440,
+        1920
+      ],
+      "usage": [
+        "Hero:1440"
+      ]
+    },
+    {
+      "file": "images/hero/scene-1024",
+      "node": "296:507",
+      "sourceWidth": 2048,
+      "sourceHeight": 940,
+      "requestedWidths": [
+        1024,
+        1440
+      ],
+      "widths": [
+        1024,
+        1440
+      ],
+      "usage": [
+        "Hero:1024"
+      ]
+    },
+    {
+      "file": "images/hero/scene-768",
+      "node": "296:499",
+      "sourceWidth": 1408,
+      "sourceHeight": 660,
+      "requestedWidths": [
+        768,
+        1024
+      ],
+      "widths": [
+        768,
+        1024
+      ],
+      "usage": [
+        "Hero:768"
+      ]
+    },
+    {
+      "file": "images/hero/scene-390",
+      "node": "296:491",
+      "sourceWidth": 1074,
+      "sourceHeight": 504,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390,
+        768,
+        1024
+      ],
+      "usage": [
+        "Hero:390"
+      ]
+    },
+    {
+      "file": "images/hero/scene-360",
+      "node": "296:483",
+      "sourceWidth": 984,
+      "sourceHeight": 462,
+      "requestedWidths": [
+        390,
+        768
+      ],
+      "widths": [
+        390,
+        768
+      ],
+      "usage": [
+        "Hero:360"
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "name": "search",
+      "node": "21:55"
+    },
+    {
+      "name": "menu",
+      "node": "21:60"
+    },
+    {
+      "name": "close",
+      "node": "21:64"
+    },
+    {
+      "name": "arrow",
+      "node": "21:68"
+    },
+    {
+      "name": "bag",
+      "node": "21:72"
+    },
+    {
+      "name": "chevron",
+      "node": "156:100"
+    },
+    {
+      "name": "check",
+      "node": "158:111"
+    },
+    {
+      "name": "dismiss",
+      "node": "158:113"
+    },
+    {
+      "name": "back",
+      "node": "175:170"
+    },
+    {
+      "name": "heart",
+      "node": "712:469"
+    },
+    {
+      "name": "home",
+      "node": "712:471"
+    },
+    {
+      "name": "grid",
+      "node": "712:473"
+    },
+    {
+      "name": "user",
+      "node": "712:478"
+    }
+  ]
+}

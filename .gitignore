@@ -55,3 +55,6 @@ next-env.d.ts
 
 # local tool caches
 /.impeccable/
+
+# Figma source rasters (re-download via assets/figma-manifest.json node ids)
+/assets/source/

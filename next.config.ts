@@ -13,6 +13,14 @@ const indexing = isIndexingEnabled(process.env.INDEXING) ? "on" : "off";
 // has open bugs with Cache Components (see docs/adr/ADR-001 and the Phase 1 ledger).
 const nextConfig: NextConfig = {
   env: { INDEXING: indexing },
+  // Images are pre-optimised static files in public/ (pnpm images). One custom loader on
+  // every host: no runtime optimisation, no sharp at runtime, no Cloudflare Images.
+  images: {
+    loader: "custom",
+    loaderFile: "./src/lib/image-loader.ts",
+    deviceSizes: [390, 768, 1024, 1440, 1920],
+    imageSizes: [],
+  },
   async headers() {
     const headers = robotsHeaders(indexing === "on");
     return headers.length > 0 ? [{ source: "/:path*", headers }] : [];
