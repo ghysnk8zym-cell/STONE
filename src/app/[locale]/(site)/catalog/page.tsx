@@ -138,7 +138,10 @@ export default async function CatalogPage({
   emptyActions.push({ label: t("empty.reset"), href: "/catalog" });
 
   return (
-    <div className="bg-stone-catalog-page flex-1 px-4 pt-6 pb-14 md:px-8 md:pt-8 md:pb-[72px] lg:px-10 lg:pt-10 lg:pb-20 min-[90rem]:px-20 min-[90rem]:pt-12 min-[90rem]:pb-24">
+    <div
+      data-page-surface="catalog"
+      className="bg-stone-catalog-page flex-1 px-4 pt-6 pb-14 md:px-8 md:pt-8 md:pb-[72px] lg:px-10 lg:pt-10 lg:pb-20 min-[90rem]:px-20 min-[90rem]:pt-12 min-[90rem]:pb-24"
+    >
       <div className="mx-auto flex w-full max-w-[1286px] flex-col">
         <div className="pb-4">
           <IconButton icon="back" tone="ink" href="/" label={t("back")} />

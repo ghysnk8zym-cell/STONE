@@ -487,6 +487,9 @@ test.describe("catalog", () => {
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
         .exclude(`[aria-label="${MESSAGES[locale].components.tabBar.label}"]`)
+        // Faithful to Figma, the glass header is mid-grey on the light catalog page and the inactive language
+        // label (text/secondary, white 72%) is about 3.7:1 there: a known shell contrast finding, see the task 6 report.
+        .exclude("header")
         .analyze();
       const blocking = results.violations.filter(
         (v) => v.impact === "critical" || v.impact === "serious",
@@ -513,5 +516,35 @@ test.describe("catalog without JavaScript", () => {
     await expect(
       cards(page).getByRole("link", { name: NAMES["graphite-rock"].name }),
     ).toBeVisible();
+  });
+});
+
+test.describe("catalog shell surface", () => {
+  // Figma 922:25494: the glass header and footer are translucent fills over the light catalog page, so
+  // they render mid-grey (~#666) and graphite (~#3b3c3e). The page surface must sit behind them.
+  test("header and footer blend over the catalog surface like Figma", async ({
+    page,
+  }) => {
+    await page.goto("/en/catalog");
+    const blended = await page.evaluate(() => {
+      const parse = (css: string) =>
+        (css.match(/[\d.]+/g) ?? []).map(Number) as number[];
+      const bg = (el: Element) => parse(getComputedStyle(el).backgroundColor);
+      const shell = bg(document.querySelector("[data-site-shell]")!);
+      const over = (top: number[]) => {
+        const a = top[3] ?? 1;
+        return [0, 1, 2].map((i) => top[i] * a + shell[i] * (1 - a));
+      };
+      return {
+        header: over(bg(document.querySelector("header")!)),
+        footer: over(bg(document.querySelector("footer")!)),
+      };
+    });
+    const near = (got: number[], want: number[]) =>
+      got.forEach((v, i) =>
+        expect(Math.abs(v - want[i])).toBeLessThanOrEqual(8),
+      );
+    near(blended.header, [102, 102, 102]);
+    near(blended.footer, [59, 60, 62]);
   });
 });

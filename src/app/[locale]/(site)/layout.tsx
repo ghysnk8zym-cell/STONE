@@ -11,6 +11,9 @@ import type { Locale } from "@/i18n/routing";
  * - `(site)` is a route group, so the URL is unchanged. `/_styleguide` sits outside it on purpose:
  *   it draws its own header, footer and tab bar stages and must stay free of the shell
  *   (`pnpm qa:visual` captures).
+ * - The shell background is the dark page surface, unless the page declares `data-page-surface="catalog"`:
+ *   the translucent glass header and footer blur whatever is behind them, so on the light catalog pages
+ *   (Figma: header ~#666, footer ~#3b3c3e) the light surface must sit behind them too, not only behind <main>.
  * - The layout owns the single `<main>` landmark. Pages render their content only, never `<main>`.
  *   The localised 404 (`not-found.tsx` here) renders inside it, so unknown paths keep the shell.
  * - The footer reserves 100 px under its content on phones (`reserveTabBar` -> `max-md:pb-tabbar`)
@@ -27,7 +30,10 @@ export default async function SiteLayout({
   setRequestLocale(locale as Locale);
 
   return (
-    <div data-site-shell className="bg-surface-page flex min-h-dvh flex-col">
+    <div
+      data-site-shell
+      className="bg-surface-page has-[[data-page-surface=catalog]]:bg-stone-catalog-page flex min-h-dvh flex-col"
+    >
       <SiteHeader inert={PHASE3_INERT.nav} />
       <main className="flex flex-1 flex-col">{children}</main>
       <SiteFooter reserveTabBar />
