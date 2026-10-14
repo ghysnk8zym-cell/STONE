@@ -4,7 +4,8 @@
 //   pnpm qa:visual                  # BASE_URL (default http://localhost:3000), QA_IDS=a,b filters ids
 //
 // `tests/visual/figma/references.json` is the source of truth:
-//   references["<id>-<width>"] = { node, note, locale?, box?, offset?, sameAs? }
+//   references["<id>-<width>"] = { node, note, caveat?, locale?, box?, offset?, sameAs? }
+//     caveat shown in the notes column of the results table (e.g. an unreliable reference)
 //     id     the `data-qa` value of the styleguide block (sections/qa-ids.ts)
 //     width  viewport width, 1440 or 390
 //     node   Figma node the PNG was taken from (file 1vEGuD9cYYFNynyByUGHwF)
@@ -146,14 +147,31 @@ async function readJson(file, fallback) {
   }
 }
 
-function formatTable(rows, skipped) {
+const LEGEND = [
+  "Method: styleguide in en (tab bar in ru, the Figma labels are Russian); deviceScaleFactor 1, reduced motion, animations disabled, images loaded before each shot.",
+  "Shot: the single child of the [data-qa] stage (not the stage); for header, footer and tab bar the backdrop photo is hidden; the stage border is made transparent so it cannot leak into a margin.",
+  "Both images are padded to the larger size and flattened on the same ground colour (first opaque ancestor background); pixelmatch threshold 0.1, anti-aliasing ignored.",
+  'Notes: "same PNG as 1440" = viewport-independent component, the 390 row reuses the 1440 reference (count unique comparisons without them).',
+];
+
+/**
+ * Markdown report: method legend, result table, and the pairs that are not compared.
+ * @param {{ id: string, width: number, mismatch: string, impl: string, figma: string, sameAs?: boolean, caveat?: string }[]} rows
+ * @param {{ id: string, width: number, reason: string }[]} skipped
+ * @returns {string}
+ */
+export function formatResults(rows, skipped) {
   const lines = [
-    "| id | width | mismatch % | impl WxH | figma WxH |",
-    "| --- | --- | --- | --- | --- |",
-    ...rows.map(
-      (r) =>
-        `| ${r.id} | ${r.width} | ${r.mismatch} | ${r.impl} | ${r.figma} |`,
-    ),
+    ...LEGEND,
+    "",
+    "| id | width | mismatch % | impl WxH | figma WxH | notes |",
+    "| --- | --- | --- | --- | --- | --- |",
+    ...rows.map((r) => {
+      const notes = [r.sameAs ? "same PNG as 1440" : "", r.caveat ?? ""]
+        .filter(Boolean)
+        .join("; ");
+      return `| ${r.id} | ${r.width} | ${r.mismatch} | ${r.impl} | ${r.figma} | ${notes} |`;
+    }),
   ];
   if (skipped.length > 0) {
     lines.push(
@@ -173,6 +191,11 @@ function formatTable(rows, skipped) {
  * @param {import("@playwright/test").Locator} stage
  */
 async function componentOf(stage) {
+  // The stage border (translucent glass, 1px) would show in a clipped margin; Figma draws none.
+  // Only the colour changes, so the box and every clip coordinate stay the same.
+  await stage.evaluate((el) => {
+    el.style.borderColor = "transparent";
+  });
   const photoFrameChildren = stage.locator(":scope > div > :not(img)");
   const hasPhoto =
     (await stage.locator(":scope > div > img.-z-10").count()) > 0;
@@ -184,7 +207,47 @@ async function componentOf(stage) {
     return photoFrameChildren;
   }
   const inner = stage.locator(":scope > *");
-  return (await inner.count()) === 1 ? inner : stage;
+  if ((await inner.count()) === 1) return inner;
+  console.warn(
+    `warning: ${await stage.getAttribute("data-qa")} has ${await inner.count()} children, shooting the whole stage`,
+  );
+  return stage;
+}
+
+/**
+ * Scrolls the stage into view and waits until every image inside it is loaded and decoded, so a
+ * lazy `next/image` is never shot as a placeholder. Throws (failing the pair) after `timeout` ms.
+ * A stage without images (placeholder cards) resolves at once.
+ * @param {import("@playwright/test").Locator} stage
+ */
+async function imagesReady(stage, timeout = 15_000) {
+  await stage.scrollIntoViewIfNeeded();
+  const failed = await stage.evaluate(async (el, ms) => {
+    const bad = [];
+    await Promise.all(
+      [...el.querySelectorAll("img")].map(async (img) => {
+        const limit = new Promise((resolve) =>
+          setTimeout(resolve, ms, "timeout"),
+        );
+        const outcome = await Promise.race([
+          img.decode().then(
+            () => "ok",
+            () => "error",
+          ),
+          limit,
+        ]);
+        if (outcome !== "ok" || !img.complete || img.naturalWidth === 0) {
+          bad.push(`${img.currentSrc || img.src} (${outcome})`);
+        }
+      }),
+    );
+    return bad;
+  }, timeout);
+  if (failed.length > 0) {
+    throw new Error(
+      `image(s) not loaded before the shot: ${failed.join(", ")}`,
+    );
+  }
 }
 
 async function main() {
@@ -277,6 +340,7 @@ async function main() {
                 `[data-qa="${job.id}"] is not visible at ${width}px`,
               );
             }
+            await imagesReady(stage);
             const locator = await componentOf(stage);
             // The ground the component sits on: the first opaque background above it (the component's
             // own translucent fill is part of what is compared).
@@ -362,6 +426,8 @@ async function main() {
               mismatch: mismatchPercent(diffPixels, w, h).toFixed(2),
               impl: `${impl.width}x${impl.height}`,
               figma: `${figma.width}x${figma.height}`,
+              sameAs: Boolean(job.entry.sameAs),
+              caveat: job.entry.caveat,
             });
           } catch (error) {
             failures.push(
@@ -379,7 +445,7 @@ async function main() {
   const skipped = Object.entries(manifest.skipped ?? {})
     .map(([key, reason]) => ({ ...parseReferenceKey(key), reason }))
     .filter((s) => s.id && (!only || only.has(s.id)));
-  const table = formatTable(rows, skipped);
+  const table = formatResults(rows, skipped);
   await writeFile(path.join(OUT_DIR, "results.md"), `${table}\n`);
   console.log(table);
 

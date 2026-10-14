@@ -1,9 +1,56 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatResults,
   mismatchPercent,
   parseReferenceKey,
 } from "../../scripts/visual-compare.mjs";
+
+describe("formatResults", () => {
+  const rows = [
+    { id: "a", width: 1440, mismatch: "1.00", impl: "10x10", figma: "10x10" },
+    {
+      id: "a",
+      width: 390,
+      mismatch: "1.00",
+      impl: "10x10",
+      figma: "10x10",
+      sameAs: true,
+    },
+    {
+      id: "tab",
+      width: 390,
+      mismatch: "89.00",
+      impl: "5x5",
+      figma: "5x5",
+      caveat: "reference unreliable",
+    },
+  ];
+  const text = formatResults(rows, [
+    { id: "b", width: 390, reason: "hidden at this width" },
+  ]);
+
+  it("starts with the method legend before the table", () => {
+    expect(text.split("\n")[0]).toMatch(/^Method:/);
+    expect(text.indexOf("pixelmatch threshold 0.1")).toBeLessThan(
+      text.indexOf("| id |"),
+    );
+  });
+
+  it("marks reused PNGs and caveats in a notes column", () => {
+    expect(text).toContain("| a | 1440 | 1.00 | 10x10 | 10x10 |  |");
+    expect(text).toContain(
+      "| a | 390 | 1.00 | 10x10 | 10x10 | same PNG as 1440 |",
+    );
+    expect(text).toContain(
+      "| tab | 390 | 89.00 | 5x5 | 5x5 | reference unreliable |",
+    );
+  });
+
+  it("lists the pairs that are not compared", () => {
+    expect(text).toContain("| b | 390 | hidden at this width |");
+  });
+});
 
 describe("parseReferenceKey", () => {
   it("splits a reference key into data-qa id and width", () => {

@@ -489,7 +489,8 @@
     },
     "tab-bar-current-catalog-390": {
       "node": "922:26785",
-      "note": "Catalog 390 > Nav / Tab bar (Catalog current). The Figma tab labels are Russian, so this one is compared on /ru",
+      "note": "Catalog 390 > Nav / Tab bar (Catalog current). The Figma tab labels are Russian, so this one is compared on /ru. Reference unreliable: opaque baked render (grey 103,103,103), see the QA doc",
+      "caveat": "reference unreliable — opaque baked render; see QA doc",
       "locale": "ru"
     },
     "site-footer-1440": {
