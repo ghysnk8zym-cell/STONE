@@ -28,6 +28,12 @@
       "vk": "ВКонтакте",
       "ig": "Instagram",
       "wa": "WhatsApp"
+    },
+    "search": {
+      "placeholder": "Поиск материалов"
+    },
+    "select": {
+      "empty": "Нет вариантов"
     }
   }
 }

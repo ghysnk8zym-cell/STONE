@@ -36,6 +36,7 @@
   --color-ink: var(--text-ink);
   --color-ink-secondary: var(--text-ink-secondary);
   --color-ink-on-dark: var(--ink-on-dark);
+  --color-ink-primary: var(--ink-primary);
   --color-icon-light: var(--icon-light);
   --color-icon-ink: var(--icon-ink);
   --color-accent-focus: var(--accent-focus);

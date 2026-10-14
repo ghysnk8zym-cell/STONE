@@ -28,6 +28,12 @@
       "vk": "VKontakte",
       "ig": "Instagram",
       "wa": "WhatsApp"
+    },
+    "search": {
+      "placeholder": "Search materials"
+    },
+    "select": {
+      "empty": "No options"
     }
   }
 }
