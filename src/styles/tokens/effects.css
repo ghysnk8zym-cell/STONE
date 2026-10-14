@@ -5,8 +5,9 @@
   --effect-glass-panel-blur: 24px;
   --effect-glass-panel-shadow: 0 16px 40px #00000059;
   /* Figma draws the panel's drop shadow THROUGH its translucent fill (CSS clips box-shadow inside the border
-     box). Measured on Home v2 (docs/QA/phase-3-pages.md D1): the pixels under the panel are 27 to 30 % darker
-     than fill + backdrop alone, at four points and two panels. A black veil over the fill reproduces it. */
+     box). Measured on Home v2 (docs/QA/phase-3-pages.md D1): at four points the panel reads like an effective
+     fill alpha of 0.70 instead of 0.55, i.e. the finished pixel (fill over backdrop) is 27 to 30 % darker. A black
+     veil of 28 % over the fill reproduces that; it approximates a shadow that really fades towards the edge. */
   --effect-glass-panel-shadow-through: 0.28;
   --effect-glass-card-blur: 16px;
   --effect-glass-card-shadow: 0 8px 28px #2a2e3312, 0 1px 4px #2a2e330a;

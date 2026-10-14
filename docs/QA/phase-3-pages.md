@@ -1,4 +1,4 @@
-﻿# Phase 3 pages: Figma visual comparison notes
+# Phase 3 pages: Figma visual comparison notes
 
 Branch `feat/phase-3-pages`. Source of truth: Figma `1vEGuD9cYYFNynyByUGHwF` (read only).
 Raw output of the run: [`phase-3/results.md`](phase-3/results.md). Only a curated set of images is committed (see "Evidence").
@@ -152,8 +152,8 @@ Phase 3:
       Keep, reword or replace with confirmed prices before launch.
 - [ ] Localised 404 (unknown product or path): not designed in Figma. Built from tokens inside the shell with a link
       back to the catalog; copy `pages.notFound`.
-- [ ] Russian copy: every ru string except the Figma tab labels is a draft. Includes the hero line, where В«РґРѕР»РіРѕРІРµС‡РЅРѕСЃС‚СЊВ»
-      may be too long at 390 (fallback В«РїСЂРѕС‡РЅРѕСЃС‚СЊВ»), В«Р РІР°РЅС‹Р№ СЃРєРѕР»В», В«Р›СЋР±Р°СЏ РѕР±СЂР°Р±РѕС‚РєР°В», В«Р¦РµРЅР° Р·Р° РјВІВ», the calculator
+- [ ] Russian copy: every ru string except the Figma tab labels is a draft. Includes the hero line, where «долговечность»
+      may be too long at 390 (fallback «прочность»), «Рваный скол», «Любая обработка», «Цена за м²», the calculator
       labels and the filter and sort labels. English colour and finish labels are derived from Figma ids.
 - [ ] Inert controls (default Figma look, non-link, `aria-disabled`, out of the tab order) until their pages exist:
       header and menu Create Your Stone, Cart, account; tab bar Favorites, Cart, Sign in; Projects; product hearts and
@@ -175,6 +175,8 @@ Phase 3:
 - [ ] 360 px: checked by e2e (no horizontal overflow in ru on catalog and product), not compared pixel for pixel.
 - [ ] Tab bar contrast: inactive labels are 3.7 to 4.05:1 over light backdrops (table above). Accept Figma's tokens, or
       darken the bar fill, or use full white labels.
+- [ ] D1: the home panel veil (`glass-panel-veil`, 28 % black) approximates Figma's drop shadow drawn through the
+      translucent fill; the value 0.28 was picked from four measurements (it overshoots near the top edge). Accept or tune.
 - [ ] D2: the home carousel arrows are disabled when nothing can scroll (all three cards fit at 1440) and Prev at the start
       (1024, 768); Figma frames 722:1300, 722:1563 and 724:1669 draw every arrow enabled (nodes 722:1317, 722:1325).
       Kept as correct behaviour; confirm. D1, D4 and D5 are fixed, D3 was a misreading (see Defects).
@@ -193,7 +195,7 @@ Carried over from Phase 2 (still apply):
       button focus ring weak on light surfaces.
 - [ ] Header breakpoint: Full at 1280 and up, Compact below (Figma draws Compact at 1024, 768, 390, 360).
 - [ ] Mobile menu panel is not in Figma. Without JavaScript the compact header menu is inert between 768 and 1279 px.
-- [ ] Footer copyright "В© 2026" is fixed text; ru strings in the header, footer and tab bar are drafts.
+- [ ] Footer copyright "© 2026" is fixed text; ru strings in the header, footer and tab bar are drafts.
 - [ ] Cyrillic PT Serif in Lusitana roles: eyeball it on the real pages in ru.
 - [ ] Question O1 (graphite search panel look) and the hero search Open state taken from Search/Pill 21:108.
 - [ ] `APP_ENV=production` on any real production deploy (the styleguide is a 404 there).
@@ -203,14 +205,14 @@ Carried over from Phase 2 (still apply):
 From the task reviews, none blocks the phase:
 
 - T0: `LOW_RES` list is hard-coded in `assets.test.ts`.
-- T1: `Localizer` has no locale for `localeCompare` (the catalog passes the locale); no Cyrillic sort test; С‘ and Рµ are
+- T1: `Localizer` has no locale for `localeCompare` (the catalog passes the locale); no Cyrillic sort test; ё and е are
   not normalised in the repository itself (the search does it); enum params are case-sensitive; seed objects are shared
   by reference.
 - T2: ".5" is rejected, so the UI error copy should say "e.g. 0.5".
 - T3: "10 %" spacing in one string; the message test does not compare ICU arguments or `pages.*` coverage.
 - T5: the inert style lists duplicate the resting styles (drift risk); hero LCP preload only at 1024 and 1440; the 390
   hero search uses `max-md:invisible` instead of `inert`.
-- T7: the calculator live region can announce "вЂ”" up to 800 ms before the error text.
+- T7: the calculator live region can announce "—" up to 800 ms before the error text.
 
 ## Evidence
 

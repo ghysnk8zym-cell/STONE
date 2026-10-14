@@ -584,13 +584,13 @@ test.describe("catalog shell surface", () => {
  * Navigation flow e2e (Phase 3, Task 8). Runs in the `desktop` (1440) and `mobile` (390) projects.
  */
 test.describe("navigation", () => {
-  test("navigation home в†’ catalog в†’ product в†’ breadcrumb в†’ catalog", async ({
+  test("navigation home → catalog → product → breadcrumb → catalog", async ({
     page,
   }, testInfo) => {
     await page.goto("/en");
     await expect(page.getByRole("banner")).toBeVisible();
 
-    // Home в†’ catalog: the hero action on desktop, the tab bar on phones (the hero is covered there).
+    // Home → catalog: the hero action on desktop, the tab bar on phones (the hero is covered there).
     if (testInfo.project.name === "mobile") {
       await page
         .getByRole("navigation", { name: en.components.tabBar.label })
@@ -606,14 +606,14 @@ test.describe("navigation", () => {
       en.pages.catalog.title,
     );
 
-    // Catalog в†’ product
+    // Catalog → product
     await page.locator('article a[href="/en/catalog/black-marble"]').click();
     await expect(page).toHaveURL(/\/en\/catalog\/black-marble$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Black Marble",
     );
 
-    // Product в†’ breadcrumb в†’ catalog
+    // Product → breadcrumb → catalog
     const crumbs = page.getByRole("navigation", {
       name: en.components.breadcrumb.label,
     });
