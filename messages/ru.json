@@ -23,6 +23,7 @@
       "next": "Вперёд"
     },
     "social": {
+      "name": "{abbr}, {network}",
       "tg": "Telegram",
       "vk": "ВКонтакте",
       "ig": "Instagram",

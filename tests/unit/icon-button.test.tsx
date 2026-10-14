@@ -135,15 +135,17 @@ describe("CarouselArrow", () => {
 describe("SocialButton", () => {
   it("SocialButton is a link with its label", () => {
     renderWithIntl(<SocialButton label="TG" href="https://t.me/stone" />);
-    const link = screen.getByRole("link", { name: "Telegram" });
+    const link = screen.getByRole("link", { name: "TG, Telegram" });
     expect(link.getAttribute("href")).toBe("https://t.me/stone");
     expect(link.textContent).toBe("TG");
+    // WCAG 2.5.3 Label in Name: the accessible name contains the visible text.
+    expect(link.getAttribute("aria-label")).toContain(link.textContent);
   });
 
   it("names every network in full, in both locales", () => {
     const names = {
-      en: ["Telegram", "VKontakte", "Instagram", "WhatsApp"],
-      ru: ["Telegram", "ВКонтакте", "Instagram", "WhatsApp"],
+      en: ["TG, Telegram", "VK, VKontakte", "IG, Instagram", "WA, WhatsApp"],
+      ru: ["TG, Telegram", "VK, ВКонтакте", "IG, Instagram", "WA, WhatsApp"],
     } as const;
     for (const locale of ["en", "ru"] as const) {
       const { unmount } = renderWithIntl(
@@ -167,7 +169,7 @@ describe("SocialButton", () => {
       <SocialButton label="VK" href="https://vk.com/stone" disabled />,
     );
     expect(container.querySelector("[href]")).toBeNull();
-    const link = screen.getByRole("link", { name: "VKontakte" });
+    const link = screen.getByRole("link", { name: "VK, VKontakte" });
     expect(link.tagName).toBe("SPAN");
     expect(link.getAttribute("aria-disabled")).toBe("true");
   });

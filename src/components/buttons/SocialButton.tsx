@@ -21,8 +21,11 @@ export type SocialButtonProps = {
 /*
  * Figma Social/Button 21:115: 44x44, fill surface/nav-pill, label Button/Label (Inter Medium 14/20)
  * in text/primary. The abbreviation is a placeholder for the official brand icons; the accessible
- * name is the full network name from messages (`components.social.*`), as the component
- * description asks.
+ * name is "{abbr}, {network}" from messages (`components.social.*`): the full network name the
+ * component description asks for, led by the visible text so it satisfies WCAG 2.5.3 Label in
+ * Name (voice control: "click TG"). When the official brand icons replace the text monograms,
+ * drop `{abbr}` from `components.social.name` and keep the network name (the criterion then no
+ * longer applies).
  */
 export function SocialButton({
   label,
@@ -31,7 +34,7 @@ export function SocialButton({
   disabled = false,
 }: SocialButtonProps) {
   const t = useTranslations("components.social");
-  const name = t(NETWORK[label]);
+  const name = t("name", { abbr: label, network: t(NETWORK[label]) });
   const classes = cn(
     ROUND_GLASS,
     "size-11 bg-surface-nav-pill text-primary type-button-label",
