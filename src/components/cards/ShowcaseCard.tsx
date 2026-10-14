@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 
 import type { InteractionState } from "../buttons/Button";
 import { cn } from "../cn";
+import { IconButton } from "../buttons/IconButton";
 import { DiscountBadge, PriceRow, type Price } from "./Price";
 
 type Common = {
@@ -36,6 +37,12 @@ type Common = {
   /** Frozen interaction state, rendered as `data-state` (styleguide only). */
   state?: InteractionState;
   className?: string;
+  /**
+   * Product / promo only: accessible name of the Heart that Figma draws on the phone (Mobile) cards
+   * (390 frames; none on Desktop). Rendered inert: favourites are not built yet (owner decision A).
+   * Hidden from 768 px up.
+   */
+  favoriteLabel?: string;
 };
 
 export type ShowcaseCardProps = Common &
@@ -146,6 +153,7 @@ export function ShowcaseCard({
   discountPercent,
   state,
   className,
+  favoriteLabel,
 }: ShowcaseCardProps) {
   const titleId = useId();
   const overlay =
@@ -223,6 +231,16 @@ export function ShowcaseCard({
             percent={discountPercent}
             className="absolute top-2 left-2"
           />
+        )}
+        {favoriteLabel !== undefined && layout !== "desktop" && (
+          <span
+            className={cn(
+              "absolute top-1.5 right-1.5 z-20",
+              layout === "responsive" && "md:hidden",
+            )}
+          >
+            <IconButton icon="heart" tone="light" label={favoriteLabel} inert />
+          </span>
         )}
       </div>
       <div className="flex flex-col gap-0.5 px-1 pb-1 wrap-break-word">

@@ -6,6 +6,7 @@ import type { Price } from "@/components/cards/Price";
 import type { Locale } from "@/i18n/routing";
 import { catalog, discountPercent, type Product } from "@/server/catalog";
 
+import { Backdrop } from "./_home/Backdrop";
 import { Hero } from "./_home/Hero";
 import { ShowcaseSection } from "./_home/ShowcaseSection";
 
@@ -68,6 +69,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
 
   const t = await getTranslations("pages.home");
   const c = await getTranslations("catalog");
+  const cc = await getTranslations("components");
   const [featured, promo] = await Promise.all([
     catalog.listFeatured(),
     catalog.listPromo(),
@@ -77,12 +79,15 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   type CatalogKey = Parameters<typeof c>[0];
   const name = (p: Product) => c(`products.${p.slug}.name` as CatalogKey);
   const material = (p: Product) => c(`material.${p.material}` as CatalogKey);
+  const favorite = (p: Product) =>
+    cc("productCard.favorite", { name: name(p) });
   const format = (p: Product) => `${material(p)} · ${p.formatMm.join("×")} mm`;
 
   return (
-    <>
+    <div className="relative isolate overflow-clip md:-mt-[72px]">
+      <Backdrop />
       <Hero locale={locale as Locale} />
-      <div className="flex flex-col items-center gap-(--layout-section-gap) px-(--layout-margin) pt-(--layout-main-top) pb-(--layout-section-gap)">
+      <div className="relative z-10 flex flex-col items-center gap-(--layout-section-gap) px-(--layout-margin) pt-(--layout-main-top) pb-(--layout-section-gap) max-md:pt-0">
         <ShowcaseSection
           id="home-catalog"
           label={t("sections.catalog")}
@@ -97,6 +102,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               href={`/catalog/${p.slug}`}
               title={name(p)}
               subtitle={material(p)}
+              favoriteLabel={favorite(p)}
               image={{ src: p.image, alt: "" }}
               imageFit={p.imageFit}
               className="w-full"
@@ -118,6 +124,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               href={`/catalog/${p.slug}`}
               title={name(p)}
               subtitle={format(p)}
+              favoriteLabel={favorite(p)}
               image={{ src: p.image, alt: "" }}
               imageFit={p.imageFit}
               price={price(p.priceCents)}
@@ -158,6 +165,6 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
           ))}
         </ShowcaseSection>
       </div>
-    </>
+    </div>
   );
 }

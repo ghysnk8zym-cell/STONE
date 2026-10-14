@@ -68,7 +68,7 @@ const NETWORKS = [
  */
 const FOCUS =
   "rounded-sm outline-0 focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus";
-const INERT = "cursor-default aria-disabled:opacity-45";
+const INERT = "cursor-default";
 
 const NAV_LINK = cn(
   "block py-3 text-primary type-footer-link whitespace-nowrap uppercase motion-hover",
@@ -156,7 +156,7 @@ export function SiteFooter({
                   <SocialButton
                     label={network}
                     href={href ?? ""}
-                    disabled={href === undefined}
+                    inert={href === undefined}
                   />
                 </li>
               );

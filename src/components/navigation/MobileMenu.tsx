@@ -149,7 +149,7 @@ export function MobileMenu({
                 <span
                   role="link"
                   aria-disabled="true"
-                  className="text-primary type-nav-menu pointer-events-none block py-4 opacity-45"
+                  className="text-primary type-nav-menu block cursor-default py-4"
                 >
                   {t(item.label)}
                 </span>

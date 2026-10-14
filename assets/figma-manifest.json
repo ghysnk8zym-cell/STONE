@@ -395,6 +395,27 @@
       "usage": [
         "CardShowcase:Work (Natural stone fireplace portal)"
       ]
+    },
+    {
+      "file": "images/home/backdrop",
+      "node": "722:1302",
+      "sourceWidth": 1788,
+      "sourceHeight": 2266,
+      "requestedWidths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "widths": [
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "usage": [
+        "Home v2 Background / 555 1 (rock backdrop behind the glass panels, all layouts)"
+      ]
     }
   ],
   "icons": [

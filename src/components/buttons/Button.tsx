@@ -21,6 +21,11 @@ type CommonProps = {
   iconLeft?: IconName;
   iconRight?: IconName;
   disabled?: boolean;
+  /**
+   * Not built yet: the default look of the variant, rendered as a non-link `<span role="link"
+   * aria-disabled>` (only with `href`), no hover / pressed reaction, no 45 % dim.
+   */
+  inert?: boolean;
   state?: InteractionState;
   children: ReactNode;
   className?: string;
@@ -110,6 +115,20 @@ const VARIANT: Record<ButtonVariant, string> = {
   ),
 };
 
+/* Inert (not built yet): only the resting look of a variant; no hov / press / focus classes. */
+const INERT: Record<ButtonVariant, string> = {
+  pill: "h-(--layout-control-h) gap-2 rounded-full border border-glass bg-surface-button pr-3.5 pl-4 text-primary type-button-label",
+  primary:
+    "gap-2.5 rounded-full border-2 border-transparent bg-[#1f2226] px-[26px] py-3 text-ink-on-dark shadow-[0_6px_8px_rgba(31,33,38,0.22)] type-catalog-button",
+  light:
+    "h-[60px] gap-2 rounded-[14px] border-2 border-transparent bg-[#f2f3f5] px-6 text-[20px] leading-normal font-medium text-[#1f2226]",
+  outline:
+    "h-[46px] gap-2 rounded-full border border-ink px-6 text-ink type-catalog-action",
+  graphite:
+    "h-[46px] gap-2 rounded-full border border-surface-card-hover bg-linear-to-b from-[rgba(76,80,83,0.2)] to-[rgba(65,68,72,0.2)] px-6 text-primary shadow-[0_8px_10px_rgba(20,23,26,0.35)] type-catalog-action",
+  save: "h-11 gap-2 rounded-full border border-ink pr-[18px] pl-4 text-ink type-catalog-action",
+};
+
 /* Icon sizes in Figma: 16 everywhere, except Graphite arrow 18 and Save heart 20 (Icon only knows 12/16/24). */
 const ICON: Record<ButtonVariant, { size: IconSize; className?: string }> = {
   pill: { size: 16 },
@@ -132,6 +151,7 @@ export function Button(props: ButtonProps) {
     iconLeft,
     iconRight,
     disabled = false,
+    inert = false,
     state,
     children,
     className,
@@ -173,13 +193,17 @@ export function Button(props: ButtonProps) {
   if (props.href !== undefined) {
     // A disabled link is not a link at all: no <a>/href, so it cannot be activated by a screen
     // reader, a programmatic click or "open in new tab".
-    if (disabled) {
+    if (disabled || inert) {
       return (
         <span
           role="link"
           aria-disabled="true"
           data-state={state}
-          className={classes}
+          className={
+            disabled
+              ? classes
+              : cn(BASE, INERT[variant], "cursor-default", className)
+          }
         >
           {content}
         </span>

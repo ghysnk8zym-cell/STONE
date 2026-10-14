@@ -246,6 +246,37 @@ describe("ShowcaseCard", () => {
     expect(screen.getByRole("img").className).toContain("top-[-200%]");
   });
 
+  it("phone cards carry an inert heart only when favoriteLabel is given", () => {
+    const { rerender } = renderWithIntl(
+      <ShowcaseCard
+        type="product"
+        layout="responsive"
+        href="/catalog/black-marble"
+        title="Black Marble"
+        subtitle="Marble"
+        image={IMAGE}
+        favoriteLabel="Save Black Marble to favorites"
+      />,
+    );
+    const heart = screen.getByRole("button", {
+      name: "Save Black Marble to favorites",
+    });
+    expect(heart.getAttribute("aria-disabled")).toBe("true");
+    expect(heart.className).not.toMatch(/opacity-45/);
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    rerender(
+      <ShowcaseCard
+        type="product"
+        layout="responsive"
+        href="/catalog/black-marble"
+        title="Black Marble"
+        subtitle="Marble"
+        image={IMAGE}
+      />,
+    );
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
   it("responsive layout carries mobile classes with md: desktop overrides", () => {
     const { container } = renderWithIntl(
       <ShowcaseCard

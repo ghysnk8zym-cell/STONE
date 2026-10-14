@@ -15,6 +15,8 @@ export type IconButtonProps = {
   /** Frozen interaction state, rendered as `data-state` (styleguide only). */
   state?: InteractionState;
   disabled?: boolean;
+  /** Not built yet: default look, non-link `<span role="link" aria-disabled>`, no reaction, no dim. */
+  inert?: boolean;
   onClick?: () => void;
   /** Disclosure trigger (menu button): sets `aria-expanded`. */
   expanded?: boolean;
@@ -45,6 +47,14 @@ const TONE = {
   ),
 } as const;
 
+/** Inert look: the resting look of each tone, no hover / focus / pressed / dim. */
+const INERT = {
+  glass:
+    "inline-flex size-[46px] shrink-0 cursor-default items-center justify-center rounded-full border border-glass bg-surface-nav-pill text-icon-light select-none",
+  light:
+    "relative inline-flex size-9 shrink-0 cursor-default items-center justify-center rounded-full border border-stone-catalog-line bg-stone-catalog-card text-ink select-none before:absolute before:-inset-1 before:content-['']",
+} as const;
+
 /** Figma: 22 px glyph in the 46 px button, except the User glyph (24) at rest; 20 px in the heart bubble. */
 function glyphClass(icon: IconName, tone: "glass" | "light") {
   if (tone === "light") return "size-5!";
@@ -63,17 +73,18 @@ export function IconButton({
   href,
   state,
   disabled = false,
+  inert = false,
   onClick,
   pressed,
   expanded,
   haspopup,
   current = false,
 }: IconButtonProps) {
-  const classes = TONE[tone];
+  const classes = inert ? INERT[tone] : TONE[tone];
   const glyph = <Icon name={icon} className={glyphClass(icon, tone)} />;
 
   if (href !== undefined) {
-    if (disabled) {
+    if (disabled || inert) {
       return (
         <span
           role="link"
@@ -96,6 +107,21 @@ export function IconButton({
       >
         {glyph}
       </Link>
+    );
+  }
+
+  if (inert) {
+    // no destination at all (e.g. the card heart): an announced, disabled button that does nothing
+    return (
+      <span
+        role="button"
+        aria-label={label}
+        aria-disabled="true"
+        data-state={state}
+        className={classes}
+      >
+        {glyph}
+      </span>
     );
   }
 

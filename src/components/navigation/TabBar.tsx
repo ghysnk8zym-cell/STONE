@@ -43,13 +43,16 @@ const TABS = [
  * Active colour, focus a 2 px accent-focus outline (same ring as the header controls), no ripple.
  * Colours are set per look (current / idle), never combined, because cn() is not twMerge.
  */
+const ITEM_BASE =
+  "flex h-[52px] w-full flex-col items-center justify-center gap-1 rounded-xl py-1 type-footer-small whitespace-nowrap select-none";
 const ITEM = cn(
   "flex h-[52px] w-full flex-col items-center justify-center gap-1 rounded-xl py-1 type-footer-small whitespace-nowrap outline-0 motion-hover",
   "focusv:outline-2 focusv:outline-accent-focus",
 );
 const IDLE = "text-secondary hov:text-primary";
 const CURRENT = "text-primary";
-const INERT = "pointer-events-none opacity-45";
+/** Inert tab: the idle look, no hover reaction, not focusable (Figma shows the tab as usual). */
+const INERT = "cursor-default";
 
 export function TabBar({
   current,
@@ -73,7 +76,7 @@ export function TabBar({
               <span
                 role="link"
                 aria-disabled="true"
-                className={cn(ITEM, IDLE, INERT)}
+                className={cn(ITEM_BASE, "text-secondary", INERT)}
               >
                 <Icon name={icon} />
                 {t(key)}

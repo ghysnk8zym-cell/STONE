@@ -41,7 +41,7 @@ export function SiteHeader({
           <NavPill
             href="/create-your-stone"
             current={current === "create"}
-            disabled={inert.includes("create")}
+            inert={inert.includes("create")}
           >
             {t("createYourStone")}
           </NavPill>
@@ -49,7 +49,7 @@ export function SiteHeader({
         <NavPill
           href="/cart"
           current={current === "cart"}
-          disabled={inert.includes("cart")}
+          inert={inert.includes("cart")}
         >
           {t("cart")}
         </NavPill>
@@ -59,7 +59,7 @@ export function SiteHeader({
             label={t("account")}
             href="/account"
             current={current === "account"}
-            disabled={inert.includes("account")}
+            inert={inert.includes("account")}
           />
           <LanguageSwitch />
         </span>

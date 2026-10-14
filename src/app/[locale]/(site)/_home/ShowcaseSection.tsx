@@ -64,7 +64,7 @@ export function ShowcaseSection({
         <Button
           variant="pill"
           href={action.href ?? "/"}
-          disabled={action.href === undefined}
+          inert={action.href === undefined}
           iconRight="arrow"
           className="shrink-0"
         >

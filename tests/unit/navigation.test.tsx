@@ -14,7 +14,10 @@ import { NextIntlClientProvider } from "next-intl";
 import { type ComponentProps, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { Button } from "@/components/buttons/Button";
+import { IconButton } from "@/components/buttons/IconButton";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
+import { NavPill } from "@/components/navigation/NavPill";
 import { LanguageSwitch } from "@/components/navigation/LanguageSwitch";
 import { MobileMenu } from "@/components/navigation/MobileMenu";
 import { ShellTabBar } from "@/components/navigation/ShellTabBar";
@@ -660,7 +663,29 @@ describe("inert navigation (Phase 3)", () => {
     expect(element, label).toBeTruthy();
     expect(element?.hasAttribute("href"), label).toBe(false);
     expect(element?.getAttribute("aria-disabled"), label).toBe("true");
+    // inert keeps the default Figma look: no 45 % dim and no hover / pressed classes
+    const classes = element?.className ?? "";
+    expect(classes, label).not.toMatch(/opacity-45/);
+    expect(classes, label).not.toMatch(/hov:|press:/);
+    expect(element?.hasAttribute("tabindex"), label).toBe(false);
   }
+
+  it("Button, IconButton and NavPill inert render the default look, not the Disabled state", () => {
+    const { container } = renderWithIntl(
+      <>
+        <Button href="/projects" inert iconRight="arrow">
+          Projects
+        </Button>
+        <IconButton icon="user" label="Account" href="/account" inert />
+        <NavPill href="/cart" inert>
+          Cart
+        </NavPill>
+      </>,
+    );
+    const items = [...container.querySelectorAll<HTMLElement>("[role=link]")];
+    expect(items).toHaveLength(3);
+    for (const item of items) expectInert(item, item.textContent ?? "icon");
+  });
 
   it("PHASE3_INERT lists favorites, cart, account (tab bar) and create, cart, account (header)", () => {
     expect([...PHASE3_INERT.tabBar]).toEqual(["favorites", "cart", "account"]);
