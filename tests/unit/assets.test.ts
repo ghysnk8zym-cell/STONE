@@ -75,20 +75,24 @@ const LOW_RES = [
   "taupe-rock",
 ];
 const WORKS_IDS = [
-  "marble-kitchen-countertop",
+  "marble-slab", // shared by Marble kitchen countertop and Bathroom cladding
   "natural-stone-fireplace-portal",
-  "bathroom-cladding",
 ];
 
 describe("page assets (Phase 3)", () => {
   const byFile = new Map(manifest.images.map((image) => [image.file, image]));
 
-  it.each(PRODUCT_SLUGS)("%s has gallery images -1 and -2", (slug) => {
-    const first = byFile.get(`images/products/${slug}-1`);
-    const second = byFile.get(`images/products/${slug}-2`);
-    expect(first, `${slug}-1`).toBeDefined();
-    expect(second, `${slug}-2`).toBeDefined();
-    expect(second!.widths.length, `${slug}-2`).toBeGreaterThan(0);
+  // The product gallery reuses images/catalog/<slug> (the Figma main image and the second
+  // thumbnail are the same fill; the thumbnail is a CSS crop of it).
+  it.each(PRODUCT_SLUGS)("%s catalog image serves the product gallery", (slug) => {
+    const first = byFile.get(`images/catalog/${slug}`);
+    expect(first, slug).toBeDefined();
+    expect(first!.requestedWidths, slug).toContain(1440);
+    expect(first!.usage, slug).toContain("ProductGallery:main");
+    expect(
+      byFile.has(`images/products/${slug}-1`),
+      "no duplicate product files",
+    ).toBe(false);
     // Never upscaled: the widest output is the widest requested width the source allows.
     const widest = Math.max(
       ...first!.requestedWidths.filter((w) => w <= first!.sourceWidth),

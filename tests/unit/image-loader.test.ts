@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import imageLoader from "@/lib/image-loader";
 
-// images/catalog/black-marble is prepared at 390 / 768 / 1024 (see assets/figma-manifest.json).
+// images/catalog/black-marble is prepared at 390 / 768 / 1024 / 1440 (see assets/figma-manifest.json).
 const src = "/images/catalog/black-marble";
 
 describe("imageLoader", () => {
@@ -20,7 +20,7 @@ describe("imageLoader", () => {
 
   it("falls back to largest", () => {
     expect(imageLoader({ src, width: 1920 })).toBe(
-      "/images/catalog/black-marble-1024.webp",
+      "/images/catalog/black-marble-1440.webp",
     );
   });
 
