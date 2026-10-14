@@ -95,18 +95,23 @@ export function Select({
   const selected = options[selectedIndex];
 
   const [open, setOpen] = useState(state === "open" && !inert);
+  // A list frozen open for the styleguide must not react to presses elsewhere on the page (closing it
+  // would also focus the button and scroll the page to it). The user closing or reopening it ends the freeze.
+  const frozenOpen = useRef(state === "open" && !inert);
   const [active, setActive] = useState(selectedIndex);
   const [alignEnd, setAlignEnd] = useState(false);
 
   const openList = () => {
     if (inert) return;
     focusListOnOpen.current = true;
+    frozenOpen.current = false;
     setActive(selectedIndex);
     setAlignEnd(false);
     setOpen(true);
   };
 
   const closeList = () => {
+    frozenOpen.current = false;
     setOpen(false);
     buttonRef.current?.focus();
   };
@@ -137,6 +142,7 @@ export function Select({
     if (!open) return;
     const onPointerDown = (event: Event) => {
       if (rootRef.current?.contains(event.target as Node)) return;
+      if (frozenOpen.current) return;
       closeList();
     };
     document.addEventListener("pointerdown", onPointerDown);

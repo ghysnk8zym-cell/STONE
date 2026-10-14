@@ -527,6 +527,30 @@ describe("Select", () => {
     expect(document.activeElement).toBe(document.body);
   });
 
+  it("a list frozen open ignores presses elsewhere (no focus steal) until the user closes it", () => {
+    renderWithIntl(
+      <>
+        <p>outside</p>
+        <Select
+          label="Material"
+          name="material"
+          options={MATERIALS}
+          state="open"
+        />
+      </>,
+    );
+    fireEvent.pointerDown(screen.getByText("outside"));
+    expect(screen.getByRole("listbox")).toBeTruthy();
+    expect(document.activeElement).toBe(document.body);
+
+    // Once the user closes it, it behaves like any other select again.
+    fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape" });
+    expect(screen.queryByRole("listbox")).toBeNull();
+    fireEvent.click(trigger());
+    fireEvent.pointerDown(screen.getByText("outside"));
+    expect(screen.queryByRole("listbox")).toBeNull();
+  });
+
   it("state hover and focus set data-state on the button", () => {
     for (const state of ["hover", "focus"] as const) {
       const { unmount } = renderWithIntl(

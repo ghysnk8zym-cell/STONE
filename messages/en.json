@@ -87,5 +87,220 @@
         "en": "English"
       }
     }
+  },
+  "styleguide": {
+    "title": "Styleguide",
+    "intro": "Internal reference of every STONE component and state. Not indexed, not linked from the site, hidden in production.",
+    "toc": "Sections",
+    "sections": {
+      "tokens": "Tokens",
+      "buttons": "Buttons",
+      "forms": "Fields and forms",
+      "cards": "Cards",
+      "navigation": "Navigation",
+      "approval": "Owner approval"
+    },
+    "states": {
+      "default": "Default",
+      "hover": "Hover",
+      "focus": "Focus",
+      "pressed": "Pressed",
+      "disabled": "Disabled",
+      "loading": "Loading",
+      "error": "Error",
+      "open": "Open",
+      "closed": "Closed",
+      "current": "Current page",
+      "none": "No current page",
+      "favorite": "In favorites"
+    },
+    "statesNote": "Hover, focus and pressed are frozen with the data-state attribute; the real pseudo-classes work as well.",
+    "demo": {
+      "sample": "Natural stone for your interior",
+      "blackMarble": {
+        "name": "Black Marble",
+        "meta": "Marble · 600×300×20 mm",
+        "alt": "Black marble slab"
+      },
+      "concretePaver": {
+        "name": "Concrete Paver",
+        "meta": "Concrete · 300×300×30 mm",
+        "alt": "Concrete paver"
+      },
+      "goldenRock": {
+        "name": "Golden Rock",
+        "meta": "Sandstone · 600×300×20 mm",
+        "alt": "Golden sandstone"
+      },
+      "graphiteStack": {
+        "name": "Graphite Stack",
+        "meta": "Slate · 600×150×15 mm",
+        "alt": "Stacked graphite slate"
+      },
+      "longName": {
+        "name": "Extra Long Product Name Natural Split Limestone Tile Collection",
+        "meta": "Limestone · 600×300×20 mm · Hand finished"
+      },
+      "work": {
+        "title": "Kitchen island",
+        "description": "Black marble worktop, project in Moscow",
+        "alt": "Kitchen with a stone island"
+      }
+    },
+    "tokens": {
+      "colors": "Colours",
+      "colorsNote": "Figma variable name and value. Each swatch sits half on a light and half on a dark ground so translucent fills read.",
+      "colorGroups": {
+        "surface": "Surfaces",
+        "line": "Borders, dividers, overlays",
+        "text": "Text, ink, icons",
+        "accent": "Accent and status",
+        "catalog": "Catalog (light) palette"
+      },
+      "type": "Type scale",
+      "typeNote": "Every type-* utility. Sizes that follow a Figma variable change with the viewport; resize the window to see it.",
+      "typeDark": "Global styles, on dark surfaces",
+      "typeLight": "Catalog styles, on light surfaces",
+      "effects": "Effects",
+      "effectsNote": "Glass approximated with backdrop blur and a light top edge (the Figma refraction cannot be reproduced in CSS), over a Figma hero texture.",
+      "effectPanel": "Glass panel: blur 24, shadow 0 16 40",
+      "effectCard": "Glass card: blur 16",
+      "effectHeader": "Glass header: blur 12"
+    },
+    "buttons": {
+      "label": "Request a sample",
+      "longLabel": "Order a free stone sample",
+      "variants": {
+        "pill": "Pill",
+        "primary": "Primary",
+        "light": "Light",
+        "outline": "Outline",
+        "graphite": "Graphite",
+        "save": "Save"
+      },
+      "extras": "Loading, link and long label",
+      "loadingNote": "Loading exists only for submit buttons.",
+      "asLink": "Primary as a link",
+      "long": "Longer label (Russian copy runs longer than English)",
+      "glass": "Icon buttons, glass tone",
+      "lightTone": "Icon buttons, light tone (catalog heart)",
+      "icons": {
+        "search": "Search",
+        "bag": "Cart",
+        "heart": "Favorites",
+        "menu": "Menu",
+        "close": "Close",
+        "user": "Account"
+      },
+      "carousel": "Carousel arrows",
+      "prev": "Previous",
+      "next": "Next",
+      "social": "Social buttons",
+      "socialNetworks": {
+        "tg": "Telegram",
+        "vk": "VKontakte",
+        "ig": "Instagram",
+        "wa": "WhatsApp"
+      }
+    },
+    "forms": {
+      "dark": "Text fields, dark",
+      "light": "Text fields, light (catalog)",
+      "search": "Search field",
+      "select": "Select",
+      "badge": "Badge",
+      "fieldEmail": "Email",
+      "fieldArea": "Area",
+      "placeholderEmail": "name@example.com",
+      "valueEmail": "anna@example.com",
+      "errorEmail": "Enter a valid email address",
+      "unitArea": "m²",
+      "valueArea": "24",
+      "searchLight": "Light (catalog page)",
+      "searchGraphite": "Graphite (under the Search pill)",
+      "selectLabel": "Material",
+      "selectOptions": {
+        "marble": "Marble",
+        "limestone": "Limestone",
+        "granite": "Granite"
+      },
+      "discount": "−20%"
+    },
+    "cards": {
+      "product": "Product card",
+      "showcase": "Showcase card",
+      "placeholderNote": "Prices are illustrative placeholders (USD 240 per m²), announced as such to screen readers.",
+      "withImage": "With photo",
+      "discount": "Old price and discount",
+      "favorite": "Saved to favorites",
+      "noImage": "Without photo (placeholder)",
+      "longName": "Long name",
+      "types": {
+        "product": "Product",
+        "promo": "Promo",
+        "work": "Work"
+      },
+      "layouts": {
+        "desktop": "Desktop",
+        "mobile": "Mobile"
+      }
+    },
+    "navigation": {
+      "header": "Site header",
+      "headerDesktop": "Full layout (from 1280 px)",
+      "headerCompact": "Compact layout (below 1280 px)",
+      "mobileMenu": "Mobile menu",
+      "mobileMenuTrigger": "Open the mobile menu (demo)",
+      "mobileMenuNote": "The menu is a full-screen dialog: open it with the button, close it with Escape or the close button.",
+      "pill": "Nav pill",
+      "pillLong": "Longest header label",
+      "languageSwitch": "Language switch",
+      "tabBar": "Tab bar (below 768 px)",
+      "tabBarCurrent": "Catalog is current",
+      "footer": "Footer",
+      "breadcrumb": "Breadcrumb",
+      "breadcrumbDefault": "Three levels",
+      "breadcrumbLong": "Long trail wraps at 390 px",
+      "crumbs": {
+        "home": "Home",
+        "catalog": "Catalog",
+        "marble": "Marble",
+        "product": "Black Marble",
+        "collection": "Collection of large format natural stone slabs",
+        "finish": "Polished finish with a very long descriptive name"
+      }
+    },
+    "approval": {
+      "intro": "Items for the owner to confirm at 1440 and 390. Each one is a value chosen without a Figma design.",
+      "fonts": "Lusitana and PT Serif",
+      "fontsHint": "Check that the Cyrillic line is PT Serif (not a system serif) and sits well beside the Latin one.",
+      "fontLatin": "Lusitana, Latin",
+      "fontCyrillic": "PT Serif, Cyrillic (Lusitana has no Cyrillic)",
+      "fontMixed": "Mixed line, one font stack",
+      "sampleLatin": "Natural stone",
+      "sampleCyrillic": "Природный камень",
+      "sampleMixed": "STONE — природный камень",
+      "languageSwitch": "Language switch (not in Figma)",
+      "languageSwitchHint": "Built from the Nav pill look; confirm the RU / EN label and where it sits in the header and the menu.",
+      "loading": "Loading submit buttons",
+      "loadingHint": "A spinner follows the label; the button stays focusable and ignores clicks while loading.",
+      "glass": "Glass approximation over a Figma texture",
+      "glassHint": "Compare with the Figma glass: blur 24 and a light top edge stand in for the refraction.",
+      "glassTitle": "Glass panel",
+      "glassBody": "Backdrop blur and a light top edge stand in for the Figma refraction.",
+      "checklist": "Values chosen without Figma",
+      "checklistHint": "Confirm each one, or say what to change.",
+      "items": {
+        "motion": "Motion timings: hover 180 ms, press ripple 600 ms, easing cubic-bezier(0.2, 0, 0, 1). Figma records none.",
+        "states": "Hover, pressed and disabled looks that Figma does not draw (Outline, Graphite, Save, fields, cards, heart, carousel arrows).",
+        "primaryFocus": "Primary button focus: white 2 px border, also on the light catalog surfaces.",
+        "focusRings": "Focus ring colour per tone: accent-focus on dark surfaces, ink-primary on light ones.",
+        "mobileMenu": "Mobile menu panel: Figma draws only the Menu and Close buttons, the panel is built from existing tokens.",
+        "headerBreakpoint": "Header switches at 1280 px: Full above, Compact (logo, Cart, Menu) below.",
+        "tabBar": "Tab bar: the active tab differs by colour only, no indicator; hidden from 768 px.",
+        "footer": "Footer links and social buttons without a known destination render as disabled, not as dead links.",
+        "ruDraft": "Russian copy and the language switch are drafts for owner review."
+      }
+    }
   }
 }
