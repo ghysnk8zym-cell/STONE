@@ -138,11 +138,11 @@ Evidence:
 - Motion timings (hover 180 ms, ripple 600 ms, `cubic-bezier(0.2,0,0,1)`, ring 8 to 300 px): defaults; Figma motion
   context returns nothing for these components.
 
-## Defects (for the owner or lead to rule on; nothing was changed)
+## Defects
 
-| ID  | Component           | data-qa              | Figma node | Expected                                       | Actual                                          | Cause                                                                                                                                                                                                                                                                                               |
-| --- | ------------------- | -------------------- | ---------- | ---------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | Button Light, Hover | `button-light-hover` | 430:473    | fill #FFFFFF with shadow 0 6 9 rgba(0,0,0,.25) | fill rgb(242,243,245) (#F2F3F5), shadow correct | `src/components/buttons/Button.tsx` line 86 uses `hov:bg-white`; the theme resets colours (`--color-*: initial` in `globals.css`), so Tailwind `bg-white` is not generated and the utility is missing from the built CSS. Fix: `hov:bg-[#ffffff]`. It is the only `*-white/black` utility in `src`. |
+| ID  | Component           | data-qa              | Figma node | Expected                                       | Actual                                          | Cause                                                                                                                                                                                                                                                                                                                                  |
+| --- | ------------------- | -------------------- | ---------- | ---------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Button Light, Hover | `button-light-hover` | 430:473    | fill #FFFFFF with shadow 0 6 9 rgba(0,0,0,.25) | fill rgb(242,243,245) (#F2F3F5), shadow correct | **FIXED in commit 8aff1ff** (`hov:bg-[#ffffff]`). `Button.tsx` used `hov:bg-white`; the theme resets colours (`--color-*: initial`), so Tailwind `bg-white` was never generated. The committed `button-light-hover-1440-impl.png` and its diff predate the fix and still show the old #F2F3F5 fill; rerun `pnpm qa:visual` to refresh. |
 
 Pressed (#dbdee3) and default (#f2f3f5) match Figma.
 
@@ -179,8 +179,12 @@ Everything below was decided by the implementer (Figma is silent or inconsistent
 - [ ] Icons are the transparent SVGs from `get_design_context` (public/icons), not the opaque `download_assets` exports.
 - [ ] Long button and nav-pill labels truncate with an ellipsis (single line, fixed height as Figma), accessible name stays full.
 - [ ] Disabled link renders `<span role="link" aria-disabled>` without href.
-- [ ] Styleguide stays reachable on the Cloudflare test deployment (`APP_ENV=preview`); set `APP_ENV=production` on any real production deploy (needs a DEPLOYMENT.md note).
-- [ ] Defect D1 (Light hover fill) and question O1 (graphite search panel): fix or accept.
+- [x] Styleguide stays reachable on the Cloudflare test deployment (`APP_ENV=preview`); set `APP_ENV=production` on any real production deploy (DEPLOYMENT.md note added in commit 00e9758).
+- [x] Defect D1 (Light hover fill): fixed in 8aff1ff.
+- [ ] Question O1 (graphite search panel): fix or accept.
+- [ ] Placeholder prices (Phase 3 must decide before any page ships): `Price.tsx` marks the value "illustrative" for screen readers only (`sr-only`), so sighted users see a placeholder such as "$240.00 / m²" as a firm price. CLAUDE.md section 8 forbids presenting unconfirmed prices as real. Phase 3 must label placeholders visibly (for example "from" / "approx.") behind a prop, or keep Figma-exact only for confirmed prices.
+- [ ] Blur conversion (finding, visuals unchanged): `src/styles/tokens/effects.css` treats Figma blur differently. "Blur/Glass background 24" becomes CSS 12 px (halved), while the panel (24 px) and card (16 px) blur are used verbatim, and the header (12 px) comes from the spec text. Figma's own definition of a layer or background blur radius is twice the CSS `blur()` radius (Figma Dev Mode emits `blur(12px)` for 24), so the halved rule is the Figma-consistent one. If the panel 24 and card 16 values were read from Figma blur radii, they render 2x too blurry (CSS 12 and 8 would match). Verify against Figma effect styles and settle one rule before Phase 3 glass panels reuse them.
+- [ ] Without JavaScript the compact header menu is inert between 768 and 1279 px (the tab bar is hidden from 768), so there is no route to Create Your Stone, Account or the language switch. Phase 3 follow-up: a link fallback, or render those links into the header.
 
 ## Evidence
 
