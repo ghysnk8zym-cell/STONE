@@ -1,7 +1,20 @@
-// Visual comparison of the styleguide against the Figma reference screenshots (Phase 2, Task 10).
+// Visual comparison against the Figma reference screenshots: component mode (Phase 2, Task 10) and
+// page mode (Phase 3, Task 8).
 //
 //   pnpm build && pnpm start        # in another terminal; this script starts nothing itself
-//   pnpm qa:visual                  # BASE_URL (default http://localhost:3000), QA_IDS=a,b filters ids
+//   pnpm qa:visual                  # component mode; BASE_URL (default http://localhost:3000), QA_IDS=a,b filters ids
+//   pnpm qa:visual:pages            # page mode (= node scripts/visual-compare.mjs --pages); QA_IDS filters
+//                                   # page ids, QA_WIDTHS=390,1440 filters widths
+//
+// PAGE MODE (`--pages`). `references.json` > `pages["<id>"] = { route, name, screens: { "<width>": node } }`:
+// full-page screenshots of `/<en><route>` at 1440 / 1024 / 768 / 390 (viewport height 900, deviceScaleFactor 1,
+// reduced motion, page scrolled once so lazy images load, every image decoded before the shot, the fixed
+// tab bar lands at the bottom of the full-page capture like the Figma frame) against
+// `tests/visual/figma/pages/<id>-<width>.png` (Figma `get_screenshot` of the screen, scale 1). Same
+// method as component mode: pad both images to the larger size, flatten on the page ground colour,
+// pixelmatch threshold 0.1 without anti-aliasing. Output: `docs/QA/phase-3/<id>-<width>-{impl,figma,diff}.png`
+// and `docs/QA/phase-3/results.md`. A report, not a gate; exit 1 only when a page cannot be loaded or a
+// reference cannot be read. The component-mode notes below do not apply to page mode.
 //
 // `tests/visual/figma/references.json` is the source of truth:
 //   references["<id>-<width>"] = { node, note, caveat?, locale?, box?, offset?, sameAs? }
@@ -36,7 +49,10 @@ import { PNG } from "pngjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FIGMA_DIR = path.join(ROOT, "tests", "visual", "figma");
 const OUT_DIR = path.join(ROOT, "docs", "QA", "phase-2");
+const PAGES_DIR = path.join(FIGMA_DIR, "pages");
+const PAGES_OUT_DIR = path.join(ROOT, "docs", "QA", "phase-3");
 const WIDTHS = [1440, 390];
+const PAGE_WIDTHS = [1440, 1024, 768, 390];
 const DEFAULT_LOCALE = "en";
 const VIEWPORT_HEIGHT = 900;
 const PAGE_BG_FALLBACK = [255, 255, 255];
@@ -184,6 +200,227 @@ export function formatResults(rows, skipped) {
     lines.push(...skipped.map((s) => `| ${s.id} | ${s.width} | ${s.reason} |`));
   }
   return lines.join("\n");
+}
+
+/**
+ * Expands the `pages` section of references.json into one job per (page, width), widest first.
+ * @param {Record<string, { route?: string, screens?: Record<string, string> }>} pages
+ * @param {Set<string> | null} onlyIds page ids to keep, null for all
+ * @param {Set<number> | null} [onlyWidths] widths to keep, null for all
+ * @returns {{ id: string, width: number, key: string, route: string, node: string }[]}
+ */
+export function buildPageJobs(pages, onlyIds, onlyWidths = null) {
+  const jobs = [];
+  for (const [id, page] of Object.entries(pages)) {
+    if (typeof page.route !== "string") {
+      throw new Error(`page "${id}" has no route`);
+    }
+    if (onlyIds && !onlyIds.has(id)) continue;
+    for (const width of PAGE_WIDTHS) {
+      const node = page.screens?.[String(width)];
+      if (!node || (onlyWidths && !onlyWidths.has(width))) continue;
+      jobs.push({ id, width, key: `${id}-${width}`, route: page.route, node });
+    }
+  }
+  return jobs;
+}
+
+const PAGE_LEGEND = [
+  "Method: full-page screenshots of /en<route> in Playwright Chromium, viewport width = Figma frame width and height 900, deviceScaleFactor 1, reduced motion, animations disabled; the page is scrolled once so lazy images load and every image is decoded before the shot.",
+  "Reference: Figma get_screenshot of the matching screen (scale 1, original size). Both images are padded to the larger size and flattened on the page background colour; pixelmatch threshold 0.1, anti-aliasing ignored.",
+  'Notes: the height delta is implementation height minus Figma height; a non-zero delta shifts everything below it, so a high mismatch is expected and must be read from the triplet ("raw % is not pass/fail").',
+];
+
+/**
+ * Markdown report of page mode.
+ * @param {{ id: string, width: number, route: string, mismatch: string, impl: string, figma: string }[]} rows
+ * @param {string[]} failures
+ * @returns {string}
+ */
+export function formatPageResults(rows, failures) {
+  const size = (value) => value.split("x").map(Number);
+  const lines = [
+    ...PAGE_LEGEND,
+    "",
+    "| id | route | width | mismatch % | impl WxH | figma WxH | height delta |",
+    "| --- | --- | --- | --- | --- | --- | --- |",
+    ...rows.map((r) => {
+      const delta = size(r.impl)[1] - size(r.figma)[1];
+      const signed = delta > 0 ? `+${delta}` : String(delta);
+      return `| ${r.id} | /${DEFAULT_LOCALE}${r.route} | ${r.width} | ${r.mismatch} | ${r.impl} | ${r.figma} | ${signed} |`;
+    }),
+  ];
+  if (failures.length > 0) {
+    lines.push("", "Failures:", "", ...failures.map((f) => `- ${f}`));
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Scrolls the whole page once (lazy images, in-view effects), then waits for every image to decode.
+ * @param {import("@playwright/test").Page} page
+ */
+async function settlePage(page) {
+  await page.evaluate(async () => {
+    const step = Math.max(200, Math.floor(window.innerHeight / 2));
+    for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    }
+    window.scrollTo(0, 0);
+    await document.fonts.ready;
+  });
+  const failed = await page.evaluate(async () => {
+    const bad = [];
+    await Promise.all(
+      [...document.images].map(async (img) => {
+        img.loading = "eager";
+        const limit = new Promise((resolve) =>
+          setTimeout(resolve, 15_000, "timeout"),
+        );
+        const outcome = await Promise.race([
+          img.decode().then(
+            () => "ok",
+            () => "error",
+          ),
+          limit,
+        ]);
+        if (outcome !== "ok" || img.naturalWidth === 0) {
+          bad.push(`${img.currentSrc || img.src} (${outcome})`);
+        }
+      }),
+    );
+    return bad;
+  });
+  if (failed.length > 0) {
+    throw new Error(
+      `image(s) not loaded before the shot: ${failed.join(", ")}`,
+    );
+  }
+  // A full-page capture keeps `position: fixed` elements at the viewport bottom of the FIRST screen,
+  // while a Figma frame draws the tab bar at the bottom of the whole screen. Re-anchor bottom-fixed
+  // elements to the bottom of the document so both show the same thing.
+  await page.evaluate(() => {
+    const docHeight = document.documentElement.scrollHeight;
+    for (const el of document.body.querySelectorAll("*")) {
+      if (getComputedStyle(el).position !== "fixed") continue;
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight / 2) continue;
+      el.style.position = "absolute";
+      el.style.bottom = "auto";
+      el.style.top = `${docHeight - (window.innerHeight - rect.top)}px`;
+    }
+  });
+  await page.waitForTimeout(300);
+}
+
+async function mainPages() {
+  const baseURL = (process.env.BASE_URL ?? "http://localhost:3000").replace(
+    /\/$/,
+    "",
+  );
+  const csv = (value) =>
+    value
+      ? value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : null;
+  const onlyIds = csv(process.env.QA_IDS);
+  const onlyWidths = csv(process.env.QA_WIDTHS);
+  const manifest = await readJson(path.join(FIGMA_DIR, "references.json"), {});
+  const jobs = buildPageJobs(
+    manifest.pages ?? {},
+    onlyIds ? new Set(onlyIds) : null,
+    onlyWidths ? new Set(onlyWidths.map(Number)) : null,
+  );
+  if (jobs.length === 0) {
+    console.error("No page references found for the selected ids/widths.");
+    process.exitCode = 1;
+    return;
+  }
+
+  await mkdir(PAGES_OUT_DIR, { recursive: true });
+  const { chromium } = await import("@playwright/test");
+  const browser = await chromium.launch();
+  const rows = [];
+  const failures = [];
+
+  try {
+    for (const job of jobs) {
+      const context = await browser.newContext({
+        viewport: { width: job.width, height: VIEWPORT_HEIGHT },
+        deviceScaleFactor: 1,
+        reducedMotion: "reduce",
+      });
+      try {
+        const figma = PNG.sync.read(
+          await readFile(path.join(PAGES_DIR, `${job.key}.png`)),
+        );
+        const page = await context.newPage();
+        const url = `${baseURL}/${DEFAULT_LOCALE}${job.route}`;
+        const response = await page.goto(url, { waitUntil: "load" });
+        if (!response || response.status() !== 200) {
+          throw new Error(`GET ${url}: HTTP ${response?.status()}`);
+        }
+        await settlePage(page);
+        const bg =
+          parseCssColor(
+            await page.evaluate(
+              () => getComputedStyle(document.body).backgroundColor,
+            ),
+          ) ?? PAGE_BG_FALLBACK;
+        const impl = PNG.sync.read(
+          await page.screenshot({
+            fullPage: true,
+            animations: "disabled",
+            caret: "hide",
+          }),
+        );
+
+        const w = Math.max(impl.width, figma.width);
+        const h = Math.max(impl.height, figma.height);
+        const a = flattenOnto(impl, w, h, bg);
+        const b = flattenOnto(figma, w, h, bg);
+        const diff = new PNG({ width: w, height: h });
+        const diffPixels = pixelmatch(a.data, b.data, diff.data, w, h, {
+          threshold: 0.1,
+          includeAA: false,
+        });
+        for (const [suffix, image] of [
+          ["impl", a],
+          ["figma", b],
+          ["diff", diff],
+        ]) {
+          await writeFile(
+            path.join(PAGES_OUT_DIR, `${job.key}-${suffix}.png`),
+            PNG.sync.write(image),
+          );
+        }
+        rows.push({
+          id: job.id,
+          width: job.width,
+          route: job.route,
+          mismatch: mismatchPercent(diffPixels, w, h).toFixed(2),
+          impl: `${impl.width}x${impl.height}`,
+          figma: `${figma.width}x${figma.height}`,
+        });
+      } catch (error) {
+        failures.push(
+          `${job.key}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      } finally {
+        await context.close();
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+
+  const table = formatPageResults(rows, failures);
+  await writeFile(path.join(PAGES_OUT_DIR, "results.md"), `${table}\n`);
+  console.log(table);
+  if (failures.length > 0) process.exitCode = 1;
 }
 
 /**
@@ -460,5 +697,5 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
 ) {
-  await main();
+  await (process.argv.includes("--pages") ? mainPages() : main());
 }

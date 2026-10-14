@@ -19,7 +19,8 @@
     "cf:upload": "opennextjs-cloudflare upload",
     "cf:size": "node scripts/check-worker-size.mjs",
     "images": "node scripts/optimize-images.mjs",
-    "qa:visual": "node scripts/visual-compare.mjs"
+    "qa:visual": "node scripts/visual-compare.mjs",
+    "qa:visual:pages": "node scripts/visual-compare.mjs --pages"
   },
   "dependencies": {
     "next": "16.3.8",
