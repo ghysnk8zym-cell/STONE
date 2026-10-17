@@ -38,8 +38,16 @@ describe("GET /api/health/db", () => {
   it("answers 503 without leaking details when the environment is invalid", async () => {
     vi.stubEnv("DATABASE_URL", "pglite://memory");
     vi.stubEnv("BETTER_AUTH_SECRET", "short");
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const response = await callHealth();
     expect(response.status).toBe(503);
+    // The failure is diagnosable from server logs: name/code only, never the URL or secret.
+    expect(log).toHaveBeenCalledTimes(1);
+    const logged = JSON.stringify(log.mock.calls);
+    expect(logged).toContain("health/db");
+    expect(logged).not.toContain("short");
+    expect(logged).not.toContain("pglite");
+    log.mockRestore();
     const text = await response.text();
     expect(text).not.toContain("short");
     expect(text).not.toContain("pglite");

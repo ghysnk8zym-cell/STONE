@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { sql } from "drizzle-orm";
@@ -5,7 +6,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-const { selectDriver, createDb } = await import("@/server/db/client");
+const { selectDriver, createDb, attachPoolErrorHandler } =
+  await import("@/server/db/client");
+const { pgliteLocation } = await import("@/server/db/pglite-url");
 const { migrate } = await import("@/server/db/migrate");
 const schema = await import("@/server/db/schema");
 
@@ -56,6 +59,56 @@ describe("database driver switch", () => {
   });
 });
 
+describe("pglite location", () => {
+  it("pglite://memory is in-memory, other paths are directories", () => {
+    expect(pgliteLocation("pglite://memory")).toBeUndefined();
+    expect(pgliteLocation("pglite://")).toBeUndefined();
+    expect(pgliteLocation("pglite://.data/pglite")).toBe(".data/pglite");
+  });
+
+  it("drizzle-kit uses the same in-memory meaning as the runtime", async () => {
+    vi.resetModules();
+    vi.stubEnv("DATABASE_URL", "pglite://memory");
+    const { default: memory } = await import("../../drizzle.config");
+    expect(memory).toMatchObject({
+      driver: "pglite",
+      dbCredentials: { url: "memory://" },
+    });
+    vi.resetModules();
+    vi.stubEnv("DATABASE_URL", "pglite://.data/pglite");
+    const { default: disk } = await import("../../drizzle.config");
+    expect(disk).toMatchObject({ dbCredentials: { url: ".data/pglite" } });
+    vi.unstubAllEnvs();
+  });
+});
+
+describe("pg pool error handling", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("an idle client error is logged by code only and does not throw", () => {
+    const pool = new EventEmitter();
+    attachPoolErrorHandler(pool);
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = Object.assign(
+      new Error("connect failed postgres://user:hunter2pass@db.internal/stone"),
+      { code: "ECONNRESET" },
+    );
+    expect(() => pool.emit("error", error)).not.toThrow();
+    expect(log).toHaveBeenCalledTimes(1);
+    const logged = JSON.stringify(log.mock.calls);
+    expect(logged).toContain("ECONNRESET");
+    expect(logged).not.toContain("hunter2pass");
+    expect(logged).not.toContain("db.internal");
+  });
+
+  it("an error without a code is still handled", () => {
+    const pool = new EventEmitter();
+    attachPoolErrorHandler(pool);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => pool.emit("error", new Error("boom"))).not.toThrow();
+  });
+});
+
 describe("migrations", () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -84,6 +137,12 @@ describe("migrations", () => {
     ]) {
       expect(tables).toContain(table);
     }
+    const indexes = await client.query<{ indexname: string }>(
+      "select indexname from pg_indexes where schemaname = 'public'",
+    );
+    expect(indexes.rows.map((row) => row.indexname)).toContain(
+      "order_item_product_idx",
+    );
     await client.close();
   });
 

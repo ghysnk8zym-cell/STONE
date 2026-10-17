@@ -5,6 +5,7 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 
 import { getServerEnv } from "../env";
 import { migrate } from "./migrate";
+import { pgliteLocation } from "./pglite-url";
 import * as schema from "./schema";
 
 /**
@@ -36,12 +37,6 @@ export function selectDriver(url: string | undefined): DbDriver | null {
   );
 }
 
-/** `pglite://memory` is a throwaway in-memory database; anything else is a data directory. */
-function pgliteDataDir(url: string): string | undefined {
-  const path = url.slice("pglite://".length);
-  return path === "" || path === "memory" ? undefined : path;
-}
-
 // Each driver is imported only when selected, so the other two never load (and, where the
 // bundler allows it, never ship) on a host that does not use them.
 async function createNeon(url: string): Promise<Db> {
@@ -52,12 +47,36 @@ async function createNeon(url: string): Promise<Db> {
   return drizzle({ client: neon(url), schema });
 }
 
+/** The part of a pooled client error that is safe to log: never the message (it can hold the URL). */
+function errorCode(error: unknown): string {
+  const code = (error as { code?: unknown } | null)?.code;
+  return typeof code === "string" ? code : "unknown";
+}
+
+/**
+ * node-postgres emits `error` on the pool when the server drops an idle client (restart, idle
+ * timeout). Without a listener that is an unhandled event and crashes the Node process, so log
+ * the error code only and let the pool replace the client.
+ */
+export function attachPoolErrorHandler(pool: {
+  on(event: "error", listener: (error: Error) => void): unknown;
+}): void {
+  pool.on("error", (error) => {
+    console.error(`[db] idle pool client error: ${errorCode(error)}`);
+  });
+}
+
+// node-postgres keeps a pool of open sockets. That is fine on Node hosts, where this module is
+// cached for the life of the process. It must never run on Cloudflare Workers: I/O objects
+// cannot be shared across requests there, and Workers use the Neon HTTP driver (ADR-002).
 async function createPg(url: string): Promise<Db> {
   const [{ Pool }, { drizzle }] = await Promise.all([
     import("pg"),
     import("drizzle-orm/node-postgres"),
   ]);
-  return drizzle({ client: new Pool({ connectionString: url }), schema });
+  const pool = new Pool({ connectionString: url });
+  attachPoolErrorHandler(pool);
+  return drizzle({ client: pool, schema });
 }
 
 async function createPglite(url: string): Promise<Db> {
@@ -65,7 +84,7 @@ async function createPglite(url: string): Promise<Db> {
     import("@electric-sql/pglite"),
     import("drizzle-orm/pglite"),
   ]);
-  const db: Db = drizzle({ client: new PGlite(pgliteDataDir(url)), schema });
+  const db: Db = drizzle({ client: new PGlite(pgliteLocation(url)), schema });
   // PGlite is local, test and CI only: bring it up to date so `pnpm dev` needs no setup step.
   await migrate(db);
   return db;

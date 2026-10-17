@@ -1,5 +1,7 @@
 import { defineConfig } from "drizzle-kit";
 
+import { pgliteLocation } from "./src/server/db/pglite-url";
+
 // drizzle-kit does not read .env.local on its own; Next.js does, so mirror it here.
 try {
   process.loadEnvFile(".env.local");
@@ -18,7 +20,7 @@ export default defineConfig({
   ...(url?.startsWith("pglite://")
     ? {
         driver: "pglite" as const,
-        dbCredentials: { url: url.slice("pglite://".length) || "memory://" },
+        dbCredentials: { url: pgliteLocation(url) ?? "memory://" },
       }
     : url
       ? { dbCredentials: { url } }

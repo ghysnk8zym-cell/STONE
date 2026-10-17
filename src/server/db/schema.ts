@@ -252,6 +252,8 @@ export const orderItem = pgTable(
     check("order_item_quantity_check", sql`${table.quantity} > 0`),
     check("order_item_price_check", sql`${table.priceCents} >= 0`),
     index("order_item_order_idx").on(table.orderId),
+    // The restrict FK scans order_item on every product delete without this.
+    index("order_item_product_idx").on(table.productId),
   ],
 );
 
