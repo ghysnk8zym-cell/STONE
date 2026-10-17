@@ -141,7 +141,8 @@ export function ProductCard({
       </div>
 
       <div className="flex flex-col gap-0.5 px-1 pb-1 wrap-break-word">
-        <h3 className="type-catalog-product-name text-stone-catalog-ink">
+        {/* Spec: at most two lines with an ellipsis; a long unbroken word breaks, never overflows. */}
+        <h3 className="type-catalog-product-name text-stone-catalog-ink line-clamp-2 wrap-anywhere">
           <Link
             href={href}
             className="outline-0 after:absolute after:inset-0 after:content-['']"

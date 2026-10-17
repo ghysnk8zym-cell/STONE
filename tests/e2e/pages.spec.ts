@@ -692,3 +692,47 @@ test.describe("catalog grid card heights", () => {
     expect(paver).toBeGreaterThan(golden + 10);
   });
 });
+
+/*
+ * Spec worst-case data: product names wrap to at most two lines with an ellipsis, and a long
+ * unbroken word breaks instead of overflowing. The real names are short, so the test swaps in the
+ * styleguide long name plus a 63-letter word, at 320 and at the project width.
+ */
+test.describe("long product names", () => {
+  const LONG = `${ru.styleguide.demo.longName.name} ${"Известняк".repeat(7)}`;
+  const NAME = "article h3[class*='type-catalog-product-name']";
+
+  async function expectClamped(page: Page) {
+    const box = await page
+      .locator(NAME)
+      .first()
+      .evaluate((heading, text) => {
+        (heading.querySelector("a") ?? heading).textContent = text;
+        const style = getComputedStyle(heading);
+        const card = heading.closest("article")!;
+        return {
+          height: heading.getBoundingClientRect().height,
+          lineHeight: parseFloat(style.lineHeight),
+          overflow: heading.scrollWidth - heading.clientWidth,
+          cardOverflow: card.scrollWidth - card.clientWidth,
+          ellipsis: style.textOverflow,
+        };
+      }, LONG);
+    expect(box.height).toBeLessThanOrEqual(box.lineHeight * 2 + 1);
+    expect(box.overflow).toBeLessThanOrEqual(0);
+    expect(box.cardOverflow).toBeLessThanOrEqual(0);
+    expect(box.ellipsis).toBe("ellipsis");
+  }
+
+  for (const width of [320, undefined]) {
+    test(`catalog and home cards clamp a long name at ${width ?? "project width"}`, async ({
+      page,
+    }) => {
+      if (width) await page.setViewportSize({ width, height: 800 });
+      await page.goto("/ru/catalog");
+      await expectClamped(page);
+      await page.goto("/ru");
+      await expectClamped(page);
+    });
+  }
+});

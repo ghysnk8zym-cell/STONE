@@ -244,7 +244,14 @@ export function ShowcaseCard({
         )}
       </div>
       <div className="flex flex-col gap-0.5 px-1 pb-1 wrap-break-word">
-        <h3 id={titleId} className={cn(light.title, "text-stone-catalog-ink")}>
+        {/* Spec: product names take at most two lines with an ellipsis and never overflow. */}
+        <h3
+          id={titleId}
+          className={cn(
+            light.title,
+            "text-stone-catalog-ink line-clamp-2 wrap-anywhere",
+          )}
+        >
           {title}
         </h3>
         <p className="type-catalog-meta text-stone-catalog-secondary">

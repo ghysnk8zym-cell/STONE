@@ -413,3 +413,51 @@ describe("ShowcaseCard", () => {
     );
   });
 });
+
+/*
+ * Spec (Phase 3, worst-case data): product names wrap to at most two lines with an ellipsis, and a
+ * long unbroken word breaks instead of overflowing. jsdom has no layout, so this checks the classes;
+ * tests/e2e/pages.spec.ts measures the real boxes.
+ */
+describe("long product names", () => {
+  const LONG =
+    "Очень длинное название изделия из натурального колотого известняка, коллекция";
+
+  function expectClamped() {
+    const heading = screen.getByRole("heading", { name: LONG });
+    expect(heading.className).toContain("line-clamp-2");
+    expect(heading.className).toContain("wrap-anywhere");
+  }
+
+  it("ProductCard clamps the name and breaks long words", () => {
+    renderWithIntl(productCard({ name: LONG }));
+    expectClamped();
+  });
+
+  it("ShowcaseCard product and promo clamp the title and break long words", () => {
+    const { unmount } = renderWithIntl(
+      <ShowcaseCard
+        type="product"
+        layout="responsive"
+        href="/catalog/black-marble"
+        title={LONG}
+        subtitle="Marble"
+        image={IMAGE}
+      />,
+    );
+    expectClamped();
+    unmount();
+    renderWithIntl(
+      <ShowcaseCard
+        type="promo"
+        layout="responsive"
+        href="/catalog/taupe-rock"
+        title={LONG}
+        subtitle="Sandstone"
+        image={IMAGE}
+        price={usd(32)}
+      />,
+    );
+    expectClamped();
+  });
+});
