@@ -6,9 +6,10 @@ import { describe, expect, it } from "vitest";
 /*
  * Guards against the encoding accident of Phase 3 Task 8: a file read as ANSI and re-saved as UTF-8
  * (for example PowerShell 5.1 `Get-Content` + `Set-Content -Encoding utf8`) turns "—", "→", "©" and
- * Cyrillic into mojibake and adds a BOM. Scans the docs and the tests (the places written by scripts).
+ * Cyrillic into mojibake and adds a BOM. Scans the docs and the tests (the places written by scripts),
+ * the messages (the shipped copy) and the source.
  */
-const ROOTS = ["docs", "tests"];
+const ROOTS = ["docs", "tests", "messages", "src"];
 const TEXT = /\.(md|ts|tsx|mjs|json|css)$/;
 // UTF-8 bytes of a non-ASCII character read as Windows-1252 / Latin-1 start with these lead characters
 // followed by a continuation character (U+0080 to U+00BF), or are the typical punctuation sequences.
@@ -33,6 +34,15 @@ describe("text files", () => {
 
   it("scans a meaningful set of files", () => {
     expect(all.length).toBeGreaterThan(20);
+  });
+
+  it("covers the shipped copy and the source", () => {
+    const relative = all.map((file) =>
+      file.slice(process.cwd().length + 1).replaceAll("\\", "/"),
+    );
+    expect(relative).toContain("messages/ru.json");
+    expect(relative).toContain("messages/en.json");
+    expect(relative).toContain("src/middleware.ts");
   });
 
   it("have no byte order mark", () => {
