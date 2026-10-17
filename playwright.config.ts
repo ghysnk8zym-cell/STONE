@@ -16,7 +16,8 @@ const productionBaseURL = `http://localhost:${productionPort}`;
 // preview does until the owner adds Neon: the Phase 3 tests and the "unavailable" tests run there.
 const authPort = 3002;
 const authBaseURL = `http://localhost:${authPort}`;
-const AUTH_SPEC = /auth\.spec\.ts/;
+// Anchored: only a file named exactly `auth.spec.ts` (not `oauth.spec.ts`) belongs to the database server.
+const AUTH_SPEC = /(^|[\\/])auth\.spec\.ts$/;
 const NO_DATABASE = { DATABASE_URL: "", BETTER_AUTH_SECRET: "" };
 
 // Tests tagged @production only make sense against the production-mode server.
@@ -102,6 +103,8 @@ export default defineConfig({
             "node --env-file=.env.test.example scripts/e2e-db-server.mjs",
           url: authBaseURL,
           env: { E2E_PORT: String(authPort) },
+          // Lets the script delete its temp database (POSIX; on Windows the script's start-up sweep does).
+          gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
           reuseExistingServer: !process.env.CI,
           timeout: 180_000,
         },

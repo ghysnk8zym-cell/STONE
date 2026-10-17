@@ -95,7 +95,9 @@ function BackToProducts() {
 /** The page title of an auth screen (`h1`): Lusitana, sized per breakpoint (type-auth-title). */
 export function AuthTitle({ children }: { children: ReactNode }) {
   return (
-    <h1 className="type-auth-title text-ink-on-dark mb-5 min-[390px]:mb-7 lg:mb-9">
+    // One line from 1440 (Figma: nowrap, 64 px; the Russian titles reach about 490 px and end before the
+    // stone); below that the longer Russian title wraps instead of running into the photo.
+    <h1 className="type-auth-title text-ink-on-dark mb-5 min-[390px]:mb-7 lg:mb-9 min-[90rem]:whitespace-nowrap">
       {children}
     </h1>
   );

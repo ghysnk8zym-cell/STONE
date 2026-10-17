@@ -178,7 +178,12 @@ export function TextField({
             {unit}
           </span>
         ) : null}
-        {trailing ? <span className="shrink-0 pr-2">{trailing}</span> : null}
+        {trailing ? (
+          // A trailing control that is `hidden` (the password toggle before hydration) leaves no padding behind.
+          <span className="shrink-0 pr-2 has-[>[hidden]]:hidden">
+            {trailing}
+          </span>
+        ) : null}
       </div>
       {error ? (
         <p

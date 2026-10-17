@@ -9,8 +9,8 @@ import { getSession } from "@/server/auth/session";
 
 import { signOutAction } from "../../(auth)/actions";
 
-// Per-request: the page reads the session, `next` and whether a database is configured, none of which exist at
-// build time (a prerendered copy would be served from the route cache to everyone).
+// Per-request: the page reads the session (a Guest is sent home), which does not exist at build time
+// (a prerendered copy would be served from the route cache to everyone).
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({

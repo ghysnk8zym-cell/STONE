@@ -354,6 +354,22 @@ test.describe("sign-in and sign-up work without JavaScript", () => {
     expect(await hasSessionCookie(context)).toBe(true);
   });
 
+  test("sign-out works as a plain form post", async ({
+    page,
+    context,
+    baseURL,
+    clientIp,
+  }) => {
+    await signInViaApi(context, baseURL!, clientIp, SEEDED.client);
+    await page.goto("/en/sign-out");
+    await page
+      .getByRole("button", { name: en.auth.signOutPage.confirm })
+      .click();
+    await page.waitForURL(/\/en$/);
+    expect(await currentUserEmail(page)).toBeNull();
+    expect(await hasSessionCookie(context)).toBe(false);
+  });
+
   test("sign-in works as a plain form post", async ({ page, context }) => {
     await page.goto("/en/sign-in?next=/en/catalog");
     await submitCredentials(page, "en", "signIn", SEEDED.client);
@@ -425,6 +441,16 @@ test.describe("layout and quality", () => {
     await page.goto("/ru/sign-out");
     await expect(page.getByRole("banner")).toBeVisible();
     await expect(page.getByRole("contentinfo")).toBeVisible();
+  });
+
+  test("the Russian sign-up title stays on one line at 1440 (Figma 64 px, nowrap) and the page does not overflow", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "auth-desktop", "1440 layout only");
+    await page.goto("/ru/sign-up");
+    const box = (await page.locator("h1").boundingBox())!;
+    expect(box.height).toBeLessThanOrEqual(72);
+    await expect(page.locator("h1")).toHaveCSS("font-size", "64px");
   });
 
   test("the auth background loads exactly one image", async ({ page }) => {
