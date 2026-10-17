@@ -62,7 +62,10 @@ export function sanitizeNext(value: unknown, locale: string): string {
   if (!rest.every((segment) => segment === "" || isSafeSegment(segment))) {
     return fallback;
   }
-  if (AUTH_PAGES.has(rest[0] ?? "")) return fallback;
+  // Segments are known to decode safely here; compare decoded and case-insensitively.
+  if (AUTH_PAGES.has(decodeURIComponent(rest[0] ?? "").toLowerCase())) {
+    return fallback;
+  }
 
   const path = rest.length === 0 ? `${prefix}/` : url.pathname;
   const result = `${path}${url.search}`;

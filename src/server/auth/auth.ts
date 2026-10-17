@@ -10,8 +10,7 @@ import { getDb, type Db } from "../db";
 import { account, rateLimit, session, user, verification } from "../db/schema";
 import type { SeedUser } from "../db/seed";
 import { getServerEnv, type ServerEnv } from "../env";
-import { platform } from "../platform";
-import { AUTH_COOKIE_PREFIX } from "./constants";
+import { AUTH_COOKIE_PREFIX, CLIENT_IP_HEADER } from "./constants";
 
 /*
  * Better Auth (ADR-002): email + password, database sessions, database rate limiting.
@@ -162,7 +161,8 @@ export async function getAuth(): Promise<Auth | null> {
   if (cached?.db === db) return cached.auth;
   const auth = createAuth(
     db,
-    authConfigFromEnv(getServerEnv(), platform.clientIpHeaders),
+    // handleAuthRequest/callAuthEndpoint set this header from the platform's client-IP rule.
+    authConfigFromEnv(getServerEnv(), [CLIENT_IP_HEADER]),
   );
   globalForAuth.__stoneAuth = { db, auth };
   return auth;
@@ -175,7 +175,15 @@ export async function getAuth(): Promise<Auth | null> {
 export async function createSeedUser(auth: Auth, seedUser: SeedUser) {
   const ctx = await auth.$context;
   const email = seedUser.email.toLowerCase();
-  if (await ctx.internalAdapter.findUserByEmail(email)) return;
+  // The seed calls this only for a missing email. If the account appeared in the meantime (someone
+  // signed up), stop: the seed must never promote an account it did not create.
+  if (await ctx.internalAdapter.findUserByEmail(email)) {
+    const error = new Error(
+      "a seed user was created by someone else during the seed; run the seed again",
+    );
+    error.name = "SeedRefusalError";
+    throw error;
+  }
   const hash = await ctx.password.hash(seedUser.password);
   const created = await ctx.internalAdapter.createUser(
     {
@@ -191,4 +199,24 @@ export async function createSeedUser(auth: Auth, seedUser: SeedUser) {
     accountId: created.id,
     password: hash,
   });
+}
+
+/**
+ * The seed's `verifyPassword` hook: whether the credential account of `email` holds `password`,
+ * checked with Better Auth's own password verify. False when there is no credential account.
+ */
+export async function verifySeedUserPassword(
+  auth: Auth,
+  email: string,
+  password: string,
+): Promise<boolean> {
+  const ctx = await auth.$context;
+  const found = await ctx.internalAdapter.findUserByEmail(email.toLowerCase(), {
+    includeAccounts: true,
+  });
+  const hash = found?.accounts.find(
+    (a) => a.providerId === "credential" && a.accountId === found.user.id,
+  )?.password;
+  if (!hash) return false;
+  return ctx.password.verify({ hash, password });
 }

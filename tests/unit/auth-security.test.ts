@@ -31,8 +31,17 @@ vi.mock("next/headers", () => ({
 }));
 
 const { createDb, schema } = await import("@/server/db");
-const { authConfigFromEnv, createAuth, createSeedUser, RATE_LIMIT_RULES } =
-  await import("@/server/auth/auth");
+const {
+  authConfigFromEnv,
+  createAuth,
+  createSeedUser,
+  RATE_LIMIT_RULES,
+  verifySeedUserPassword,
+} = await import("@/server/auth/auth");
+const { authRequestBase, toClientResult } = await import("@/server/auth/next");
+const { CLIENT_IP_HEADER } = await import("@/server/auth/constants");
+const { nodePlatform } = await import("@/server/platform/node");
+const { cloudflarePlatform } = await import("@/server/platform/cloudflare");
 const { SESSION_COOKIE_NAMES } = await import("@/server/auth/constants");
 const { seed } = await import("@/server/db/seed");
 
@@ -287,6 +296,70 @@ describe("seed users through Better Auth", () => {
     const sessions = await f.db.select({ n: count() }).from(schema.session);
     expect(sessions[0]!.n).toBe(2);
   });
+
+  function hooks(auth: Fresh["auth"]) {
+    return {
+      createUser: (user: Parameters<typeof createSeedUser>[1]) =>
+        createSeedUser(auth, user),
+      verifyPassword: (email: string, password: string) =>
+        verifySeedUserPassword(auth, email, password),
+    };
+  }
+
+  it("does not make an attacker who pre-registered the admin email an admin", async () => {
+    const f = await freshAuth();
+    // Signed up through the public endpoint, with the attacker's own password.
+    expect(
+      (
+        await f.auth.handler(
+          authRequest("/sign-up/email", {
+            body: {
+              email: options.adminEmail.toUpperCase(),
+              password: "attacker-pass-1",
+              name: "Attacker",
+            },
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    const spies = (["log", "info", "warn", "error", "debug"] as const).map(
+      (method) => vi.spyOn(console, method).mockImplementation(() => {}),
+    );
+    const error = await seed(f.db, { ...options, ...hooks(f.auth) })
+      .then(() => null)
+      .catch((e: Error) => e);
+    const printed = JSON.stringify(spies.flatMap((s) => s.mock.calls));
+    spies.forEach((s) => s.mockRestore());
+    expect(error?.name).toBe("SeedRefusalError");
+    for (const secret of [options.adminEmail, options.adminPassword]) {
+      expect(error?.message).not.toContain(secret);
+      expect(printed).not.toContain(secret);
+    }
+    const [row] = await f.db
+      .select({ role: schema.user.role })
+      .from(schema.user)
+      .where(eq(schema.user.email, options.adminEmail));
+    expect(row?.role).toBe("client");
+  });
+
+  it("promotes an existing account that already has the admin password", async () => {
+    const f = await freshAuth();
+    await f.auth.handler(
+      authRequest("/sign-up/email", {
+        body: {
+          email: options.adminEmail,
+          password: options.adminPassword,
+          name: "Owner",
+        },
+      }),
+    );
+    await seed(f.db, { ...options, ...hooks(f.auth) });
+    const [row] = await f.db
+      .select({ role: schema.user.role })
+      .from(schema.user)
+      .where(eq(schema.user.email, options.adminEmail));
+    expect(row?.role).toBe("admin");
+  });
 });
 
 describe("auth route handler", () => {
@@ -413,5 +486,110 @@ describe("server-action calls go through the handler (rate limit + origin check)
     });
     const result = await callAuthEndpoint("/sign-out", {});
     expect(result).toMatchObject({ ok: false, status: 403 });
+  });
+});
+
+describe("client IP for rate limiting (platform rule)", () => {
+  const ip = (
+    platform: { clientIp(h: Headers): string | null },
+    h: Record<string, string>,
+  ) => platform.clientIp(new Headers(h));
+
+  it("Node: the last x-forwarded-for hop, the address the proxy in front saw", () => {
+    expect(ip(nodePlatform, { "x-forwarded-for": "203.0.113.9" })).toBe(
+      "203.0.113.9",
+    );
+    // A client-supplied value is on the left; the proxy appends the real address.
+    expect(
+      ip(nodePlatform, { "x-forwarded-for": "1.1.1.1, 2.2.2.2,203.0.113.9 " }),
+    ).toBe("203.0.113.9");
+    expect(ip(nodePlatform, {})).toBeNull();
+    expect(ip(nodePlatform, { "cf-connecting-ip": "1.1.1.1" })).toBeNull();
+  });
+
+  it("Cloudflare: cf-connecting-ip only", () => {
+    expect(
+      ip(cloudflarePlatform, {
+        "cf-connecting-ip": "198.51.100.4",
+        "x-forwarded-for": "1.1.1.1",
+      }),
+    ).toBe("198.51.100.4");
+    expect(ip(cloudflarePlatform, { "x-forwarded-for": "1.1.1.1" })).toBeNull();
+  });
+
+  it("the auth route keys the rate limit on the platform IP and ignores a client-set header", async () => {
+    vi.resetModules();
+    const g = globalThis as { __stoneDb?: unknown; __stoneAuth?: unknown };
+    delete g.__stoneDb;
+    delete g.__stoneAuth;
+    vi.stubEnv("DATABASE_URL", "pglite://memory");
+    vi.stubEnv("BETTER_AUTH_SECRET", TEST_SECRET);
+    vi.stubEnv("BETTER_AUTH_URL", TEST_BASE_URL);
+    try {
+      const { POST } = await import("@/app/api/auth/[...all]/route");
+      const proxySaw = nextTestIp();
+      const statuses: number[] = [];
+      for (let i = 0; i <= RATE_LIMIT_RULES.signIn.max; i += 1) {
+        const req = authRequest("/sign-in/email", {
+          body: { email: "x@example.test", password: "wrong-pass-1" },
+          // A rotating spoofed left hop and our internal header must not open new buckets.
+          ip: `9.9.9.${i}, ${proxySaw}`,
+        });
+        req.headers.set(CLIENT_IP_HEADER, `8.8.8.${i}`);
+        statuses.push((await POST(req)).status);
+      }
+      expect(statuses.at(-1)).toBe(429);
+      // Another client behind the same kind of proxy has its own bucket (not one shared bucket).
+      const other = authRequest("/sign-in/email", {
+        body: { email: "x@example.test", password: "wrong-pass-1" },
+        ip: `9.9.9.200, ${nextTestIp()}`,
+      });
+      expect((await POST(other)).status).toBe(401);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+      delete g.__stoneDb;
+      delete g.__stoneAuth;
+    }
+  });
+});
+
+describe("server-action request base URL", () => {
+  it("uses https off localhost and http on localhost when no base URL is configured", () => {
+    const base = (host: string, extra: Record<string, string> = {}) =>
+      authRequestBase(undefined, new Headers({ host, ...extra }));
+    expect(base("pr-12-stone.example.workers.dev")).toBe(
+      "https://pr-12-stone.example.workers.dev",
+    );
+    expect(base("stone.example", { "x-forwarded-proto": "http" })).toBe(
+      "https://stone.example",
+    );
+    expect(base("localhost:3000")).toBe("http://localhost:3000");
+    expect(base("127.0.0.1:3001")).toBe("http://127.0.0.1:3001");
+    expect(base("[::1]:3000")).toBe("http://[::1]:3000");
+  });
+
+  it("prefers the configured base URL", () => {
+    expect(
+      authRequestBase("https://stone.example", new Headers({ host: "x" })),
+    ).toBe("https://stone.example");
+  });
+});
+
+describe("results returned to the browser", () => {
+  it("toClientResult never carries the session token or user data", () => {
+    const success = toClientResult({
+      ok: true,
+      data: { token: "raw-session-token", user: { id: "u1", email: "e" } },
+    });
+    expect(success).toEqual({ ok: true });
+    expect(JSON.stringify(success)).not.toContain("raw-session-token");
+    expect(
+      toClientResult({
+        ok: false,
+        status: 401,
+        code: "INVALID_EMAIL_OR_PASSWORD",
+      }),
+    ).toEqual({ ok: false, status: 401, code: "INVALID_EMAIL_OR_PASSWORD" });
   });
 });

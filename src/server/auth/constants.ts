@@ -22,6 +22,13 @@ export const SESSION_COOKIE_NAMES = [
  */
 export const REQUEST_PATH_HEADER = "x-stone-path";
 
+/**
+ * Internal header Better Auth reads the client IP from (rate-limit key). The auth entry points in
+ * src/server/auth/next.ts always overwrite it with the platform's rule (src/server/platform), so a
+ * client-sent value is never used.
+ */
+export const CLIENT_IP_HEADER = "x-stone-client-ip";
+
 type CookieReader = { get(name: string): { value: string } | undefined };
 
 /** Optimistic only: a present cookie is not proof of a session (the guards check the database). */

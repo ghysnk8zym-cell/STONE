@@ -25,10 +25,14 @@ export function authRequest(
     baseURL?: string;
   } = {},
 ): Request {
+  const ip = init.ip ?? nextTestIp();
   const headers = new Headers({
     "content-type": "application/json",
     origin: init.origin ?? init.baseURL ?? TEST_BASE_URL,
-    "x-forwarded-for": init.ip ?? nextTestIp(),
+    "x-forwarded-for": ip,
+    // What the auth route sets from the platform rule; lets tests call `auth.handler` of the
+    // getAuth() instance directly. The route itself always overwrites it.
+    "x-stone-client-ip": ip.split(",").at(-1)!.trim(),
   });
   if (init.cookie) headers.set("cookie", init.cookie);
   const method = init.method ?? (init.body === undefined ? "GET" : "POST");

@@ -15,8 +15,9 @@ import * as schema from "./schema";
  *
  * Steps: catalog (12 products + ru/en translations) -> users -> demo account data for the Client.
  * Users are created by an injected `createUser`, because passwords must go through Better Auth's
- * hashing (Task 2 passes it in). Without it, an existing user is still found by email and gets the
- * demo orders and favourites; a missing one is skipped.
+ * hashing (src/server/auth/auth.ts). Without it, an existing user is still found by email and gets
+ * the demo orders and favourites; a missing one is skipped. Emails are lowercased first, as Better
+ * Auth stores them. An existing account is made an admin only if it already holds the admin password.
  */
 
 const LOCALES = ["ru", "en"] as const;
@@ -217,60 +218,91 @@ export type SeedOptions = {
   adminPassword: string;
   clientEmail: string;
   clientPassword: string;
-  /** Creates a user with a hashed password (Better Auth, Task 2). Called only for emails not yet in the database. */
+  /** Creates a user with a hashed password (Better Auth). Called only for emails not yet in the database. */
   createUser?: (user: SeedUser) => Promise<void>;
+  /** True when the stored credential of `email` matches `password` (Better Auth's password verify). */
+  verifyPassword?: (email: string, password: string) => Promise<boolean>;
 };
 
-async function ensureUser(
-  db: Db,
-  user: SeedUser,
-  create: SeedOptions["createUser"],
-) {
-  const [existing] = await db
-    .select({ id: schema.user.id })
+/**
+ * The seed refused to change the database. The message names variables only, never emails or
+ * passwords, so the seed script can print it as is.
+ */
+export class SeedRefusalError extends Error {
+  override name = "SeedRefusalError";
+}
+
+/** Better Auth stores emails lowercased; the seed compares and writes the same form. */
+export function normalizeSeedEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+async function findUser(db: Db, email: string) {
+  const [row] = await db
+    .select({ id: schema.user.id, role: schema.user.role })
     .from(schema.user)
-    .where(eq(schema.user.email, user.email));
-  if (!existing && create) await create(user);
-  // Sign-up always creates a client; the Admin exists only through the seed (ADR-002).
-  if (user.role === "admin") {
-    await db
-      .update(schema.user)
-      .set({ role: "admin" })
-      .where(eq(schema.user.email, user.email));
+    .where(eq(schema.user.email, email));
+  return row;
+}
+
+async function ensureUser(db: Db, user: SeedUser, options: SeedOptions) {
+  const existing = await findUser(db, user.email);
+  if (!existing) {
+    if (!options.createUser) return; // nothing to create users with: skipped
+    await options.createUser(user);
   }
+  // Sign-up always creates a client; the Admin exists only through the seed (ADR-002).
+  if (user.role !== "admin" || existing?.role === "admin") return;
+
+  // An account with the admin email that the seed did not just create may belong to anyone who
+  // signed up first with that (guessable) email. Promote it only when it holds the admin password.
+  if (existing) {
+    const verified =
+      (await options.verifyPassword?.(user.email, user.password)) ?? false;
+    if (!verified) {
+      throw new SeedRefusalError(
+        "an account with SEED_ADMIN_EMAIL already exists and its password is not SEED_ADMIN_PASSWORD; " +
+          "refusing to make it an admin. Delete that account or choose another SEED_ADMIN_EMAIL",
+      );
+    }
+  }
+  await db
+    .update(schema.user)
+    .set({ role: "admin" })
+    .where(eq(schema.user.email, user.email));
 }
 
 export async function seed(db: Db, options: SeedOptions): Promise<SeedCounts> {
+  const adminEmail = normalizeSeedEmail(options.adminEmail);
+  const clientEmail = normalizeSeedEmail(options.clientEmail);
   const catalog = await seedCatalog(db);
 
   await ensureUser(
     db,
     {
-      email: options.adminEmail,
+      email: adminEmail,
       password: options.adminPassword,
       name: "STONE Admin",
       role: "admin",
     },
-    options.createUser,
+    options,
   );
   await ensureUser(
     db,
     {
-      email: options.clientEmail,
+      email: clientEmail,
       password: options.clientPassword,
       name: "STONE Client",
       role: "client",
     },
-    options.createUser,
+    options,
   );
 
-  const account = await seedAccountData(db, options.clientEmail);
+  const account = await seedAccountData(db, clientEmail);
   const [{ users }] = await db
     .select({ users: sql<number>`count(*)::int` })
     .from(schema.user)
-    .where(
-      inArray(schema.user.email, [options.adminEmail, options.clientEmail]),
-    );
+    .where(inArray(schema.user.email, [adminEmail, clientEmail]));
 
   return { ...catalog, users: users ?? 0, ...account };
 }

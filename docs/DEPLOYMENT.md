@@ -55,6 +55,11 @@ All variables are listed in `.env.example` and validated by `src/server/env.ts`.
 
 ## 4. Alternative hosting
 
+> **Auth on Node hosts (docs/SECURITY.md):**
+>
+> - Run the Node server only behind a reverse proxy that overwrites or appends to `X-Forwarded-For`. Auth rate limiting uses its last hop, and a directly reachable `next start` lets clients choose that value.
+> - Set `APP_ENV=production` (or an https `BETTER_AUTH_URL`). Without it, and with no URL configured, session cookies are not `Secure`.
+
 The application code does not depend on Cloudflare. Cloudflare-only files: `wrangler.jsonc`, `open-next.config.ts`, `scripts/*worker-size*`, `public/_headers`, and the `cf:*` scripts.
 
 ### Vercel

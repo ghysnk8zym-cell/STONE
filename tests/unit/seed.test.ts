@@ -234,6 +234,78 @@ describe("seed", () => {
     });
   });
 
+  it("never promotes a pre-registered account whose password is not the admin password", async () => {
+    const db = await freshDb();
+    // An attacker signed up with the (guessable) admin email before the seed ran.
+    await insertUser(db, options.adminEmail);
+    const verifyPassword = vi.fn(async () => false);
+    const createUser = vi.fn(async (u: { email: string }) => {
+      await insertUser(db, u.email);
+    });
+    const error = await seed(db, { ...options, createUser, verifyPassword })
+      .then(() => null)
+      .catch((e: Error) => e);
+    expect(error?.name).toBe("SeedRefusalError");
+    expect(error?.message).toContain("SEED_ADMIN_EMAIL");
+    expect(error?.message).not.toContain(options.adminEmail);
+    expect(error?.message).not.toContain("MARKER");
+    expect(verifyPassword).toHaveBeenCalledWith(
+      options.adminEmail,
+      options.adminPassword,
+    );
+    const [admin] = await db
+      .select({ role: schema.user.role })
+      .from(schema.user)
+      .where(eq(schema.user.email, options.adminEmail));
+    expect(admin?.role).toBe("client");
+  });
+
+  it("refuses to promote an existing non-admin account when it cannot verify the password", async () => {
+    const db = await freshDb();
+    await insertUser(db, options.adminEmail);
+    await expect(seed(db, options)).rejects.toMatchObject({
+      name: "SeedRefusalError",
+    });
+  });
+
+  it("promotes an existing account whose password verifies as the admin password", async () => {
+    const db = await freshDb();
+    await insertUser(db, options.adminEmail);
+    const verifyPassword = vi.fn(async () => true);
+    await seed(db, { ...options, verifyPassword });
+    const [admin] = await db
+      .select({ role: schema.user.role })
+      .from(schema.user)
+      .where(eq(schema.user.email, options.adminEmail));
+    expect(admin?.role).toBe("admin");
+  });
+
+  it("normalises mixed-case seed emails to lowercase", async () => {
+    const db = await freshDb();
+    const createUser = vi.fn(async (u: { email: string }) => {
+      await insertUser(db, u.email);
+    });
+    const counts = await seed(db, {
+      ...options,
+      adminEmail: "Admin@Example.TEST",
+      clientEmail: " Client@EXAMPLE.test ",
+      createUser,
+    });
+    expect(createUser.mock.calls.map(([u]) => u.email)).toEqual([
+      options.adminEmail,
+      options.clientEmail,
+    ]);
+    const roles = await db
+      .select({ email: schema.user.email, role: schema.user.role })
+      .from(schema.user)
+      .orderBy(schema.user.email);
+    expect(roles).toEqual([
+      { email: options.adminEmail, role: "admin" },
+      { email: options.clientEmail, role: "client" },
+    ]);
+    expect(counts).toMatchObject({ users: 2, orders: 2, favorites: 3 });
+  });
+
   it("seed output contains no password or secret", async () => {
     const db = await freshDb();
     await insertUser(db, options.clientEmail);

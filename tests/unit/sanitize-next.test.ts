@@ -100,3 +100,15 @@ describe("sanitizeNext accepts internal paths", () => {
     }
   });
 });
+
+describe("sanitizeNext never returns an auth form, however it is spelled", () => {
+  it.each([
+    "/ru/SIGN-IN",
+    "/ru/Sign-In?next=%2Fru",
+    "/ru/%73ign-in",
+    "/ru/%53IGN-up",
+    "/ru/sign-up/",
+  ])("%j falls back to the account page", (value) => {
+    expect(sanitizeNext(value, "ru")).toBe(FALLBACK_RU);
+  });
+});

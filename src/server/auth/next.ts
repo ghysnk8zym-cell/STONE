@@ -6,7 +6,9 @@ import {
 } from "better-auth/cookies/utils";
 import { cookies, headers } from "next/headers";
 
+import { platform } from "../platform";
 import { getAuth } from "./auth";
+import { CLIENT_IP_HEADER } from "./constants";
 
 const noStore = { "Cache-Control": "no-store" };
 
@@ -15,6 +17,28 @@ function safeErrorSummary(error: unknown): string {
   const name = error instanceof Error ? error.name : typeof error;
   const code = (error as { code?: unknown } | null)?.code;
   return typeof code === "string" ? `${name} ${code}` : name;
+}
+
+let warnedNoClientIp = false;
+
+/**
+ * Headers for Better Auth with the rate-limit IP set by the platform rule (src/server/platform),
+ * overwriting anything the client sent in CLIENT_IP_HEADER.
+ */
+function withClientIp(source: Headers): Headers {
+  const result = new Headers(source);
+  result.delete(CLIENT_IP_HEADER);
+  const ip = platform.clientIp(source);
+  if (ip) {
+    result.set(CLIENT_IP_HEADER, ip);
+  } else if (!warnedNoClientIp) {
+    // Better Auth then counts every such request in one shared bucket per path.
+    warnedNoClientIp = true;
+    console.warn(
+      "[auth] no client IP header on this host: rate limiting falls back to one shared bucket (docs/SECURITY.md)",
+    );
+  }
+  return result;
 }
 
 /** The catch-all /api/auth/* route: Better Auth, or 503 JSON without a database. */
@@ -32,7 +56,9 @@ export async function handleAuthRequest(request: Request): Promise<Response> {
       { status: 503, headers: noStore },
     );
   }
-  return auth.handler(request);
+  return auth.handler(
+    new Request(request, { headers: withClientIp(request.headers) }),
+  );
 }
 
 /** Endpoints that server actions may call (Task 3 sign-in/up/out, Task 4 profile). */
@@ -43,11 +69,29 @@ export type AuthEndpoint =
   | "/change-password"
   | "/update-user";
 
+/**
+ * Server-side only. On sign-in and sign-up `data` holds the raw session `token` (the cookie value
+ * without its signature): never return it from a server action or render it. Use
+ * `toClientResult()` for anything that reaches the browser.
+ */
 export type AuthEndpointResult =
   { ok: true; data: unknown } | { ok: false; status: number; code?: string };
 
+/** What a server action may return to the browser: no token, no user data. */
+export type ClientAuthResult =
+  { ok: true } | { ok: false; status: number; code?: string };
+
+export function toClientResult(result: AuthEndpointResult): ClientAuthResult {
+  if (result.ok) return { ok: true };
+  return {
+    ok: false,
+    status: result.status,
+    ...(result.code ? { code: result.code } : {}),
+  };
+}
+
 // Forwarded from the browser request: session cookie, the origin for Better Auth's CSRF check,
-// the client IP for rate limiting, and the user agent stored with the session.
+// the client IP headers for the platform rule, and the user agent stored with the session.
 const FORWARDED_HEADERS = [
   "cookie",
   "origin",
@@ -59,6 +103,23 @@ const FORWARDED_HEADERS = [
   "sec-fetch-mode",
   "sec-fetch-dest",
 ];
+
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/**
+ * Base URL of the internal request to Better Auth. The configured one when set; otherwise the
+ * request host over https, except plain http for localhost. `x-forwarded-proto` is ignored: the
+ * browser's Origin on a deployed host is https, and an http URL would fail the origin check.
+ */
+export function authRequestBase(
+  configured: unknown,
+  incoming: Headers,
+): string {
+  if (typeof configured === "string" && configured) return configured;
+  const host = incoming.get("host") || "localhost";
+  const hostname = new URL(`http://${host}`).hostname;
+  return `${LOCAL_HOSTNAMES.has(hostname) ? "http" : "https"}://${host}`;
+}
 
 /**
  * Calls a Better Auth endpoint from a server action through `auth.handler`, not `auth.api`:
@@ -78,16 +139,15 @@ export async function callAuthEndpoint(
     const value = incoming.get(name);
     if (value) forwarded.set(name, value);
   }
-  // The URL only routes the request inside Better Auth; with a configured base URL it must match.
-  const base =
-    auth.options.baseURL ??
-    `${incoming.get("x-forwarded-proto") ?? "http"}://${incoming.get("host") ?? "localhost"}`;
-  const url = new URL(`/api/auth${path}`, base);
+  const url = new URL(
+    `/api/auth${path}`,
+    authRequestBase(auth.options.baseURL, incoming),
+  );
 
   const response = await auth.handler(
     new Request(url, {
       method: "POST",
-      headers: forwarded,
+      headers: withClientIp(forwarded),
       body: JSON.stringify(body),
     }),
   );

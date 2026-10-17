@@ -61,7 +61,7 @@ try {
   if (!db) fail("set DATABASE_URL (see .env.example)");
 
   // Users get their passwords hashed by Better Auth; the seed makes the admin an admin afterwards.
-  const { getAuth, createSeedUser } =
+  const { getAuth, createSeedUser, verifySeedUserPassword } =
     await import("../src/server/auth/auth.ts");
   const auth = await getAuth();
   if (!auth) fail("set DATABASE_URL (see .env.example)");
@@ -72,13 +72,20 @@ try {
     clientEmail: env.SEED_CLIENT_EMAIL,
     clientPassword: env.SEED_CLIENT_PASSWORD,
     createUser: (user) => createSeedUser(auth, user),
+    // An existing account becomes the admin only if it already holds SEED_ADMIN_PASSWORD.
+    verifyPassword: (email, password) =>
+      verifySeedUserPassword(auth, email, password),
   });
   console.log(`db:seed done. ${formatSeedSummary(counts)}`);
   // A pooled connection would keep the process alive.
   process.exit(0);
 } catch (error) {
   // Query errors can quote parameters (emails): print only the kind and the Postgres code.
-  if (String(error?.message).startsWith("Invalid server environment")) {
+  // Refusals name variables only (see SeedRefusalError in src/server/db/seed.ts).
+  if (
+    error?.name === "SeedRefusalError" ||
+    String(error?.message).startsWith("Invalid server environment")
+  ) {
     fail(error.message); // names the variables, never their values
   }
   const code = error?.code ?? error?.cause?.code ?? "unknown";

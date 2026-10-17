@@ -8,8 +8,8 @@ export type PlatformName = "node" | "cloudflare";
 export interface PlatformAdapter {
   name: PlatformName;
   /**
-   * Request headers that carry the client IP on this host, in order of trust. Used by Better Auth
-   * for rate limiting, so only headers the host itself sets (and a client cannot forge) belong here.
+   * The client IP of a request, from headers this host sets itself (a client cannot choose the
+   * value), or null when there is none. Used as the auth rate-limit key (docs/SECURITY.md).
    */
-  clientIpHeaders: readonly string[];
+  clientIp(headers: Headers): string | null;
 }
