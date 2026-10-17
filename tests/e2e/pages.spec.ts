@@ -548,6 +548,23 @@ test.describe("catalog without JavaScript", () => {
       cards(page).getByRole("link", { name: NAMES["graphite-rock"].name }),
     ).toBeVisible();
   });
+
+  test("material options are in ru alphabetical order", async ({ page }) => {
+    await page.goto("/ru/catalog");
+    const labels = await page
+      .getByLabel(CAT.filters.material, { exact: true })
+      .locator("option")
+      .allTextContents();
+    expect(labels).toEqual([
+      CAT.filters.allMaterials,
+      "Бетон",
+      "Известняк",
+      "Кварцит",
+      "Мрамор",
+      "Песчаник",
+      "Сланец",
+    ]);
+  });
 });
 
 test.describe("catalog shell surface", () => {

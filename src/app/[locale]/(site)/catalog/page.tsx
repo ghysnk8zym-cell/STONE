@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { IconButton } from "@/components/buttons/IconButton";
 import { ProductCard, type Price } from "@/components/cards/ProductCard";
 import type { Locale } from "@/i18n/routing";
+import { sortByLabel } from "@/lib/sort-by-label";
 import {
   catalog,
   COLOR_GROUPS,
@@ -88,7 +89,11 @@ export default async function CatalogPage({
       value: query.material ?? "",
       options: [
         { value: "", label: t("filters.allMaterials") },
-        ...facets.materials.map((m) => ({ value: m, label: material(m) })),
+        // facets come sorted by enum key; the visible list is alphabetical in the current locale
+        ...sortByLabel(
+          facets.materials.map((m) => ({ value: m, label: material(m) })),
+          locale,
+        ),
       ],
     },
     {
