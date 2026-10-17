@@ -6,4 +6,6 @@ import type { PlatformAdapter } from "./types";
  */
 export const cloudflarePlatform: PlatformAdapter = {
   name: "cloudflare",
+  // Set by Cloudflare at the edge from the connecting address; a client value is overwritten.
+  clientIpHeaders: ["cf-connecting-ip"],
 };

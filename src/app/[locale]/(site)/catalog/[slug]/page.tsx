@@ -7,7 +7,7 @@ import { IconButton } from "@/components/buttons/IconButton";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { routing, type Locale } from "@/i18n/routing";
 import { imageSize } from "@/lib/image-size";
-import { catalog, products, type Product } from "@/server/catalog";
+import { getCatalog, products, type Product } from "@/server/catalog";
 
 import { PAGE_SURFACE_ATTR, PAGE_SURFACE_CATALOG } from "../../page-surface";
 import { Calculator } from "./Calculator";
@@ -24,7 +24,7 @@ export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/catalog/[slug]">): Promise<Metadata> {
   const { locale, slug } = await params;
-  const product = await catalog.getBySlug(slug);
+  const product = await (await getCatalog()).getBySlug(slug);
   if (!product) return {};
   const c = await getTranslations({
     locale: locale as Locale,
@@ -64,7 +64,7 @@ export default async function ProductPage({
 }: PageProps<"/[locale]/catalog/[slug]">) {
   const { locale, slug } = await params;
   setRequestLocale(locale as Locale);
-  const product = await catalog.getBySlug(slug);
+  const product = await (await getCatalog()).getBySlug(slug);
   if (!product) notFound();
 
   const t = await getTranslations("pages.product");
