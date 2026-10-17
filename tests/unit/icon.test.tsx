@@ -22,6 +22,7 @@ const names: IconName[] = [
   "home",
   "grid",
   "user",
+  "eye",
 ];
 
 describe("Icon", () => {

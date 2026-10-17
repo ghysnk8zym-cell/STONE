@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { cache } from "react";
 
 import { getAuth } from "./auth";
+import { CLIENT_IP_HEADER } from "./constants";
 
 export type Role = "client" | "admin";
 
@@ -24,8 +25,12 @@ export type Session = { user: SessionUser };
 export const getSession = cache(async (): Promise<Session | null> => {
   const auth = await getAuth();
   if (!auth) return null;
+  // The raw request headers carry whatever the client sent. The internal client-IP header is ours
+  // alone (src/server/auth/next.ts sets it from the platform rule), so a client-set one is dropped.
+  const forwarded = new Headers(await headers());
+  forwarded.delete(CLIENT_IP_HEADER);
   const result = await auth.api.getSession({
-    headers: await headers(),
+    headers: forwarded,
     // The cookie cache is disabled in auth.ts; this keeps a guard correct even if it is enabled.
     query: { disableCookieCache: true },
   });

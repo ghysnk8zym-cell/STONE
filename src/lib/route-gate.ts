@@ -19,6 +19,9 @@ const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   "",
   "catalog",
   "_styleguide",
+  "sign-in",
+  "sign-up",
+  "sign-out",
 ]);
 
 export type RouteGate =

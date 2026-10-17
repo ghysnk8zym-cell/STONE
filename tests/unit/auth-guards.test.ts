@@ -160,6 +160,24 @@ describe("guards with a database (PGlite + real Better Auth sessions)", () => {
     });
   });
 
+  it("getSession never forwards a client-set x-stone-client-ip to Better Auth", async () => {
+    asRequest({ cookie: await cookieFor(clientEmail) });
+    request.headers.set("x-stone-client-ip", "203.0.113.9");
+    request.headers.set("x-forwarded-for", "203.0.113.9");
+    const spy = vi.spyOn(auth.api, "getSession");
+    try {
+      await m.getSession();
+      expect(spy).toHaveBeenCalledTimes(1);
+      const forwarded = spy.mock.calls[0]![0]!.headers as Headers;
+      expect(forwarded.has("x-stone-client-ip")).toBe(false);
+      // The session cookie still goes through, and the caller's own headers are untouched.
+      expect(forwarded.get("cookie")).toContain("session_token=");
+      expect(request.headers.get("x-stone-client-ip")).toBe("203.0.113.9");
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("expired session: requireUser redirects to sign-in", async () => {
     const cookie = await cookieFor(clientEmail);
     const token = decodeURIComponent(cookie.split("=")[1]!).split(".")[0]!;

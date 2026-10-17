@@ -537,5 +537,45 @@
       "body": "Такой страницы нет или она переехала.",
       "toCatalog": "Открыть каталог"
     }
+  },
+  "auth": {
+    "meta": {
+      "signIn": "Вход",
+      "signUp": "Создать аккаунт",
+      "signOut": "Выход"
+    },
+    "backToProducts": "Назад к товарам",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Пароль",
+    "showPassword": "Показать пароль",
+    "signUp": {
+      "title": "Создать аккаунт",
+      "passwordPlaceholder": "Введите пароль",
+      "submit": "Создать аккаунт",
+      "haveAccount": "Уже есть аккаунт?",
+      "signInLink": "Войти"
+    },
+    "signIn": {
+      "title": "Вход",
+      "passwordPlaceholder": "Введите пароль",
+      "submit": "Войти",
+      "noAccount": "Нет аккаунта?",
+      "signUpLink": "Создать"
+    },
+    "errors": {
+      "invalidEmail": "Введите корректный адрес почты.",
+      "weakPassword": "Пароль должен быть от 8 до 128 символов.",
+      "emailTaken": "Аккаунт с такой почтой уже существует.",
+      "invalidCredentials": "Неверная почта или пароль.",
+      "tooManyAttempts": "Слишком много попыток. Подождите минуту и повторите.",
+      "unavailable": "Вход недоступен в этом окружении.",
+      "generic": "Что-то пошло не так. Попробуйте ещё раз."
+    },
+    "signOutPage": {
+      "title": "Выйти?",
+      "confirm": "Выйти",
+      "stay": "Остаться в аккаунте"
+    }
   }
 }

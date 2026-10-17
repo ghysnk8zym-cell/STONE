@@ -62,6 +62,11 @@ describe("sanitizeNext rejects external targets", () => {
     expect(sanitizeNext("/en/sign-up", "en")).toBe("/en/account");
   });
 
+  it("never returns the sign-out page (signing in must not land on a sign-out question)", () => {
+    expect(sanitizeNext("/ru/sign-out", "ru")).toBe(FALLBACK_RU);
+    expect(sanitizeNext("/en/Sign-Out?x=1", "en")).toBe("/en/account");
+  });
+
   it("uses the requested locale for the fallback and the default locale for an unknown one", () => {
     expect(sanitizeNext("//evil.com", "en")).toBe("/en/account");
     expect(sanitizeNext("//evil.com", "xx")).toBe("/ru/account");

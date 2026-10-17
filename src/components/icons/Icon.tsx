@@ -15,7 +15,8 @@ export type IconName =
   | "heart"
   | "home"
   | "grid"
-  | "user";
+  | "user"
+  | "eye";
 
 export type IconSize = 12 | 16 | 24;
 

@@ -251,6 +251,51 @@
   letter-spacing: 0;
 }
 
+/* Figma: the Create account title: "Catalog/Product title 40" (40/48) on phones, "Catalog/Page title 56" (56/64) from 768,
+   "Catalog/Product title 64" (64/72) from 1440. Sign-in uses the same layout. */
+@utility type-auth-title {
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 48px;
+  letter-spacing: 0;
+
+  @media (min-width: 768px) {
+    font-size: 56px;
+    line-height: 64px;
+  }
+
+  @media (min-width: 1440px) {
+    font-size: 64px;
+    line-height: 72px;
+  }
+}
+
+/* Figma: the Sign out title: "Catalog/Page title 44" (44/52) on phones, 56/64 at 768 and 1024, "Catalog/Page title 72" (72/80)
+   at 1440 and "Catalog/Page title" (88/96) at 1920. */
+@utility type-sign-out-title {
+  font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
+  font-weight: 400;
+  font-size: 44px;
+  line-height: 52px;
+  letter-spacing: 0;
+
+  @media (min-width: 768px) {
+    font-size: 56px;
+    line-height: 64px;
+  }
+
+  @media (min-width: 1440px) {
+    font-size: 72px;
+    line-height: 80px;
+  }
+
+  @media (min-width: 1920px) {
+    font-size: 88px;
+    line-height: 96px;
+  }
+}
+
 @utility type-catalog-section {
   font-family: var(--font-display, "Lusitana", "PT Serif", Georgia, serif);
   font-weight: 400;

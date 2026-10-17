@@ -11,8 +11,8 @@ const MAX_LENGTH = 1024;
 // Any C0 control character, DEL or whitespace: URL parsers drop tabs and newlines, which turns
 // `/\t/evil.com` into `//evil.com`, and CR/LF would split a Location header.
 const UNSAFE_CHARS = /[\u0000- \u007f\\]/;
-// Never send someone back to an auth form after signing in.
-const AUTH_PAGES = new Set(["sign-in", "sign-up"]);
+// Never send someone back to an auth form (or the sign-out question) after signing in.
+const AUTH_PAGES = new Set(["sign-in", "sign-up", "sign-out"]);
 const PROBE_ORIGIN = "http://stone.invalid";
 
 function resolveLocale(locale: string): string {

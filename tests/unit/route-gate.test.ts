@@ -26,6 +26,20 @@ describe("route gate", () => {
     }
   });
 
+  it("lets the sign-up, sign-in and sign-out pages through in both locales", () => {
+    for (const locale of ["ru", "en"]) {
+      for (const page of ["sign-in", "sign-up", "sign-out"]) {
+        expect(gate(`/${locale}/${page}`), `/${locale}/${page}`).toEqual({
+          action: "next",
+        });
+      }
+    }
+    // Only the exact pages: no sub-paths, no other case.
+    for (const path of ["/ru/sign-in/x", "/ru/Sign-In", "/en/sign-out/now"]) {
+      expect(gate(path), path).toMatchObject({ action: "not-found" });
+    }
+  });
+
   it("leaves paths without a locale to the i18n middleware", () => {
     for (const path of ["/", "/de", "/RU/catalog", "/xx/catalog/nope"]) {
       expect(gate(path), path).toEqual({ action: "next" });
