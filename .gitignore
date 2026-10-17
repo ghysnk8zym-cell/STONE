@@ -83,3 +83,6 @@ next-env.d.ts
 
 # Page-mode visual comparison output: only results.md and the curated *-triplet.jpg strips are kept (docs/QA/phase-3-pages.md)
 /docs/QA/phase-3/*.png
+
+# local PGlite database (DATABASE_URL=pglite://.data/pglite)
+/.data/

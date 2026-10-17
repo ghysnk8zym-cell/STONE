@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
     deviceSizes: [390, 768, 1024, 1440, 1920],
     imageSizes: [],
   },
+  // PGlite (local and CI database, ADR-002) loads its WebAssembly files from disk, so it must
+  // run from node_modules instead of being bundled. `pg` is already external by default.
+  serverExternalPackages: ["@electric-sql/pglite"],
   async headers() {
     const headers = robotsHeaders(indexing === "on");
     return headers.length > 0 ? [{ source: "/:path*", headers }] : [];
