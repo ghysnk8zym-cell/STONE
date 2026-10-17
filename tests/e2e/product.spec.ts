@@ -159,6 +159,45 @@ test.describe("product", () => {
     expect(await overflow()).toBeLessThanOrEqual(0);
   });
 
+  // Largest total (10 000 m², the area limit) in ru, the longest format: «2 640 000,00 $».
+  async function maxTotal(page: Page) {
+    await page.goto("/ru/catalog/black-marble");
+    await productReady(page, "ru");
+    await page
+      .getByLabel(PRODUCT_RU.calculator.fields.area, { exact: true })
+      .fill("10 000");
+    const total = page.getByTestId("calculator-total");
+    await expect(total).toHaveText(/^2\s640\s000,00\s\$$/);
+    return total.evaluate((el) => {
+      const card = el.closest("section")!.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      return {
+        insideLeft: box.left - card.left,
+        insideRight: card.right - box.right,
+        clipped: el.scrollWidth - el.clientWidth,
+        fontSize: getComputedStyle(el).fontSize,
+      };
+    });
+  }
+
+  test("the largest total stays inside the calculator at 320", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    const total = await maxTotal(page);
+    expect(total.insideLeft).toBeGreaterThanOrEqual(0);
+    expect(total.insideRight).toBeGreaterThanOrEqual(0);
+    expect(total.clipped).toBeLessThanOrEqual(0);
+  });
+
+  test("the total keeps the Figma 40 px at the project width", async ({
+    page,
+  }) => {
+    const total = await maxTotal(page);
+    expect(total.fontSize).toBe("40px");
+    expect(total.insideRight).toBeGreaterThanOrEqual(0);
+  });
+
   for (const locale of LOCALES) {
     test(`axe has no critical or serious violations on a product (${locale})`, async ({
       page,

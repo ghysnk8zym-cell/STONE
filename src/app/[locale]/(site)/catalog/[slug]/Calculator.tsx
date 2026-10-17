@@ -158,7 +158,7 @@ export function Calculator({
   return (
     <section
       aria-labelledby={titleId}
-      className="bg-stone-catalog-card border-stone-catalog-line flex w-full flex-col gap-5 rounded-[20px] border p-(--layout-panel-pad)"
+      className="bg-stone-catalog-card border-stone-catalog-line @container flex w-full flex-col gap-5 rounded-[20px] border p-(--layout-panel-pad)"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4">
         <h2
@@ -226,7 +226,12 @@ export function Calculator({
           {t("note")}
         </p>
 
-        <div className="flex items-center justify-between gap-4">
+        {/*
+         * Below 390 (no Figma frame) the label may wrap above the total and the total scales with the
+         * card (12.4cqi = 40 px at the 390 card width), so «2 640 000,00 $» never leaves the card.
+         * At 390 and wider both rules resolve to the Figma 40/48 layout.
+         */}
+        <div className="flex items-center justify-between gap-4 max-[389px]:flex-wrap max-[389px]:gap-y-1">
           <div className="flex min-w-0 flex-col gap-0.5">
             <p className="type-catalog-section text-stone-catalog-ink">
               {t("estimatedTotal")}
@@ -239,7 +244,7 @@ export function Calculator({
           </div>
           <p
             data-testid="calculator-total"
-            className="type-catalog-product-title text-stone-catalog-ink text-right whitespace-nowrap"
+            className="type-catalog-product-title text-stone-catalog-ink ml-auto text-right whitespace-nowrap max-[389px]:text-[length:min(40px,12.4cqi)]"
           >
             {result.ok ? money(result.totalCents) : DASH}
           </p>
