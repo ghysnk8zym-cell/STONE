@@ -9,8 +9,9 @@ import type { Db } from "./client";
 import * as schema from "./schema";
 
 /*
- * The idempotent seed behind `pnpm db:seed`. Every step upserts by a natural key (product slug,
- * user email, order number, favourite pair), so running it again changes nothing.
+ * The idempotent seed behind `pnpm db:seed`. Every step inserts by a natural key (product slug,
+ * user email, order number, favourite pair) and does nothing when the row exists, so running it
+ * again changes nothing and never overwrites data an admin has edited (prices, publishing, names).
  *
  * Steps: catalog (12 products + ru/en translations) -> users -> demo account data for the Client.
  * Users are created by an injected `createUser`, because passwords must go through Better Auth's
@@ -64,11 +65,12 @@ export async function seedCatalog(
       published: true,
       sortOrder: index,
     };
+    // Admin-managed data is never overwritten: an existing slug is left exactly as it is.
+    await db.insert(schema.product).values(values).onConflictDoNothing();
     const [row] = await db
-      .insert(schema.product)
-      .values(values)
-      .onConflictDoUpdate({ target: schema.product.slug, set: values })
-      .returning({ id: schema.product.id });
+      .select({ id: schema.product.id })
+      .from(schema.product)
+      .where(eq(schema.product.slug, p.slug));
 
     for (const locale of LOCALES) {
       const entry = copy[locale]?.[p.slug];
@@ -86,13 +88,7 @@ export async function seedCatalog(
       await db
         .insert(schema.productTranslation)
         .values(translation)
-        .onConflictDoUpdate({
-          target: [
-            schema.productTranslation.productId,
-            schema.productTranslation.locale,
-          ],
-          set: translation,
-        });
+        .onConflictDoNothing();
       translations += 1;
     }
   }
@@ -166,16 +162,22 @@ export async function seedAccountData(
       totalCents: demo.totalCents,
       createdAt: demo.createdAt,
     };
+    await db.insert(schema.order).values(values).onConflictDoNothing();
     const [order] = await db
-      .insert(schema.order)
-      .values(values)
-      .onConflictDoUpdate({ target: schema.order.number, set: values })
-      .returning({ id: schema.order.id });
+      .select({ id: schema.order.id })
+      .from(schema.order)
+      .where(eq(schema.order.number, demo.number));
 
-    // Replace the items of this order so a half-finished earlier run heals itself.
-    await db
-      .delete(schema.orderItem)
-      .where(eq(schema.orderItem.orderId, order!.id));
+    // Items are added only to an order that has none (a half-finished earlier run heals itself).
+    const [existingItem] = await db
+      .select({ id: schema.orderItem.id })
+      .from(schema.orderItem)
+      .where(eq(schema.orderItem.orderId, order!.id))
+      .limit(1);
+    if (existingItem) {
+      orderItems += demo.items.length;
+      continue;
+    }
     for (const item of demo.items) {
       const product = productOf(item.slug);
       await db.insert(schema.orderItem).values({
@@ -278,4 +280,32 @@ export function formatSeedSummary(counts: SeedCounts): string {
   return Object.entries(counts)
     .map(([name, value]) => `${name}: ${value}`)
     .join(", ");
+}
+
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** True for pglite:// and for a postgres URL on this machine; false for anything else, or an unparsable URL. */
+export function isLocalDatabaseUrl(url: string): boolean {
+  if (url.startsWith("pglite://")) return true;
+  try {
+    const parsed = new URL(url);
+    return (
+      /^postgres(ql)?:$/.test(parsed.protocol) &&
+      LOCAL_HOSTS.has(parsed.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The seed refuses a remote database unless SEED_ALLOW_REMOTE=1. Returns the refusal message
+ * (naming variables only, never the URL, which holds credentials) or null when it may run.
+ */
+export function seedTargetRefusal(
+  databaseUrl: string,
+  allowRemote: string | undefined,
+): string | null {
+  if (isLocalDatabaseUrl(databaseUrl) || allowRemote === "1") return null;
+  return "DATABASE_URL points to a remote database; set SEED_ALLOW_REMOTE=1 to seed it anyway";
 }

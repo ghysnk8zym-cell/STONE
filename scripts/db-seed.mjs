@@ -48,8 +48,15 @@ try {
   const missing = REQUIRED.filter((name) => !env[name]);
   if (missing.length > 0) fail(`set ${missing.join(", ")} (see .env.example)`);
 
+  const { seed, formatSeedSummary, seedTargetRefusal } =
+    await import("../src/server/db/seed.ts");
+  const refusal = seedTargetRefusal(
+    env.DATABASE_URL,
+    process.env.SEED_ALLOW_REMOTE,
+  );
+  if (refusal) fail(refusal);
+
   const { getDb } = await import("../src/server/db/index.ts");
-  const { seed, formatSeedSummary } = await import("../src/server/db/seed.ts");
   const db = await getDb();
   if (!db) fail("set DATABASE_URL (see .env.example)");
 

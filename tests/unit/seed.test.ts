@@ -8,8 +8,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 const { createDb, schema } = await import("@/server/db");
-const { seed, seedCatalog, seedAccountData, formatSeedSummary } =
-  await import("@/server/db/seed");
+const {
+  seed,
+  seedCatalog,
+  seedAccountData,
+  formatSeedSummary,
+  isLocalDatabaseUrl,
+  seedTargetRefusal,
+} = await import("@/server/db/seed");
 
 const options = {
   adminEmail: "admin@example.test",
@@ -245,6 +251,118 @@ describe("seed", () => {
   });
 });
 
+describe("seed never overwrites admin-managed data", () => {
+  it("a re-seed keeps an edited price, publication, order and name", async () => {
+    const db = await freshDb();
+    await insertUser(db, options.clientEmail);
+    await seed(db, options);
+
+    await db
+      .update(schema.product)
+      .set({ priceCents: 99900, published: false, sortOrder: 77 })
+      .where(eq(schema.product.slug, "black-marble"));
+    await db
+      .update(schema.productTranslation)
+      .set({ name: "Edited by admin" })
+      .where(
+        and(
+          eq(schema.productTranslation.locale, "en"),
+          eq(
+            schema.productTranslation.productId,
+            (
+              await db
+                .select({ id: schema.product.id })
+                .from(schema.product)
+                .where(eq(schema.product.slug, "black-marble"))
+            )[0]!.id,
+          ),
+        ),
+      );
+    await db
+      .update(schema.order)
+      .set({ status: "delivered", totalCents: 1 })
+      .where(eq(schema.order.number, "D-1048"));
+
+    await seed(db, options);
+
+    const [product] = await db
+      .select()
+      .from(schema.product)
+      .where(eq(schema.product.slug, "black-marble"));
+    expect(product).toMatchObject({
+      priceCents: 99900,
+      published: false,
+      sortOrder: 77,
+    });
+    const [translation] = await db
+      .select({ name: schema.productTranslation.name })
+      .from(schema.productTranslation)
+      .where(
+        and(
+          eq(schema.productTranslation.productId, product!.id),
+          eq(schema.productTranslation.locale, "en"),
+        ),
+      );
+    expect(translation?.name).toBe("Edited by admin");
+    const [order] = await db
+      .select({
+        status: schema.order.status,
+        totalCents: schema.order.totalCents,
+      })
+      .from(schema.order)
+      .where(eq(schema.order.number, "D-1048"));
+    expect(order).toEqual({ status: "delivered", totalCents: 1 });
+    expect(await rowCounts(db)).toMatchObject({ orderItems: 2, orders: 2 });
+  });
+
+  it("restores missing items of an existing order without touching it", async () => {
+    const db = await freshDb();
+    await insertUser(db, options.clientEmail);
+    await seed(db, options);
+    await db.delete(schema.orderItem);
+    await seed(db, options);
+    expect(await rowCounts(db)).toMatchObject({ orders: 2, orderItems: 2 });
+  });
+});
+
+describe("seed target guard", () => {
+  it("treats pglite and localhost postgres as local", () => {
+    for (const url of [
+      "pglite://memory",
+      "pglite://.data/pglite",
+      "postgres://u:p@localhost:5432/stone",
+      "postgresql://127.0.0.1/stone",
+      "postgres://u:p@[::1]:5432/stone",
+    ]) {
+      expect(isLocalDatabaseUrl(url), url).toBe(true);
+    }
+  });
+
+  it("treats everything else as remote", () => {
+    for (const url of [
+      "postgres://u:p@ep-x.neon.tech/db",
+      "postgres://u:p@db.internal:5432/stone",
+      "postgres://u:p@localhost.evil.example/stone",
+      "postgres://localhost@evil.example/stone",
+      "not a url",
+    ]) {
+      expect(isLocalDatabaseUrl(url), url).toBe(false);
+    }
+  });
+
+  it("refuses a remote database unless SEED_ALLOW_REMOTE=1, without echoing the URL", () => {
+    const url = "postgres://user:topsecret@ep-x.neon.tech/db";
+    const refusal = seedTargetRefusal(url, undefined);
+    expect(refusal).toContain("SEED_ALLOW_REMOTE");
+    expect(refusal).toContain("DATABASE_URL");
+    expect(refusal).not.toContain("topsecret");
+    expect(refusal).not.toContain("neon.tech");
+    expect(seedTargetRefusal(url, "0")).not.toBeNull();
+    expect(seedTargetRefusal(url, "1")).toBeNull();
+    expect(seedTargetRefusal("pglite://memory", undefined)).toBeNull();
+  });
+});
+
 describe("pnpm db:seed", () => {
   it("runs against DATABASE_URL, prints counts and no secrets", () => {
     const result = spawnSync(
@@ -280,6 +398,34 @@ describe("pnpm db:seed", () => {
       expect(output).not.toContain(secret);
     }
   }, 90_000);
+
+  it("refuses a remote DATABASE_URL without SEED_ALLOW_REMOTE and never echoes it", () => {
+    const result = spawnSync(
+      process.execPath,
+      [join("scripts", "db-seed.mjs")],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        timeout: 60_000,
+        env: {
+          NODE_ENV: "test",
+          PATH: process.env.PATH,
+          SystemRoot: process.env.SystemRoot,
+          DATABASE_URL: "postgres://user:topsecret@ep-x.neon.tech/db",
+          BETTER_AUTH_SECRET: "s".repeat(32),
+          SEED_ADMIN_EMAIL: options.adminEmail,
+          SEED_ADMIN_PASSWORD: options.adminPassword,
+          SEED_CLIENT_EMAIL: options.clientEmail,
+          SEED_CLIENT_PASSWORD: options.clientPassword,
+        },
+      },
+    );
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("SEED_ALLOW_REMOTE");
+    for (const secret of ["topsecret", "neon.tech", "MARKER"]) {
+      expect(`${result.stdout}${result.stderr}`).not.toContain(secret);
+    }
+  }, 60_000);
 
   it("fails with variable names only when the database or seed users are not configured", () => {
     const result = spawnSync(
