@@ -75,6 +75,7 @@ test.describe("404 without JavaScript", () => {
         await expect(
           page.getByRole("main").getByRole("link", { name: copy.toCatalog }),
         ).toHaveAttribute("href", `/${locale}/catalog`);
+        await expect(page).toHaveTitle(MESSAGES[locale].meta.notFound.title);
         await expect(
           page.locator('meta[name="robots"]').first(),
         ).toHaveAttribute("content", /noindex/);
