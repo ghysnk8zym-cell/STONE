@@ -4,7 +4,23 @@
   },
   "meta": {
     "title": "STONE — natural stone",
-    "description": "Natural stone surfaces."
+    "description": "Natural stone surfaces.",
+    "home": {
+      "title": "STONE — natural stone",
+      "description": "Natural stone for interiors and exteriors: marble, limestone, slate and sandstone."
+    },
+    "catalog": {
+      "title": "Catalog — STONE",
+      "description": "Browse natural stone by material, color and finish. Prices are illustrative."
+    },
+    "product": {
+      "title": "{name} — STONE",
+      "description": "{name}: {description} Prices are illustrative."
+    },
+    "notFound": {
+      "title": "Page not found — STONE",
+      "description": "The page you are looking for does not exist."
+    }
   },
   "placeholder": {
     "title": "Site under construction",
@@ -20,7 +36,8 @@
     },
     "carousel": {
       "prev": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "scrollable": "{label}, scrollable list"
     },
     "social": {
       "name": "{abbr}, {network}",
@@ -302,6 +319,223 @@
         "footer": "Footer links and social buttons without a known destination render as disabled, not as dead links.",
         "ruDraft": "Russian copy and the language switch are drafts for owner review."
       }
+    }
+  },
+  "catalog": {
+    "products": {
+      "black-marble": {
+        "name": "Black Marble",
+        "description": "Deep black stone with bright white veining."
+      },
+      "charcoal-ledger": {
+        "name": "Charcoal Ledger",
+        "description": "Stacked slate strips for feature walls."
+      },
+      "concrete-paver": {
+        "name": "Concrete Paver",
+        "description": "Smooth concrete pavers for paths and terraces."
+      },
+      "golden-rock": {
+        "name": "Golden Rock",
+        "description": "Warm sandstone with sharp, deep facets."
+      },
+      "graphite-rock": {
+        "name": "Graphite Rock",
+        "description": "Cool grey slate with a sculpted rock relief."
+      },
+      "graphite-stack": {
+        "name": "Graphite Stack",
+        "description": "Dark quartzite ledger panel with a rugged face."
+      },
+      "grey-limestone": {
+        "name": "Grey Limestone",
+        "description": "Soft grey limestone with a calm, even surface."
+      },
+      "grey-marble": {
+        "name": "Grey Marble",
+        "description": "Grey marble with dense white veining."
+      },
+      "rustic-split": {
+        "name": "Rustic Split",
+        "description": "Rustic split-face tiles with warm mineral tones."
+      },
+      "silver-ledger": {
+        "name": "Silver Ledger",
+        "description": "Layered ledger stone with deep shadow lines."
+      },
+      "split-limestone": {
+        "name": "Split Limestone",
+        "description": "Chalk-white limestone with a hand-chipped face."
+      },
+      "taupe-rock": {
+        "name": "Taupe Rock",
+        "description": "Split-face sandstone with deep natural relief."
+      }
+    },
+    "material": {
+      "marble": "Marble",
+      "limestone": "Limestone",
+      "slate": "Slate",
+      "sandstone": "Sandstone",
+      "quartzite": "Quartzite",
+      "concrete": "Concrete"
+    },
+    "colorGroup": {
+      "dark": "Dark",
+      "grey": "Grey",
+      "light": "Light",
+      "warm": "Warm"
+    },
+    "color": {
+      "black": "Black",
+      "grey": "Grey",
+      "taupe": "Taupe",
+      "graphite": "Graphite",
+      "white": "White",
+      "golden-beige": "Golden beige",
+      "charcoal": "Charcoal",
+      "dark-grey": "Dark grey",
+      "silver-grey": "Silver grey",
+      "grey-and-rust": "Grey and rust"
+    },
+    "finish": {
+      "polished": "Polished",
+      "honed": "Honed",
+      "split-face": "Split face",
+      "chipped": "Chipped",
+      "smooth": "Smooth"
+    },
+    "meta": "{material} · {w}×{h}×{d} mm"
+  },
+  "pages": {
+    "home": {
+      "hero": {
+        "line1": "Where",
+        "line2": "design",
+        "line3": "meets",
+        "line4": "durability",
+        "searchLabel": "Search materials",
+        "searchPlaceholder": "Search"
+      },
+      "sections": {
+        "catalog": "Catalog",
+        "promo": "Promo products",
+        "works": "Our works"
+      },
+      "actions": {
+        "openCatalog": "Open catalog",
+        "offers": "Offers",
+        "projects": "Projects"
+      },
+      "works": {
+        "marble-kitchen-countertop": {
+          "title": "Marble kitchen countertop",
+          "subtitle": "Precise pattern matching and a clean, hand-finished edge"
+        },
+        "natural-stone-fireplace-portal": {
+          "title": "Natural stone fireplace portal",
+          "subtitle": "Bespoke design, fabrication and installation"
+        },
+        "bathroom-cladding": {
+          "title": "Bathroom cladding",
+          "subtitle": "Full-height slabs, expressive texture and a lasting finish"
+        }
+      },
+      "placeholderPrices": "Prices are illustrative"
+    },
+    "catalog": {
+      "title": "Catalog",
+      "searchLabel": "Search materials",
+      "searchPlaceholder": "Search materials",
+      "filters": {
+        "label": "Filters",
+        "material": "Material",
+        "color": "Color",
+        "finish": "Finish",
+        "sort": "Sort by",
+        "allMaterials": "All materials",
+        "allColors": "All colors",
+        "allFinishes": "All finishes"
+      },
+      "sort": {
+        "name-asc": "Name A–Z",
+        "name-desc": "Name Z–A",
+        "price-asc": "Price: low to high",
+        "price-desc": "Price: high to low"
+      },
+      "applyFilters": "Apply filters",
+      "showing": "Showing {shown} of {total}",
+      "placeholderPrices": "Prices are illustrative",
+      "back": "Back",
+      "empty": {
+        "title": "No stone matches this pairing",
+        "body": "This color is not available in the selected material yet. Change one of the filters or start again.",
+        "clearColor": "Clear color",
+        "clearMaterial": "Clear material",
+        "reset": "Reset all"
+      },
+      "customOrder": {
+        "eyebrow": "Custom order",
+        "title": "Didn't find your stone?",
+        "body": "Share your idea and request a custom quote.",
+        "cta": "Create Your Stone"
+      }
+    },
+    "product": {
+      "back": "Back",
+      "breadcrumbCatalog": "Catalog",
+      "specs": {
+        "material": "Material",
+        "color": "Color",
+        "finish": "Finish",
+        "format": "Format"
+      },
+      "save": "Save",
+      "buyNow": "Buy now",
+      "addToCart": "Add to cart",
+      "formatValue": "{w}×{h}×{d} mm",
+      "gallery": {
+        "label": "Product images",
+        "full": "Show the full image",
+        "detail": "Show a close-up"
+      },
+      "calculator": {
+        "title": "Cost calculator",
+        "pricingNote": "Area pricing",
+        "modesLabel": "Calculation mode",
+        "modes": {
+          "area": "Area",
+          "wall": "Wall dimensions"
+        },
+        "fields": {
+          "area": "Surface area (m²)",
+          "length": "Length (m)",
+          "height": "Height (m)"
+        },
+        "units": {
+          "area": "m²",
+          "length": "m",
+          "height": "m"
+        },
+        "rows": {
+          "surface": "Surface area",
+          "extra": "Extra tiles (10%)",
+          "order": "Order area",
+          "unitPrice": "Unit price"
+        },
+        "note": "Includes 10% extra tiles for cutting, breakage and installation waste.",
+        "estimatedTotal": "Estimated total",
+        "illustrative": "Illustrative estimate",
+        "error": {
+          "invalid": "Enter a number, e.g. 2.5",
+          "range": "Enter a value from {min} to {max}"
+        }
+      }
+    },
+    "notFound": {
+      "title": "Page not found",
+      "body": "The page you are looking for does not exist or has moved.",
+      "toCatalog": "Open catalog"
     }
   }
 }

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -42,12 +43,97 @@ describe("image assets", () => {
     }
   });
 
+  it("no two manifest images resolve to byte-identical files at the same width", () => {
+    const seen = new Map<string, string>();
+    for (const output of outputs) {
+      const hash = createHash("sha256")
+        .update(readFileSync(join(root, "public", output)))
+        .digest("hex");
+      const width = output.match(/-(\d+)\.webp$/)![1];
+      const key = `${width}:${hash}`;
+      expect(
+        seen.get(key),
+        `${output} duplicates ${seen.get(key)}`,
+      ).toBeUndefined();
+      seen.set(key, output);
+    }
+  });
+
   it("every Figma icon in the manifest exists", () => {
     for (const icon of manifest.icons) {
       const path = join(root, "public", "icons", `${icon.name}.svg`);
       expect(existsSync(path), icon.name).toBe(true);
       expect(statSync(path).size, icon.name).toBeGreaterThan(0);
     }
+  });
+});
+
+const PRODUCT_SLUGS = [
+  "black-marble",
+  "charcoal-ledger",
+  "concrete-paver",
+  "golden-rock",
+  "graphite-rock",
+  "graphite-stack",
+  "grey-limestone",
+  "grey-marble",
+  "rustic-split",
+  "silver-ledger",
+  "split-limestone",
+  "taupe-rock",
+];
+const LOW_RES = [
+  "charcoal-ledger",
+  "concrete-paver",
+  "golden-rock",
+  "graphite-rock",
+  "rustic-split",
+  "silver-ledger",
+  "taupe-rock",
+];
+const WORKS_IDS = ["natural-stone-fireplace-portal"];
+
+describe("page assets (Phase 3)", () => {
+  const byFile = new Map(manifest.images.map((image) => [image.file, image]));
+
+  // The product gallery reuses images/catalog/<slug> (the Figma main image and the second
+  // thumbnail are the same fill; the thumbnail is a CSS crop of it).
+  it.each(PRODUCT_SLUGS)(
+    "%s catalog image serves the product gallery",
+    (slug) => {
+      const first = byFile.get(`images/catalog/${slug}`);
+      expect(first, slug).toBeDefined();
+      expect(first!.requestedWidths, slug).toContain(1440);
+      expect(first!.usage, slug).toContain("ProductGallery:main");
+      expect(
+        byFile.has(`images/products/${slug}-1`),
+        "no duplicate product files",
+      ).toBe(false);
+      // Never upscaled: the widest output is the widest requested width the source allows.
+      const widest = Math.max(
+        ...first!.requestedWidths.filter((w) => w <= first!.sourceWidth),
+      );
+      expect(Math.max(...first!.widths), `${slug}-1 widest`).toBe(widest);
+      for (const width of first!.widths) {
+        expect(
+          existsSync(join(root, "public", `${first!.file}-${width}.webp`)),
+          `${slug} ${width}`,
+        ).toBe(true);
+      }
+      // Figma sources narrower than 1024 px are low-res; they are listed explicitly so a
+      // regression (or a better source later) is noticed.
+      if (LOW_RES.includes(slug)) {
+        expect(first!.sourceWidth, `${slug}-1 low-res`).toBeLessThan(1024);
+      } else {
+        expect(first!.sourceWidth, `${slug}-1`).toBeGreaterThanOrEqual(1024);
+      }
+    },
+  );
+
+  it.each(WORKS_IDS)("works/%s exists", (id) => {
+    const image = byFile.get(`images/works/${id}`);
+    expect(image, id).toBeDefined();
+    expect(image!.widths.length, id).toBeGreaterThan(0);
   });
 });
 

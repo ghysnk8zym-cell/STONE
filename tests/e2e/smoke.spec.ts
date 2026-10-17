@@ -4,7 +4,12 @@ import { expect, test } from "@playwright/test";
 import en from "../../messages/en.json";
 import ru from "../../messages/ru.json";
 
-const placeholderTitle = { ru: ru.placeholder.title, en: en.placeholder.title };
+const hero = (h: typeof ru.pages.home.hero) =>
+  [h.line1, h.line2, h.line3, h.line4].join(" ");
+const homeTitle = {
+  ru: hero(ru.pages.home.hero),
+  en: hero(en.pages.home.hero),
+};
 
 test.describe("smoke", { tag: "@smoke" }, () => {
   test("root redirects to ru", async ({ page }) => {
@@ -17,7 +22,7 @@ test.describe("smoke", { tag: "@smoke" }, () => {
       const response = await page.goto(`/${locale}`);
       expect(response?.status()).toBe(200);
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
-      await expect(page.locator("h1")).toHaveText(placeholderTitle[locale]);
+      await expect(page.locator("h1")).toHaveText(homeTitle[locale]);
     });
   }
 
@@ -68,7 +73,9 @@ test.describe("smoke", { tag: "@smoke" }, () => {
       const response = await page.goto(`/${locale}/no-such-page`);
       expect(response?.status()).toBe(404);
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
-      await expect(page.locator("h1")).toHaveText(messages.notFound.title);
+      await expect(page.locator("h1")).toHaveText(
+        messages.pages.notFound.title,
+      );
     });
   }
 

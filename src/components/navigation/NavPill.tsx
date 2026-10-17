@@ -10,6 +10,12 @@ type CommonProps = {
   /** The pill points at the page the user is on: Figma "Current" look + `aria-current="page"`. */
   current?: boolean;
   disabled?: boolean;
+  /**
+   * Not built yet (owner decision A): looks exactly like the default pill, but is a non-link
+   * `<span role="link" aria-disabled>`: no hover / pressed reaction, not focusable, no 45 % dim.
+   * Distinct from `disabled`, which is Figma's Disabled state.
+   */
+  inert?: boolean;
   /** Frozen interaction state, rendered as `data-state` (styleguide only). */
   state?: InteractionState;
   /** Needed when the visible label is not the accessible name (language switch). */
@@ -50,6 +56,11 @@ const IDLE = cn(
   "press:border-glass-strong press:bg-surface-card-hover press:shadow-[inset_0_1px_3px_rgba(27,29,32,0.2)]",
 );
 
+/** Default look without any interaction (inert pill): same geometry and colours as BASE + IDLE. */
+const INERT = cn(
+  "inline-flex h-[46px] max-w-full min-w-0 shrink-0 cursor-default items-center justify-center rounded-full border border-glass bg-surface-nav-pill px-4 text-primary type-nav-link whitespace-nowrap select-none",
+);
+
 const CURRENT = "border-[rgba(255,255,255,0.55)] bg-[rgba(255,255,255,0.26)]";
 
 /**
@@ -62,6 +73,7 @@ export function NavPill(props: NavPillProps) {
     children,
     current = false,
     disabled = false,
+    inert = false,
     state,
     className,
   } = props;
@@ -69,14 +81,14 @@ export function NavPill(props: NavPillProps) {
   const classes = cn(BASE, current ? CURRENT : IDLE, className);
 
   if (props.href !== undefined) {
-    if (disabled) {
+    if (disabled || inert) {
       return (
         <span
           role="link"
           aria-label={ariaLabel}
           aria-disabled="true"
           data-state={state}
-          className={classes}
+          className={disabled ? classes : cn(INERT, className)}
         >
           <span className="min-w-0 truncate">{children}</span>
         </span>

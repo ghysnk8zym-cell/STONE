@@ -16,6 +16,8 @@ export type SocialButtonProps = {
   state?: InteractionState;
   /** Figma Disabled variant: renders a non-link `<span role="link" aria-disabled>` without href. */
   disabled?: boolean;
+  /** Not built yet: default look, non-link, no reaction, no dim (Phase 3 footer). */
+  inert?: boolean;
 };
 
 /*
@@ -32,6 +34,7 @@ export function SocialButton({
   href,
   state,
   disabled = false,
+  inert = false,
 }: SocialButtonProps) {
   const t = useTranslations("components.social");
   const name = t("name", { abbr: label, network: t(NETWORK[label]) });
@@ -40,14 +43,18 @@ export function SocialButton({
     "size-11 bg-surface-nav-pill text-primary type-button-label",
   );
 
-  if (disabled) {
+  if (disabled || inert) {
     return (
       <span
         role="link"
         aria-label={name}
         aria-disabled="true"
         data-state={state}
-        className={classes}
+        className={
+          disabled
+            ? classes
+            : "border-glass bg-surface-nav-pill text-primary type-button-label inline-flex size-11 shrink-0 cursor-default items-center justify-center rounded-full border select-none"
+        }
       >
         {label}
       </span>

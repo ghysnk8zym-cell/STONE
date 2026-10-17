@@ -87,6 +87,12 @@ export function Select({
   const inert = disabled || empty;
 
   const [value, setValue] = useState(defaultValue);
+  // A changed defaultValue (the URL changed, e.g. Back) replaces the shown value; the user's own pick is kept otherwise.
+  const [seenDefault, setSeenDefault] = useState(defaultValue);
+  if (defaultValue !== seenDefault) {
+    setSeenDefault(defaultValue);
+    setValue(defaultValue);
+  }
   // The shown / posted option is derived, so an unknown defaultValue (or changed options) falls back to the first option.
   const selectedIndex = Math.max(
     0,

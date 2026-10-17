@@ -669,5 +669,58 @@
     "approval-glass-390": "no Figma reference (owner approval block, not a component)",
     "approval-checklist-1440": "no Figma reference (owner approval block, not a component)",
     "approval-checklist-390": "no Figma reference (owner approval block, not a component)"
-  }
+  },
+  "pages": {
+    "home": {
+      "route": "",
+      "name": "Home v2 (714:869)",
+      "screens": {
+        "390": "716:1060",
+        "768": "724:1669",
+        "1024": "722:1563",
+        "1440": "722:1300"
+      }
+    },
+    "catalog": {
+      "route": "/catalog",
+      "name": "Catalog (918:25304)",
+      "screens": {
+        "390": "922:26324",
+        "768": "922:25976",
+        "1024": "922:25741",
+        "1440": "922:25494"
+      }
+    },
+    "black-marble": {
+      "route": "/catalog/black-marble",
+      "name": "Product / Black Marble (780:11881)",
+      "screens": {
+        "390": "782:11727",
+        "768": "782:11639",
+        "1024": "782:11577",
+        "1440": "782:11526"
+      }
+    },
+    "charcoal-ledger": {
+      "route": "/catalog/charcoal-ledger",
+      "name": "Product / Charcoal Ledger (784:20137)",
+      "screens": {
+        "390": "784:20616",
+        "768": "784:20500",
+        "1024": "784:20385",
+        "1440": "784:20261"
+      }
+    },
+    "concrete-paver": {
+      "route": "/catalog/concrete-paver",
+      "name": "Product / Concrete Paver (784:18611)",
+      "screens": {
+        "390": "784:19090",
+        "768": "784:18974",
+        "1024": "784:18859",
+        "1440": "784:18735"
+      }
+    }
+  },
+  "pagesDoc": "pages = full-screen Figma frames (get_screenshot, 1:1 CSS px, maxDimension large) compared by `scripts/visual-compare.mjs --pages`. PNG of <id> at <width> is tests/visual/figma/pages/<id>-<width>.png; route is appended to /<locale> (locale en). screens maps width to the Figma node."
 }

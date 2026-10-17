@@ -19,7 +19,14 @@ import type { NavCurrent } from "./nav-items";
  * side padding layout/header-pad-x (per breakpoint), gap 12 between the right-hand controls in
  * Compact and 24 in Full. Sticky and full-bleed per the Figma component description.
  */
-export function SiteHeader({ current }: { current?: NavCurrent }) {
+export function SiteHeader({
+  current,
+  inert = [],
+}: {
+  current?: NavCurrent;
+  /** Entries whose page does not exist yet: rendered through the disabled (non-link) path. */
+  inert?: readonly NavCurrent[];
+}) {
   const t = useTranslations("components.nav");
 
   return (
@@ -31,11 +38,19 @@ export function SiteHeader({ current }: { current?: NavCurrent }) {
       >
         {/* Wrappers (not classes on the pill) carry hidden / xl:contents: the pill sets its own display. */}
         <span className="hidden xl:contents">
-          <NavPill href="/create-your-stone" current={current === "create"}>
+          <NavPill
+            href="/create-your-stone"
+            current={current === "create"}
+            inert={inert.includes("create")}
+          >
             {t("createYourStone")}
           </NavPill>
         </span>
-        <NavPill href="/cart" current={current === "cart"}>
+        <NavPill
+          href="/cart"
+          current={current === "cart"}
+          inert={inert.includes("cart")}
+        >
           {t("cart")}
         </NavPill>
         <span className="hidden xl:contents">
@@ -44,10 +59,11 @@ export function SiteHeader({ current }: { current?: NavCurrent }) {
             label={t("account")}
             href="/account"
             current={current === "account"}
+            inert={inert.includes("account")}
           />
           <LanguageSwitch />
         </span>
-        <HeaderMenuButton current={current} />
+        <HeaderMenuButton current={current} inert={inert} />
       </nav>
     </header>
   );

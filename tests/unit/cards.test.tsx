@@ -78,6 +78,13 @@ describe("ProductCard", () => {
     expect(heart.closest("a")).toBeNull();
   });
 
+  it("favoriteInert renders the heart as a disabled non-button", () => {
+    renderWithIntl(productCard({ favoriteInert: true }));
+    const heart = screen.getByRole("button", { name: /Black Marble/ });
+    expect(heart.tagName).toBe("SPAN");
+    expect(heart.getAttribute("aria-disabled")).toBe("true");
+  });
+
   it("the link overlay covers the whole card and the heart stays above it", () => {
     renderWithIntl(productCard());
     const link = screen.getByRole("link", { name: "Black Marble" });
@@ -222,6 +229,77 @@ describe("ShowcaseCard", () => {
     expect(screen.getByText("Precise pattern matching")).toBeTruthy();
   });
 
+  it("a work card without href is not a link and keeps its title", () => {
+    renderWithIntl(
+      <ShowcaseCard
+        type="work"
+        layout="responsive"
+        title="Bathroom cladding"
+        subtitle="Full-height slabs"
+        image={{
+          ...SHOWCASE_IMAGE,
+          crop: {
+            className: "left-[-37%] top-[-200%] h-[333%] w-[174%]",
+            width: 562,
+            height: 941,
+          },
+        }}
+      />,
+    );
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
+    expect(
+      screen.getByRole("heading", { name: "Bathroom cladding" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("img").className).toContain("top-[-200%]");
+  });
+
+  it("phone cards carry an inert heart only when favoriteLabel is given", () => {
+    const { rerender } = renderWithIntl(
+      <ShowcaseCard
+        type="product"
+        layout="responsive"
+        href="/catalog/black-marble"
+        title="Black Marble"
+        subtitle="Marble"
+        image={IMAGE}
+        favoriteLabel="Save Black Marble to favorites"
+      />,
+    );
+    const heart = screen.getByRole("button", {
+      name: "Save Black Marble to favorites",
+    });
+    expect(heart.getAttribute("aria-disabled")).toBe("true");
+    expect(heart.className).not.toMatch(/opacity-45/);
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    rerender(
+      <ShowcaseCard
+        type="product"
+        layout="responsive"
+        href="/catalog/black-marble"
+        title="Black Marble"
+        subtitle="Marble"
+        image={IMAGE}
+      />,
+    );
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("responsive layout carries mobile classes with md: desktop overrides", () => {
+    const { container } = renderWithIntl(
+      <ShowcaseCard
+        type="product"
+        layout="responsive"
+        href="/catalog/black-marble"
+        title="Black Marble"
+        subtitle="Marble"
+        image={IMAGE}
+      />,
+    );
+    const html = container.innerHTML;
+    expect(html).toContain("h-[140px]");
+    expect(html).toContain("md:h-[220px]");
+  });
+
   it("promo type shows price, old price and the discount badge", () => {
     renderWithIntl(
       <ShowcaseCard
@@ -333,5 +411,53 @@ describe("ShowcaseCard", () => {
     expect(container.querySelector("article")?.getAttribute("data-state")).toBe(
       "focus",
     );
+  });
+});
+
+/*
+ * Spec (Phase 3, worst-case data): product names wrap to at most two lines with an ellipsis, and a
+ * long unbroken word breaks instead of overflowing. jsdom has no layout, so this checks the classes;
+ * tests/e2e/pages.spec.ts measures the real boxes.
+ */
+describe("long product names", () => {
+  const LONG =
+    "Очень длинное название изделия из натурального колотого известняка, коллекция";
+
+  function expectClamped() {
+    const heading = screen.getByRole("heading", { name: LONG });
+    expect(heading.className).toContain("line-clamp-2");
+    expect(heading.className).toContain("wrap-anywhere");
+  }
+
+  it("ProductCard clamps the name and breaks long words", () => {
+    renderWithIntl(productCard({ name: LONG }));
+    expectClamped();
+  });
+
+  it("ShowcaseCard product and promo clamp the title and break long words", () => {
+    const { unmount } = renderWithIntl(
+      <ShowcaseCard
+        type="product"
+        layout="responsive"
+        href="/catalog/black-marble"
+        title={LONG}
+        subtitle="Marble"
+        image={IMAGE}
+      />,
+    );
+    expectClamped();
+    unmount();
+    renderWithIntl(
+      <ShowcaseCard
+        type="promo"
+        layout="responsive"
+        href="/catalog/taupe-rock"
+        title={LONG}
+        subtitle="Sandstone"
+        image={IMAGE}
+        price={usd(32)}
+      />,
+    );
+    expectClamped();
   });
 });

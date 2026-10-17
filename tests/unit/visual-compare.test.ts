@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildPageJobs,
+  formatPageResults,
   formatResults,
   mismatchPercent,
   parseReferenceKey,
@@ -89,5 +91,87 @@ describe("mismatchPercent", () => {
     expect(() => mismatchPercent(0, 0, 10)).toThrow("Invalid image size");
     expect(() => mismatchPercent(0, 10, 0)).toThrow("Invalid image size");
     expect(() => mismatchPercent(0, -1, 10)).toThrow("Invalid image size");
+  });
+});
+
+describe("buildPageJobs", () => {
+  const pages = {
+    home: { route: "", screens: { "1440": "1:1", "390": "1:2" } },
+    "black-marble": {
+      route: "/catalog/black-marble",
+      screens: { "1440": "2:1", "1024": "2:2", "768": "2:3", "390": "2:4" },
+    },
+  };
+
+  it("expands every screen into a job with its path, key and node", () => {
+    const jobs = buildPageJobs(pages, null);
+    expect(jobs).toHaveLength(6);
+    expect(jobs[0]).toEqual({
+      id: "home",
+      width: 1440,
+      key: "home-1440",
+      route: "",
+      node: "1:1",
+    });
+    expect(jobs.map((j: { key: string }) => j.key)).toContain(
+      "black-marble-768",
+    );
+  });
+
+  it("orders each page from the widest to the narrowest screen", () => {
+    const widths = buildPageJobs(pages, null)
+      .filter((j) => j.id === "black-marble")
+      .map((j) => j.width);
+    expect(widths).toEqual([1440, 1024, 768, 390]);
+  });
+
+  it("filters by page ids and by widths", () => {
+    expect(buildPageJobs(pages, new Set(["home"]))).toHaveLength(2);
+    expect(
+      buildPageJobs(pages, null, new Set([390])).map(
+        (j: { key: string }) => j.key,
+      ),
+    ).toEqual(["home-390", "black-marble-390"]);
+  });
+
+  it("ignores screens at widths the mode does not compare", () => {
+    const odd = {
+      x: { route: "/x", screens: { "1920": "9:9", "390": "9:8" } },
+    };
+    expect(
+      buildPageJobs(odd, null).map((j: { width: number }) => j.width),
+    ).toEqual([390]);
+  });
+
+  it("rejects a page without a route", () => {
+    expect(() => buildPageJobs({ x: { screens: {} } }, null)).toThrow(
+      'page "x"',
+    );
+  });
+});
+
+describe("formatPageResults", () => {
+  const text = formatPageResults(
+    [
+      {
+        id: "home",
+        width: 1440,
+        route: "",
+        mismatch: "12.34",
+        impl: "1440x2300",
+        figma: "1440x2208",
+      },
+    ],
+    [],
+  );
+
+  it("starts with the page-mode method legend", () => {
+    expect(text.split("\n")[0]).toMatch(/^Method: full-page/);
+  });
+
+  it("lists the route and a height delta per row", () => {
+    expect(text).toContain(
+      "| home | /en | 1440 | 12.34 | 1440x2300 | 1440x2208 | +92 |",
+    );
   });
 });

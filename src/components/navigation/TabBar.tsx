@@ -43,14 +43,25 @@ const TABS = [
  * Active colour, focus a 2 px accent-focus outline (same ring as the header controls), no ripple.
  * Colours are set per look (current / idle), never combined, because cn() is not twMerge.
  */
+const ITEM_BASE =
+  "flex h-[52px] w-full flex-col items-center justify-center gap-1 rounded-xl py-1 type-footer-small whitespace-nowrap select-none";
 const ITEM = cn(
   "flex h-[52px] w-full flex-col items-center justify-center gap-1 rounded-xl py-1 type-footer-small whitespace-nowrap outline-0 motion-hover",
   "focusv:outline-2 focusv:outline-accent-focus",
 );
 const IDLE = "text-secondary hov:text-primary";
 const CURRENT = "text-primary";
+/** Inert tab: the idle look, no hover reaction, not focusable (Figma shows the tab as usual). */
+const INERT = "cursor-default";
 
-export function TabBar({ current }: { current?: TabBarCurrent }) {
+export function TabBar({
+  current,
+  inert = [],
+}: {
+  current?: TabBarCurrent;
+  /** Tabs whose page does not exist yet: rendered as non-link items with `aria-disabled`. */
+  inert?: readonly TabBarCurrent[];
+}) {
   const t = useTranslations("components.tabBar");
 
   return (
@@ -61,14 +72,25 @@ export function TabBar({ current }: { current?: TabBarCurrent }) {
       <ul className="flex h-[52px] items-center justify-between">
         {TABS.map(({ key, href, icon }) => (
           <li key={key} className="max-w-16 min-w-0 flex-1">
-            <Link
-              href={href}
-              aria-current={current === key ? "page" : undefined}
-              className={cn(ITEM, current === key ? CURRENT : IDLE)}
-            >
-              <Icon name={icon} />
-              {t(key)}
-            </Link>
+            {inert.includes(key) ? (
+              <span
+                role="link"
+                aria-disabled="true"
+                className={cn(ITEM_BASE, "text-secondary", INERT)}
+              >
+                <Icon name={icon} />
+                {t(key)}
+              </span>
+            ) : (
+              <Link
+                href={href}
+                aria-current={current === key ? "page" : undefined}
+                className={cn(ITEM, current === key ? CURRENT : IDLE)}
+              >
+                <Icon name={icon} />
+                {t(key)}
+              </Link>
+            )}
           </li>
         ))}
       </ul>

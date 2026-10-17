@@ -9,6 +9,11 @@ export type CarouselArrowProps = {
   direction: "prev" | "next";
   onClick?: () => void;
   disabled?: boolean;
+  /**
+   * Same look as `disabled`, but the button stays focusable (`aria-disabled`, click ignored): a
+   * keyboard user who reaches the end of a carousel keeps focus on the arrow instead of losing it.
+   */
+  softDisabled?: boolean;
   /** Frozen interaction state, rendered as `data-state` (styleguide only). */
   state?: InteractionState;
 };
@@ -23,6 +28,7 @@ export function CarouselArrow({
   direction,
   onClick,
   disabled = false,
+  softDisabled = false,
   state,
 }: CarouselArrowProps) {
   const t = useTranslations("components.carousel");
@@ -33,7 +39,8 @@ export function CarouselArrow({
       className={cn(ROUND_GLASS, "bg-surface-button text-icon-light size-11")}
       data-state={state}
       disabled={disabled}
-      onClick={onClick}
+      aria-disabled={softDisabled ? "true" : undefined}
+      onClick={softDisabled ? undefined : onClick}
     >
       <Icon
         name="arrow"

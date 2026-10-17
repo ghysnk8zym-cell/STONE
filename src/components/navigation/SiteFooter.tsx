@@ -23,6 +23,12 @@ export type SiteFooterProps = {
    * without a URL renders its SocialButton disabled (non-link) instead of a dead "#" link.
    */
   social?: Partial<Record<SocialNetwork, string>>;
+  /**
+   * Pages with the floating phone TabBar: the footer keeps 100 px under its content (after its 24 px padding) on phones
+   * (`pb-footer-tabbar`: its own 24 px + the 100 px the bar covers) so the bar floats over the footer's own glass, as in Figma, instead of over a
+   * page-background band below it.
+   */
+  reserveTabBar?: boolean;
 };
 
 const LINKS = [
@@ -62,7 +68,7 @@ const NETWORKS = [
  */
 const FOCUS =
   "rounded-sm outline-0 focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus";
-const INERT = "cursor-default aria-disabled:opacity-45";
+const INERT = "cursor-default";
 
 const NAV_LINK = cn(
   "block py-3 text-primary type-footer-link whitespace-nowrap uppercase motion-hover",
@@ -103,13 +109,19 @@ export function SiteFooter({
   links = {},
   privacyHref,
   social = {},
+  reserveTabBar = false,
 }: SiteFooterProps) {
   const t = useTranslations("components.footer");
   const name = useTranslations("common")("siteName");
   const followId = useId();
 
   return (
-    <footer className="glass-blur border-glass bg-surface-footer flex flex-col items-center gap-6 border-t px-(--layout-header-pad-x) pt-8 pb-6 lg:items-start lg:gap-5 lg:pt-7">
+    <footer
+      className={cn(
+        "glass-blur border-glass bg-surface-footer flex flex-col items-center gap-6 border-t px-(--layout-header-pad-x) pt-8 lg:items-start lg:gap-5 lg:pt-7",
+        reserveTabBar ? "max-md:pb-footer-tabbar md:pb-6" : "pb-6",
+      )}
+    >
       <div className="flex w-full flex-col items-center gap-6 lg:flex-row">
         <nav aria-label={t("label")} className="lg:flex-1">
           <ul className="flex flex-wrap justify-center gap-x-(--layout-footer-link-gap) lg:flex-nowrap lg:justify-start">
@@ -144,7 +156,7 @@ export function SiteFooter({
                   <SocialButton
                     label={network}
                     href={href ?? ""}
-                    disabled={href === undefined}
+                    inert={href === undefined}
                   />
                 </li>
               );

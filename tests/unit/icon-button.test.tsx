@@ -85,6 +85,13 @@ describe("IconButton", () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it("ink tone (the back button on light pages) has the Figma ink border", () => {
+    renderWithIntl(<IconButton icon="back" label="Back" href="/" tone="ink" />);
+    const link = screen.getByRole("link", { name: "Back" });
+    expect(link.className).toContain("border-ink");
+    expect(link.className).toContain("size-[46px]");
+  });
+
   it("renders an anchor with the given href and the label as name", () => {
     renderWithIntl(<IconButton icon="back" label="Back" href="/catalog" />);
     const link = screen.getByRole("link", { name: "Back" });

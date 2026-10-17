@@ -30,6 +30,8 @@ export type ProductCardProps = {
   /** Heart state (aria-pressed). The toggle itself belongs to a client parent: pass `onFavoriteToggle`. */
   favorite?: boolean;
   onFavoriteToggle?: () => void;
+  /** Favourites are not built yet: the heart keeps its Figma look but is a disabled, non-interactive control. */
+  favoriteInert?: boolean;
   /** Frozen interaction state, rendered as `data-state` (styleguide only). */
   state?: InteractionState;
 };
@@ -98,6 +100,7 @@ export function ProductCard({
   discountPercent,
   favorite = false,
   onFavoriteToggle,
+  favoriteInert = false,
   state,
 }: ProductCardProps) {
   const t = useTranslations("components.productCard");
@@ -133,11 +136,13 @@ export function ProductCard({
           label={t("favorite", { name })}
           pressed={favorite}
           onClick={onFavoriteToggle}
+          inert={favoriteInert}
         />
       </div>
 
       <div className="flex flex-col gap-0.5 px-1 pb-1 wrap-break-word">
-        <h3 className="type-catalog-product-name text-stone-catalog-ink">
+        {/* Spec: at most two lines with an ellipsis; a long unbroken word breaks, never overflows. */}
+        <h3 className="type-catalog-product-name text-stone-catalog-ink line-clamp-2 wrap-anywhere">
           <Link
             href={href}
             className="outline-0 after:absolute after:inset-0 after:content-['']"

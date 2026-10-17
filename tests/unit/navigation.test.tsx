@@ -14,11 +14,16 @@ import { NextIntlClientProvider } from "next-intl";
 import { type ComponentProps, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { Button } from "@/components/buttons/Button";
+import { IconButton } from "@/components/buttons/IconButton";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
+import { NavPill } from "@/components/navigation/NavPill";
 import { LanguageSwitch } from "@/components/navigation/LanguageSwitch";
 import { MobileMenu } from "@/components/navigation/MobileMenu";
+import { ShellTabBar } from "@/components/navigation/ShellTabBar";
 import { SiteFooter } from "@/components/navigation/SiteFooter";
 import { SiteHeader } from "@/components/navigation/SiteHeader";
+import { PHASE3_INERT } from "@/components/navigation/nav-items";
 import { TabBar } from "@/components/navigation/TabBar";
 
 import en from "../../messages/en.json";
@@ -30,15 +35,19 @@ import { renderWithIntl } from "./render";
 // KNOWN DEBT: the locale prefix of hrefs ("/en/catalog") and the real locale switch (cookie,
 // redirect) are not covered here. They will be covered by the Playwright styleguide / locale
 // e2e (Tasks 9 and Phase 3).
-const replace = vi.fn();
+const { replace, pathname } = vi.hoisted(() => ({
+  replace: vi.fn(),
+  pathname: { current: "/catalog" },
+}));
 vi.mock("@/i18n/navigation", () => ({
   Link: (props: ComponentProps<"a">) => <a {...props} />,
-  usePathname: () => "/catalog",
+  usePathname: () => pathname.current,
   useRouter: () => ({ replace }),
 }));
 
 beforeEach(() => {
   replace.mockClear();
+  pathname.current = "/catalog";
 });
 
 afterEach(() => {
@@ -646,5 +655,145 @@ describe("TabBar page offset", () => {
     expect(screen.getByRole("navigation").className).toContain(
       "bottom-[max(16px,env(safe-area-inset-bottom))]",
     );
+  });
+
+  it("keeps the footer's own 24 px bottom padding above the tab bar space (Figma 370 px footer + 100 px band)", () => {
+    const css = readFileSync(
+      join(process.cwd(), "src", "app", "globals.css"),
+      "utf8",
+    );
+    expect(css.replace(/\s+/g, " ")).toContain(
+      "@utility pb-footer-tabbar { padding-bottom: calc( 24px + 68px + max(16px, env(safe-area-inset-bottom)) + 16px ); }",
+    );
+    const footer = readFileSync(
+      join(process.cwd(), "src", "components", "navigation", "SiteFooter.tsx"),
+      "utf8",
+    );
+    expect(footer).toContain("max-md:pb-footer-tabbar");
+    expect(footer).not.toContain("max-md:pb-tabbar");
+  });
+});
+
+describe("inert navigation (Phase 3)", () => {
+  function expectInert(element: HTMLElement | null, label: string) {
+    expect(element, label).toBeTruthy();
+    expect(element?.hasAttribute("href"), label).toBe(false);
+    expect(element?.getAttribute("aria-disabled"), label).toBe("true");
+    // inert keeps the default Figma look: no 45 % dim and no hover / pressed classes
+    const classes = element?.className ?? "";
+    expect(classes, label).not.toMatch(/opacity-45/);
+    expect(classes, label).not.toMatch(/hov:|press:/);
+    expect(element?.hasAttribute("tabindex"), label).toBe(false);
+  }
+
+  it("Button, IconButton and NavPill inert render the default look, not the Disabled state", () => {
+    const { container } = renderWithIntl(
+      <>
+        <Button href="/projects" inert iconRight="arrow">
+          Projects
+        </Button>
+        <Button inert iconRight="arrow">
+          Soon
+        </Button>
+        <IconButton icon="user" label="Account" href="/account" inert />
+        <NavPill href="/cart" inert>
+          Cart
+        </NavPill>
+      </>,
+    );
+    const items = [
+      ...container.querySelectorAll<HTMLElement>("[role=link], [role=button]"),
+    ];
+    expect(items).toHaveLength(4);
+    expect(container.querySelector("button, a")).toBeNull();
+    for (const item of items) expectInert(item, item.textContent ?? "icon");
+  });
+
+  it("PHASE3_INERT lists favorites, cart, account (tab bar) and create, cart, account (header)", () => {
+    expect([...PHASE3_INERT.tabBar]).toEqual(["favorites", "cart", "account"]);
+    expect([...PHASE3_INERT.nav]).toEqual(["create", "cart", "account"]);
+  });
+
+  it("TabBar renders inert tabs without href and aria-disabled", () => {
+    renderWithIntl(<TabBar current="home" inert={PHASE3_INERT.tabBar} />);
+    const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
+    // active tabs stay real links
+    expect(
+      within(nav).getByRole("link", { name: "Home" }).getAttribute("href"),
+    ).toBe("/");
+    expect(
+      within(nav).getByRole("link", { name: "Catalog" }).getAttribute("href"),
+    ).toBe("/catalog");
+    for (const name of ["Favorites", "Cart", "Sign in"]) {
+      expectInert(within(nav).getByText(name).closest("[role=link]"), name);
+    }
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(2);
+  });
+
+  it("SiteHeader renders inert pills and the account button without href", () => {
+    renderWithIntl(<SiteHeader inert={PHASE3_INERT.nav} />);
+    const banner = screen.getByRole("banner");
+    const nav = within(banner).getByRole("navigation", { name: "Main" });
+    for (const name of ["Create Your Stone", "Cart", "Account"]) {
+      const item = within(nav).getByRole("link", { name });
+      expectInert(item, name);
+    }
+    // the logo and the language switch stay active
+    expect(
+      within(banner)
+        .getByRole("link", { name: "STONE — home" })
+        .hasAttribute("href"),
+    ).toBe(true);
+    expect(
+      (
+        within(banner).getByRole("button", {
+          name: /^RU \/ EN/,
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
+  });
+
+  it("MobileMenu receives the same inert list through the header", () => {
+    renderWithIntl(<SiteHeader inert={PHASE3_INERT.nav} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    const dialog = screen.getByRole("dialog", { name: "Menu" });
+    const nav = within(dialog).getByRole("navigation", { name: "Main" });
+    for (const name of ["Create Your Stone", "Cart", "Account"]) {
+      expectInert(within(nav).getByText(name).closest("[role=link]"), name);
+    }
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(0);
+    expect(
+      within(dialog).getByRole("button", { name: /^RU \/ EN/ }),
+    ).toBeTruthy();
+  });
+});
+
+describe("ShellTabBar", () => {
+  function current() {
+    return screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page")
+      .map((link) => link.textContent);
+  }
+
+  it.each([
+    ["/", ["Home"]],
+    ["/catalog", ["Catalog"]],
+    ["/catalog/black-marble", ["Catalog"]],
+    ["/catalog/black-marble/", ["Catalog"]],
+    ["/catalogue", []],
+    ["/catalog/", ["Catalog"]],
+    ["/something-else", []],
+  ] as const)("maps %s to the current tab", (path, expected) => {
+    pathname.current = path;
+    renderWithIntl(<ShellTabBar />);
+    expect(current()).toEqual(expected);
+  });
+
+  it("keeps the Phase 3 inert tabs inert", () => {
+    renderWithIntl(<ShellTabBar />);
+    const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(2);
+    expect(nav.querySelectorAll("[aria-disabled=true]")).toHaveLength(3);
   });
 });

@@ -1,3 +1,5 @@
+import type { TabBarCurrent } from "./TabBar";
+
 /** Page the header highlights with `aria-current="page"`. */
 export type NavCurrent = "create" | "cart" | "account";
 
@@ -15,3 +17,17 @@ export const NAV_ITEMS = [
   href: string;
   label: "createYourStone" | "cart" | "account";
 }[];
+
+/**
+ * Controls that stay inert (non-link, `aria-disabled`) in Phase 3 because their pages are not
+ * built yet (owner decision A, docs/superpowers/specs/2026-10-14-phase-3-pages-design.md).
+ * Remove an entry when its page ships. `tabBar` feeds `TabBar`, `nav` feeds `SiteHeader` and the
+ * mobile menu.
+ */
+export const PHASE3_INERT = {
+  tabBar: ["favorites", "cart", "account"],
+  nav: ["create", "cart", "account"],
+} as const satisfies {
+  tabBar: readonly TabBarCurrent[];
+  nav: readonly NavCurrent[];
+};
