@@ -804,3 +804,34 @@ test.describe("long product names", () => {
     });
   }
 });
+
+/*
+ * Design QA fixes D7 / D8 (docs/QA/phase-3-pages.md): the Our works card and panel match Figma's
+ * heights (Figma strokes sit inside the 4 px rim, CSS borders do not), and the last home panel is
+ * 24 px above the footer at 390.
+ */
+test.describe("home design QA geometry", () => {
+  test("Our works card and panel heights match Figma", async ({
+    page,
+  }, testInfo) => {
+    const mobile = testInfo.project.name === "mobile";
+    await page.goto("/ru");
+    const works = page.locator("section[aria-labelledby='home-works-heading']");
+    const card = works.getByRole("article").first();
+    // Figma 713:561 Work: media 300 / 240 plus the 4 px rim on both sides
+    expect((await card.boundingBox())!.height).toBe(mobile ? 248 : 308);
+    // 25 px padding + border each side, header 40, gap 20 (Figma 722:1340: 418; 390: 338)
+    expect((await works.boundingBox())!.height).toBe(mobile ? 338 : 418);
+  });
+
+  test("the last home panel is 24 px above the footer at 390", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile", "mobile padding");
+    await page.goto("/ru");
+    const works = page.locator("section[aria-labelledby='home-works-heading']");
+    const panel = (await works.boundingBox())!;
+    const foot = (await page.getByRole("contentinfo").boundingBox())!;
+    expect(foot.y - (panel.y + panel.height)).toBe(24);
+  });
+});

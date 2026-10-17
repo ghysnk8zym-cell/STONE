@@ -93,7 +93,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
     <div className="relative isolate overflow-clip md:-mt-[72px]">
       <Backdrop />
       <Hero locale={locale as Locale} />
-      <div className="relative z-10 flex flex-col items-center gap-(--layout-section-gap) px-(--layout-margin) pt-(--layout-main-top) pb-(--layout-section-gap) max-md:pt-0">
+      <div className="relative z-10 flex flex-col items-center gap-(--layout-section-gap) px-(--layout-margin) pt-(--layout-main-top) pb-(--layout-section-gap) max-md:pt-0 max-md:pb-6">
         <ShowcaseSection
           id="home-catalog"
           label={t("sections.catalog")}

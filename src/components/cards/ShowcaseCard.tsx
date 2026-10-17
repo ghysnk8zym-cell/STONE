@@ -90,8 +90,9 @@ const LIGHT = cn(
   "focusv:outline-2 focusv:-outline-offset-2 focusv:outline-ink-primary has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-ink-primary",
 );
 
+/* Figma draws the 1 px stroke INSIDE the 4 px rim; a CSS border is outside the padding, so 3 + 1 = 4. */
 const DARK = cn(
-  "relative overflow-clip rounded-[20px] border border-glass-strong bg-surface-card p-1 text-left outline-0 motion-hover",
+  "relative overflow-clip rounded-[20px] border border-glass-strong bg-surface-card p-[3px] text-left outline-0 motion-hover",
   "hov:bg-surface-card-hover",
   "press:bg-surface-selected",
   "focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent-focus",
@@ -100,7 +101,8 @@ const DARK = cn(
 /*
  * Per layout: card padding / gap and media height (Figma), the title style, and `sizes` = the media
  * width in the slot (card width minus padding and border): 356 px slot on Home v2 at 1440 -> 330 px
- * (light) / 346 px (work); 148 / 240 / 280 px carousel cards at 390 -> 130 / 222 / 270 px.
+ * (light) / 348 px (work, 3 px padding + 1 px border); 148 / 240 / 280 px carousel cards at 390 ->
+ * 130 / 222 / 272 px.
  */
 const LIGHT_LAYOUT = {
   desktop: {
@@ -130,12 +132,12 @@ const LIGHT_LAYOUT = {
 } as const;
 
 const WORK_LAYOUT = {
-  desktop: { media: "h-[300px]", panel: "px-5 py-4", sizes: "346px" },
-  mobile: { media: "h-[240px]", panel: "px-3.5 py-3", sizes: "270px" },
+  desktop: { media: "h-[300px]", panel: "px-5 py-4", sizes: "348px" },
+  mobile: { media: "h-[240px]", panel: "px-3.5 py-3", sizes: "272px" },
   responsive: {
     media: "h-[240px] md:h-[300px]",
     panel: "px-3.5 py-3 md:px-5 md:py-4",
-    sizes: "(min-width: 768px) 346px, 270px",
+    sizes: "(min-width: 768px) 348px, 272px",
   },
 } as const;
 
