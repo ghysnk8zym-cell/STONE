@@ -170,7 +170,7 @@ Everything below was decided by the implementer (Figma is silent or inconsistent
 - [ ] Mobile menu panel is not in Figma (built from tokens).
 - [ ] Language switch placement (header at 1280 and up, menu below), underline on the current language, Current look kept on hover; account IconButton "Current" is `aria-current` only (no visual cue).
 - [ ] Footer and social links without destinations render as disabled non-link items (Figma and route map give none): keep disabled or omit before Phase 3.
-- [ ] Tab bar: `current` optional (Figma Product screen has none); "Sign in" tab goes to `/account` until a sign-in screen exists; active state is colour only (as Figma); needs bottom padding (`pb-tabbar`, docs/ARCHITECTURE.md).
+- [ ] Tab bar: `current` optional (the Product screen highlights Catalog, 782:11815; other routes none); "Sign in" tab goes to `/account` until a sign-in screen exists; active state is colour only (as Figma); needs bottom padding (`pb-tabbar`, docs/ARCHITECTURE.md).
 - [ ] Breadcrumb focus ring uses ink-primary (accent ring is about 1.9:1 on the light page); 44 px hit area via pseudo-element.
 - [ ] Footer copyright "© 2026" is fixed in messages (stale in 2027).
 - [ ] Russian strings: only the Figma tab labels are exact. All other ru strings are drafts: Создать свой камень, Корзина, Личный кабинет, menu, language, nav and footer labels, "Хлебные крошки", footer copy.

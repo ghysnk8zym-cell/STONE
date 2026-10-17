@@ -779,7 +779,9 @@ describe("ShellTabBar", () => {
   it.each([
     ["/", ["Home"]],
     ["/catalog", ["Catalog"]],
-    ["/catalog/black-marble", []],
+    ["/catalog/black-marble", ["Catalog"]],
+    ["/catalog/black-marble/", ["Catalog"]],
+    ["/catalogue", []],
     ["/catalog/", ["Catalog"]],
     ["/something-else", []],
   ] as const)("maps %s to the current tab", (path, expected) => {

@@ -6,13 +6,13 @@ import { PHASE3_INERT } from "./nav-items";
 import { TabBar, type TabBarCurrent } from "./TabBar";
 
 /**
- * Tab highlighted for a locale-stripped pathname: `/` is Home, `/catalog` Catalog. A product page
- * (`/catalog/<slug>`) highlights nothing, like Figma's Product screen (docs/ARCHITECTURE.md).
+ * Tab highlighted for a locale-stripped pathname: `/` is Home; `/catalog` and any product page below
+ * it (`/catalog/<slug>`) are Catalog, as Figma's Product screen draws Catalog active (782:11815).
  */
 export function tabBarCurrentFor(pathname: string): TabBarCurrent | undefined {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   if (path === "/") return "home";
-  if (path === "/catalog") return "catalog";
+  if (path === "/catalog" || path.startsWith("/catalog/")) return "catalog";
   return undefined;
 }
 
