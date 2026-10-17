@@ -158,8 +158,8 @@ describe("Carousel", () => {
     const html = renderToStaticMarkup(
       <NextIntlClientProvider locale="en" messages={en}>
         <Carousel label="Catalog">
-          <a href="/a">One</a>
-          <a href="/b">Two</a>
+          <span>One</span>
+          <span>Two</span>
         </Carousel>
       </NextIntlClientProvider>,
     );
