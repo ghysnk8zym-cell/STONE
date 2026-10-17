@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 
-import { IconButton } from "../buttons/IconButton";
+import { HeaderAccountButton } from "./HeaderAccountButton";
 import { HeaderMenuButton } from "./HeaderMenuButton";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { Logo } from "./Logo";
@@ -54,11 +54,8 @@ export function SiteHeader({
           {t("cart")}
         </NavPill>
         <span className="hidden xl:contents">
-          <IconButton
-            icon="user"
-            label={t("account")}
-            href="/account"
-            current={current === "account"}
+          <HeaderAccountButton
+            current={current}
             inert={inert.includes("account")}
           />
           <LanguageSwitch />

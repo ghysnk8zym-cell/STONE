@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
+import { FavoriteHeart } from "@/features/account/FavoriteControls";
 import { Link } from "@/i18n/navigation";
 
 import { IconButton } from "../buttons/IconButton";
@@ -27,6 +28,11 @@ export type ProductCardProps = {
   oldPrice?: Price;
   /** Whole percent, shown as "−15%". */
   discountPercent?: number;
+  /**
+   * Live favourite of the catalog: the heart reads and toggles this product's favourite through the account
+   * state (src/features/account). Takes precedence over `favorite`, `onFavoriteToggle` and `favoriteInert`.
+   */
+  favoriteSlug?: string;
   /** Heart state (aria-pressed). The toggle itself belongs to a client parent: pass `onFavoriteToggle`. */
   favorite?: boolean;
   onFavoriteToggle?: () => void;
@@ -98,6 +104,7 @@ export function ProductCard({
   price,
   oldPrice,
   discountPercent,
+  favoriteSlug,
   favorite = false,
   onFavoriteToggle,
   favoriteInert = false,
@@ -130,14 +137,18 @@ export function ProductCard({
 
       {/* Bubble 36 px: 8 px padding + 2 px + 4 px from the card edge (12 px padding on 768+). */}
       <div className="absolute top-3.5 right-3.5 z-10 md:top-[18px] md:right-[18px]">
-        <IconButton
-          icon="heart"
-          tone="light"
-          label={t("favorite", { name })}
-          pressed={favorite}
-          onClick={onFavoriteToggle}
-          inert={favoriteInert}
-        />
+        {favoriteSlug !== undefined ? (
+          <FavoriteHeart slug={favoriteSlug} label={t("favorite", { name })} />
+        ) : (
+          <IconButton
+            icon="heart"
+            tone="light"
+            label={t("favorite", { name })}
+            pressed={favorite}
+            onClick={onFavoriteToggle}
+            inert={favoriteInert}
+          />
+        )}
       </div>
 
       <div className="flex flex-col gap-0.5 px-1 pb-1 wrap-break-word">

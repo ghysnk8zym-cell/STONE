@@ -60,8 +60,8 @@ Decision (Phase 3 final review, I1 and I2): `src/middleware.ts` runs `gateRoute(
 - The `[locale]` layout mounts both `TabBar` and `SiteFooter` in Phase 3 (neither is mounted anywhere yet). The footer is full width; the bar floats above it.
 - `TabBar`'s `current` prop is optional: product pages (`/catalog/<slug>`) highlight Catalog, as Figma's Product screen (782:11815) draws it active.
 - Shell mounting (Task 4): `src/app/[locale]/(site)/layout.tsx` renders `SiteHeader`, the single `<main>` (pages never render their own), `SiteFooter` and `ShellTabBar` (client; maps the locale-stripped `usePathname()` to `TabBarCurrent`), with the phone padding on the footer, 24 px own + 100 px bar space (`<SiteFooter reserveTabBar>` -> `max-md:pb-footer-tabbar`), not on the wrapper, so the footer glass extends under the floating bar. `[locale]/layout.tsx` keeps `<html>`, `<body>` and providers only. `/_styleguide` is outside the `(site)` group, so it has no shell. `(site)/not-found.tsx` renders the localised 404 inside the shell; `[locale]/not-found.tsx` is the fallback.
-- Controls whose pages do not exist yet are inert (non-link `span`, `aria-disabled`), listed in `PHASE3_INERT` (`src/components/navigation/nav-items.ts`): header and menu Create Your Stone, Cart, account; tab bar Favorites, Cart, Sign in. Remove an entry when its page ships.
-- The "Sign in" tab links to `/account` until the sign-in screen exists (Figma gap, `docs/FIGMA-INVENTORY.md` section 5.1).
+- Controls whose pages do not exist yet are inert (non-link `span`, `aria-disabled`), listed in `INERT` (`src/components/navigation/nav-items.ts`, called `PHASE3_INERT` in Phase 3): header and menu Create Your Stone and Cart; tab bar Cart. Favorites and the account entries went live in Phase 4a. Remove an entry when its page ships.
+- The account entries are session-aware (Phase 4a): the header account button, the mobile menu entry and the last tab ("Sign in" for a Guest, "Account" once signed in) go to `/sign-in` for a Guest and `/account` otherwise. The public pages are static, so the visitor state is a client island: `AccountStateProvider` (`src/features/account`, mounted in the `(site)` layout) fetches `GET /api/me` after hydration (no-store; signed-in flag, display name, favourite slugs; never an id or email) and re-reads it after each navigation. The ♥ of the catalog and showcase cards and the product page Save read it and toggle through the guarded `toggleFavorite` server action (optimistic, the wanted state is sent so a stale client cannot flip the wrong way); a Guest is sent to `/sign-in?next=<page and query>` and the click is added once they are back (sessionStorage, 30 minutes). Trade-off: a signed-in visitor sees an unsaved heart for the moment between hydration and the answer; the alternative, reading the session in the layout, would make every public page dynamic. `html[data-account-state]` (loading, guest, signed-in) is the readiness signal for tests.
 
 ## Pages, catalog data and the inert pattern (Phase 3)
 
@@ -87,8 +87,8 @@ Decision (Phase 3 final review, I1 and I2): `src/middleware.ts` runs `gateRoute(
 - Inert pattern: a control whose destination does not exist yet renders in its default Figma look but as a
   non-link element with `aria-disabled="true"`, no hover or press styles and out of the tab order (distinct from
   `disabled`, which dims). Components take an `inert` prop (Button, IconButton, NavPill, SocialButton, TabBar tab,
-  MobileMenu item, footer links). The lists live in `PHASE3_INERT` (`src/components/navigation/nav-items.ts`); other
-  inert controls are page-local (hearts, Add to cart, Buy now, Save, Projects, custom-order CTA). Remove the entry
+  MobileMenu item, footer links). The lists live in `INERT` (`src/components/navigation/nav-items.ts`); other
+  inert controls are page-local (Add to cart, Buy now, Projects, custom-order CTA, the account Support and bell, View order). Remove the entry
   and the prop when the page ships (Phase 4).
 
 ## Motion

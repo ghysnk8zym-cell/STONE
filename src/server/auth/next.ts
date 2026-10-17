@@ -67,6 +67,7 @@ export type AuthEndpoint =
   | "/sign-up/email"
   | "/sign-out"
   | "/change-password"
+  | "/revoke-other-sessions"
   | "/update-user";
 
 /**

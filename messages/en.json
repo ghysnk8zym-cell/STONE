@@ -78,7 +78,8 @@
       "catalog": "Catalog",
       "favorites": "Favorites",
       "cart": "Cart",
-      "account": "Sign in"
+      "account": "Sign in",
+      "accountSignedIn": "Account"
     },
     "footer": {
       "label": "Footer",
@@ -576,6 +577,115 @@
       "title": "Sign out?",
       "confirm": "Sign out",
       "stay": "Stay signed in"
+    }
+  },
+  "account": {
+    "meta": {
+      "overview": "My account",
+      "orders": "Orders",
+      "favorites": "Favorites",
+      "profile": "Profile"
+    },
+    "back": "Back",
+    "nav": {
+      "label": "Account sections",
+      "overview": "Overview",
+      "orders": "Orders",
+      "favorites": "Favorites",
+      "profile": "Profile",
+      "support": "Support",
+      "signOut": "Sign out",
+      "caption": "My account"
+    },
+    "notifications": "Notifications",
+    "overview": {
+      "title": "My account",
+      "welcome": "Welcome, {name}",
+      "offers": {
+        "label": "Demo offers",
+        "title": "Selected offers",
+        "cta": "View offers"
+      },
+      "orders": {
+        "title": "My orders",
+        "all": "All orders",
+        "current": "Current order",
+        "demoOrder": "Demo order {number}",
+        "demoData": "Demo data for layout",
+        "view": "View order",
+        "empty": "No orders yet."
+      },
+      "profile": {
+        "title": "Profile",
+        "edit": "Edit profile"
+      },
+      "favorites": {
+        "title": "Favorites",
+        "viewAll": "View all",
+        "yours": "Your favorites",
+        "view": "View favorites",
+        "empty": "Tap the heart on a product to save it here.",
+        "browse": "Open catalog"
+      }
+    },
+    "orders": {
+      "title": "Orders",
+      "subtitle": "Your orders",
+      "demoOrder": "Demo order {number}",
+      "order": "Order {number}",
+      "quantity": "Quantity {count}",
+      "more": "+{count} more",
+      "view": "View order",
+      "status": {
+        "in_progress": "In progress",
+        "delivered": "Delivered"
+      },
+      "empty": {
+        "title": "No orders yet",
+        "body": "Orders you place will appear here.",
+        "browse": "Open catalog"
+      }
+    },
+    "favorites": {
+      "title": "Favorites",
+      "subtitle": "Items you saved",
+      "remove": "Remove {name} from favorites",
+      "empty": {
+        "title": "No favorites yet",
+        "body": "Tap the heart on a product to save it here.",
+        "browse": "Open catalog"
+      }
+    },
+    "profile": {
+      "title": "Profile",
+      "subtitle": "Personal details",
+      "details": "Personal details",
+      "name": "Name",
+      "email": "Email",
+      "nameEmpty": "Not set",
+      "edit": "Edit profile",
+      "save": "Save",
+      "saving": "Saving",
+      "cancel": "Cancel",
+      "saved": "Your name was saved.",
+      "errors": {
+        "nameInvalid": "Enter a name of 1 to 80 characters.",
+        "generic": "Something went wrong. Please try again."
+      },
+      "password": {
+        "title": "Password",
+        "current": "Current password",
+        "next": "New password",
+        "submit": "Change password",
+        "success": "Your password was changed.",
+        "errors": {
+          "invalidCurrent": "The current password is wrong.",
+          "weakPassword": "Use a new password of 8 to 128 characters.",
+          "tooManyAttempts": "Too many attempts. Wait a minute and try again.",
+          "unavailable": "Changing the password is unavailable here.",
+          "generic": "Something went wrong. Please try again."
+        }
+      }
     }
   }
 }

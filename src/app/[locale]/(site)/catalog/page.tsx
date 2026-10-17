@@ -204,7 +204,7 @@ export default async function CatalogPage({
                         : price(p.oldPriceCents)
                     }
                     discountPercent={discountPercent(p)}
-                    favoriteInert
+                    favoriteSlug={p.slug}
                   />
                 </li>
               ))}

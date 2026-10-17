@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { NextIntlClientProvider } from "next-intl";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, type ReactElement, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Button } from "@/components/buttons/Button";
@@ -23,8 +23,12 @@ import { MobileMenu } from "@/components/navigation/MobileMenu";
 import { ShellTabBar } from "@/components/navigation/ShellTabBar";
 import { SiteFooter } from "@/components/navigation/SiteFooter";
 import { SiteHeader } from "@/components/navigation/SiteHeader";
-import { PHASE3_INERT } from "@/components/navigation/nav-items";
+import { INERT } from "@/components/navigation/nav-items";
 import { TabBar } from "@/components/navigation/TabBar";
+import {
+  AccountContext,
+  type AccountContextValue,
+} from "@/features/account/account-context";
 
 import en from "../../messages/en.json";
 import ru from "../../messages/ru.json";
@@ -709,35 +713,40 @@ describe("inert navigation (Phase 3)", () => {
     for (const item of items) expectInert(item, item.textContent ?? "icon");
   });
 
-  it("PHASE3_INERT lists favorites, cart, account (tab bar) and create, cart, account (header)", () => {
-    expect([...PHASE3_INERT.tabBar]).toEqual(["favorites", "cart", "account"]);
-    expect([...PHASE3_INERT.nav]).toEqual(["create", "cart", "account"]);
+  it("INERT lists only what has no page: cart (tab bar) and create, cart (header)", () => {
+    expect([...INERT.tabBar]).toEqual(["cart"]);
+    expect([...INERT.nav]).toEqual(["create", "cart"]);
   });
 
   it("TabBar renders inert tabs without href and aria-disabled", () => {
-    renderWithIntl(<TabBar current="home" inert={PHASE3_INERT.tabBar} />);
+    renderWithIntl(<TabBar current="home" inert={INERT.tabBar} />);
     const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
-    // active tabs stay real links
-    expect(
-      within(nav).getByRole("link", { name: "Home" }).getAttribute("href"),
-    ).toBe("/");
-    expect(
-      within(nav).getByRole("link", { name: "Catalog" }).getAttribute("href"),
-    ).toBe("/catalog");
-    for (const name of ["Favorites", "Cart", "Sign in"]) {
-      expectInert(within(nav).getByText(name).closest("[role=link]"), name);
+    // live tabs stay real links: favourites and the account tab are live since Phase 4a
+    for (const [name, href] of [
+      ["Home", "/"],
+      ["Catalog", "/catalog"],
+      ["Favorites", "/account/favorites"],
+      ["Sign in", "/account"],
+    ] as const) {
+      expect(
+        within(nav).getByRole("link", { name }).getAttribute("href"),
+        name,
+      ).toBe(href);
     }
-    expect(nav.querySelectorAll("a[href]")).toHaveLength(2);
+    expectInert(within(nav).getByText("Cart").closest("[role=link]"), "Cart");
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(4);
   });
 
-  it("SiteHeader renders inert pills and the account button without href", () => {
-    renderWithIntl(<SiteHeader inert={PHASE3_INERT.nav} />);
+  it("SiteHeader renders inert pills; the account button is a live link", () => {
+    renderWithIntl(<SiteHeader inert={INERT.nav} />);
     const banner = screen.getByRole("banner");
     const nav = within(banner).getByRole("navigation", { name: "Main" });
-    for (const name of ["Create Your Stone", "Cart", "Account"]) {
-      const item = within(nav).getByRole("link", { name });
-      expectInert(item, name);
+    for (const name of ["Create Your Stone", "Cart"]) {
+      expectInert(within(nav).getByRole("link", { name }), name);
     }
+    expect(
+      within(nav).getByRole("link", { name: "Account" }).getAttribute("href"),
+    ).toBe("/account");
     // the logo and the language switch stay active
     expect(
       within(banner)
@@ -754,17 +763,114 @@ describe("inert navigation (Phase 3)", () => {
   });
 
   it("MobileMenu receives the same inert list through the header", () => {
-    renderWithIntl(<SiteHeader inert={PHASE3_INERT.nav} />);
+    renderWithIntl(<SiteHeader inert={INERT.nav} />);
     fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
     const dialog = screen.getByRole("dialog", { name: "Menu" });
     const nav = within(dialog).getByRole("navigation", { name: "Main" });
-    for (const name of ["Create Your Stone", "Cart", "Account"]) {
+    for (const name of ["Create Your Stone", "Cart"]) {
       expectInert(within(nav).getByText(name).closest("[role=link]"), name);
     }
-    expect(nav.querySelectorAll("a[href]")).toHaveLength(0);
+    // the account entry is a live link
+    expect(
+      within(nav).getByRole("link", { name: "Account" }).getAttribute("href"),
+    ).toBe("/account");
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(1);
     expect(
       within(dialog).getByRole("button", { name: /^RU \/ EN/ }),
     ).toBeTruthy();
+  });
+});
+
+describe("session-aware account entries (Phase 4a)", () => {
+  function withAccount(
+    status: AccountContextValue["status"],
+    ui: ReactElement,
+  ) {
+    const value: AccountContextValue = {
+      status,
+      name: status === "signed-in" ? "Alex" : null,
+      isFavorite: () => false,
+      toggleFavorite: () => {},
+      setFavorite: () => {},
+    };
+    return renderWithIntl(
+      <AccountContext.Provider value={value}>{ui}</AccountContext.Provider>,
+    );
+  }
+
+  it.each([
+    ["guest", "/sign-in"],
+    ["signed-in", "/account"],
+    ["loading", "/account"],
+  ] as const)("%s: the header account button points at %s", (status, href) => {
+    withAccount(status, <SiteHeader inert={INERT.nav} />);
+    const banner = screen.getByRole("banner");
+    expect(
+      within(banner)
+        .getByRole("link", { name: "Account" })
+        .getAttribute("href"),
+    ).toBe(href);
+  });
+
+  it.each([
+    ["guest", "/sign-in"],
+    ["signed-in", "/account"],
+  ] as const)(
+    "%s: the mobile menu account entry points at %s",
+    (status, href) => {
+      withAccount(status, <SiteHeader inert={INERT.nav} />);
+      fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+      const nav = within(screen.getByRole("dialog")).getByRole("navigation", {
+        name: "Main",
+      });
+      expect(
+        within(nav).getByRole("link", { name: "Account" }).getAttribute("href"),
+      ).toBe(href);
+    },
+  );
+
+  it("the tab bar shows Sign in for a Guest and Account once signed in", () => {
+    pathname.current = "/";
+    const guest = withAccount("guest", <ShellTabBar />);
+    let nav = screen.getByRole("navigation", { name: "Mobile navigation" });
+    expect(
+      within(nav).getByRole("link", { name: "Sign in" }).getAttribute("href"),
+    ).toBe("/sign-in");
+    guest.unmount();
+
+    withAccount("signed-in", <ShellTabBar />);
+    nav = screen.getByRole("navigation", { name: "Mobile navigation" });
+    expect(within(nav).queryByRole("link", { name: "Sign in" })).toBeNull();
+    expect(
+      within(nav).getByRole("link", { name: "Account" }).getAttribute("href"),
+    ).toBe("/account");
+  });
+
+  it("the Russian tab reads Вход for a Guest and Кабинет once signed in", () => {
+    const value = (
+      status: AccountContextValue["status"],
+    ): AccountContextValue => ({
+      status,
+      name: null,
+      isFavorite: () => false,
+      toggleFavorite: () => {},
+      setFavorite: () => {},
+    });
+    const guest = renderWithIntl(
+      <AccountContext.Provider value={value("guest")}>
+        <ShellTabBar />
+      </AccountContext.Provider>,
+      "ru",
+    );
+    expect(screen.getByRole("link", { name: "Вход" })).toBeTruthy();
+    guest.unmount();
+    renderWithIntl(
+      <AccountContext.Provider value={value("signed-in")}>
+        <ShellTabBar />
+      </AccountContext.Provider>,
+      "ru",
+    );
+    expect(screen.getByRole("link", { name: "Кабинет" })).toBeTruthy();
   });
 });
 
@@ -783,6 +889,11 @@ describe("ShellTabBar", () => {
     ["/catalog/black-marble/", ["Catalog"]],
     ["/catalogue", []],
     ["/catalog/", ["Catalog"]],
+    ["/account", ["Sign in"]],
+    ["/account/orders", ["Sign in"]],
+    ["/account/profile", ["Sign in"]],
+    ["/account/favorites", ["Favorites"]],
+    ["/accounts", []],
     ["/something-else", []],
   ] as const)("maps %s to the current tab", (path, expected) => {
     pathname.current = path;
@@ -790,10 +901,10 @@ describe("ShellTabBar", () => {
     expect(current()).toEqual(expected);
   });
 
-  it("keeps the Phase 3 inert tabs inert", () => {
+  it("keeps only the Cart tab inert", () => {
     renderWithIntl(<ShellTabBar />);
     const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
-    expect(nav.querySelectorAll("a[href]")).toHaveLength(2);
-    expect(nav.querySelectorAll("[aria-disabled=true]")).toHaveLength(3);
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(4);
+    expect(nav.querySelectorAll("[aria-disabled=true]")).toHaveLength(1);
   });
 });

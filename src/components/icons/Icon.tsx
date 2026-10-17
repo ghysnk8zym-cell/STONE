@@ -16,7 +16,13 @@ export type IconName =
   | "home"
   | "grid"
   | "user"
-  | "eye";
+  | "eye"
+  | "orders"
+  | "support"
+  | "sign-out"
+  | "chevron-right"
+  | "bell"
+  | "heart-filled";
 
 export type IconSize = 12 | 16 | 24;
 

@@ -22,6 +22,11 @@ const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   "sign-in",
   "sign-up",
   "sign-out",
+  // Phase 4a: the pages themselves call requireUser (the middleware only does the optimistic redirect).
+  "account",
+  "account/orders",
+  "account/favorites",
+  "account/profile",
 ]);
 
 export type RouteGate =

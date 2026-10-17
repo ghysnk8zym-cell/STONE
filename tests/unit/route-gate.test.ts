@@ -40,6 +40,28 @@ describe("route gate", () => {
     }
   });
 
+  it("lets the account pages through in both locales (the page guard decides who may see them)", () => {
+    for (const locale of ["ru", "en"]) {
+      for (const page of [
+        "account",
+        "account/orders",
+        "account/favorites",
+        "account/profile",
+      ]) {
+        expect(gate(`/${locale}/${page}`), `/${locale}/${page}`).toEqual({
+          action: "next",
+        });
+      }
+    }
+    for (const path of [
+      "/ru/account/x",
+      "/ru/Account",
+      "/en/account/orders/D-1",
+    ]) {
+      expect(gate(path), path).toMatchObject({ action: "not-found" });
+    }
+  });
+
   it("leaves paths without a locale to the i18n middleware", () => {
     for (const path of ["/", "/de", "/RU/catalog", "/xx/catalog/nope"]) {
       expect(gate(path), path).toEqual({ action: "next" });

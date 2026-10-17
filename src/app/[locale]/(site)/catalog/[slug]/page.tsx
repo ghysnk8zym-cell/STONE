@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Button } from "@/components/buttons/Button";
 import { IconButton } from "@/components/buttons/IconButton";
+import { FavoriteSaveButton } from "@/features/account/FavoriteControls";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { routing, type Locale } from "@/i18n/routing";
 import { imageSize } from "@/lib/image-size";
@@ -118,9 +119,7 @@ export default async function ProductPage({
                 <h1 className="text-ink min-w-0 flex-1 [font-family:var(--font-display)] text-[28px] leading-9 md:text-[44px] md:leading-[52px] min-[90rem]:text-[56px] min-[90rem]:leading-16">
                   {name}
                 </h1>
-                <Button variant="save" inert>
-                  {t("save")}
-                </Button>
+                <FavoriteSaveButton slug={product.slug} label={t("save")} />
               </div>
               <p className="type-catalog-field-value text-ink-secondary">
                 {c(`products.${product.slug}.description` as CatalogKey)}

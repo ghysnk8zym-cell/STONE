@@ -110,6 +110,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               title={name(p)}
               subtitle={material(p)}
               favoriteLabel={favorite(p)}
+              favoriteSlug={p.slug}
               image={{ src: p.image, alt: "" }}
               imageFit={p.imageFit}
               className="w-full"
@@ -132,6 +133,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               title={name(p)}
               subtitle={format(p)}
               favoriteLabel={favorite(p)}
+              favoriteSlug={p.slug}
               image={{ src: p.image, alt: "" }}
               imageFit={p.imageFit}
               price={price(p.priceCents)}

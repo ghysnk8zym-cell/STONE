@@ -85,7 +85,13 @@ export function IconButton({
   current = false,
 }: IconButtonProps) {
   const classes = inert ? INERT[tone] : TONE[tone];
-  const glyph = <Icon name={icon} className={glyphClass(icon, tone)} />;
+  // Figma draws no pressed heart: a saved one is the same outline filled with ink.
+  const glyph = (
+    <Icon
+      name={icon === "heart" && pressed ? "heart-filled" : icon}
+      className={glyphClass(icon, tone)}
+    />
+  );
 
   if (href !== undefined) {
     if (disabled || inert) {

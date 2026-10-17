@@ -42,10 +42,15 @@ test.describe("product", () => {
     ).toHaveAttribute("href", "/en/catalog");
   });
 
-  test("Buy now, Add to cart and Save are inert", async ({ page }) => {
+  test("Buy now and Add to cart are inert; Save is a live toggle", async ({
+    page,
+  }) => {
     await page.goto("/en/catalog/black-marble");
     const main = page.getByRole("main");
-    for (const label of [PRODUCT.buyNow, PRODUCT.addToCart, PRODUCT.save]) {
+    await expect(
+      main.getByRole("button", { name: PRODUCT.save }),
+    ).toHaveAttribute("aria-pressed", "false");
+    for (const label of [PRODUCT.buyNow, PRODUCT.addToCart]) {
       await expect(main.getByRole("button", { name: label })).toHaveAttribute(
         "aria-disabled",
         "true",

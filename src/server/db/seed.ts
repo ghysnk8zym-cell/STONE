@@ -192,10 +192,17 @@ export async function seedAccountData(
     }
   }
 
-  for (const slug of DEMO_FAVORITES) {
+  // The account screens list favourites newest first; Figma shows Black Marble, Grey Limestone, Grey Marble,
+  // so the first slug is the newest.
+  const now = Date.now();
+  for (const [index, slug] of DEMO_FAVORITES.entries()) {
     await db
       .insert(schema.favorite)
-      .values({ userId: client.id, productId: productOf(slug).id })
+      .values({
+        userId: client.id,
+        productId: productOf(slug).id,
+        createdAt: new Date(now - index * 60_000),
+      })
       .onConflictDoNothing();
   }
 
