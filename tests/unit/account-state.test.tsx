@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { NextIntlClientProvider } from "next-intl";
 import type { ComponentProps } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,6 +17,7 @@ import {
 } from "@/features/account/display";
 import type { AccountState } from "@/features/account/results";
 
+import en from "../../messages/en.json";
 import { renderWithIntl } from "./render";
 
 // The real next-intl navigation and the Next router cannot run under Vitest: Link and the router are mocked.
@@ -177,16 +179,116 @@ describe("account state provider", () => {
     });
   });
 
-  it("ignores a click before the state is known", () => {
+  /** A fetch whose answer the test releases by hand. */
+  function slowAnswer() {
+    let release!: (state: AccountState) => void;
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => new Promise(() => {})),
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            release = (value) => resolve(Response.json(value));
+          }),
+      ),
     );
+    return (value: AccountState) => release(value);
+  }
+
+  it("queues a click made before the state is known and applies it for a signed-in visitor", async () => {
+    const release = slowAnswer();
+    mocks.toggle.mockResolvedValue({ ok: true, favorited: true });
     renderHearts();
     expect(state()).toBe("loading");
     fireEvent.click(screen.getByRole("button", { name: "Heart golden" }));
+    // Nothing happens yet: not a guess, not a loss.
     expect(mocks.push).not.toHaveBeenCalled();
     expect(mocks.toggle).not.toHaveBeenCalled();
+
+    release(SIGNED_IN);
+    await waitFor(() =>
+      expect(mocks.toggle).toHaveBeenCalledWith("golden-rock", true),
+    );
+    await waitFor(() =>
+      expect(
+        screen
+          .getByRole("button", { name: "Heart golden" })
+          .getAttribute("aria-pressed"),
+      ).toBe("true"),
+    );
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it("sends a Guest who clicked before the state was known to sign-in", async () => {
+    const release = slowAnswer();
+    renderHearts();
+    fireEvent.click(screen.getByRole("button", { name: "Heart golden" }));
+    release({ signedIn: false, name: null, favorites: [] });
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledTimes(1));
+    expect(mocks.push.mock.calls[0]![0]).toContain("/en/sign-in?next=");
+    expect(mocks.toggle).not.toHaveBeenCalled();
+  });
+
+  it("an early click on a product that turns out to be saved already changes nothing", async () => {
+    const release = slowAnswer();
+    renderHearts();
+    const heart = screen.getByRole("button", { name: "Heart black" });
+    fireEvent.click(heart); // while loading the heart reads unsaved, so the click means "save"
+    fireEvent.click(heart);
+    release(SIGNED_IN); // black-marble is already a favourite: nothing to send
+    await waitFor(() => expect(state()).toBe("signed-in"));
+    expect(mocks.toggle).not.toHaveBeenCalled();
+  });
+
+  describe("when the state is read", () => {
+    const calls = () => vi.mocked(fetch).mock.calls.length;
+    // A re-render of the same provider (what a navigation does) needs the same Intl wrapper.
+    const tree = () => (
+      <NextIntlClientProvider locale="en" messages={en}>
+        <AccountStateProvider>
+          <FavoriteHeart slug="black-marble" label="Heart black" />
+        </AccountStateProvider>
+      </NextIntlClientProvider>
+    );
+
+    it("not again on a plain navigation", async () => {
+      answerWith(SIGNED_IN);
+      const view = renderHearts();
+      await waitFor(() => expect(state()).toBe("signed-in"));
+      expect(calls()).toBe(1);
+
+      mocks.pathname.current = "/en/catalog/black-marble";
+      view.rerender(tree());
+      mocks.pathname.current = "/en/account";
+      view.rerender(tree());
+      expect(calls()).toBe(1);
+      expect(state()).toBe("signed-in");
+    });
+
+    it("again when the sign-out confirmation is left", async () => {
+      answerWith(SIGNED_IN);
+      mocks.pathname.current = "/en/sign-out";
+      const view = renderHearts();
+      await waitFor(() => expect(state()).toBe("signed-in"));
+      expect(calls()).toBe(1);
+
+      answerWith({ signedIn: false, name: null, favorites: [] });
+      mocks.pathname.current = "/en";
+      view.rerender(tree());
+      await waitFor(() => expect(state()).toBe("guest"));
+    });
+
+    it("again when the tab becomes visible", async () => {
+      answerWith(SIGNED_IN);
+      renderHearts();
+      await waitFor(() => expect(state()).toBe("signed-in"));
+      Object.defineProperty(document, "visibilityState", {
+        value: "visible",
+        configurable: true,
+      });
+      answerWith({ signedIn: false, name: null, favorites: [] });
+      document.dispatchEvent(new Event("visibilitychange"));
+      await waitFor(() => expect(state()).toBe("guest"));
+    });
   });
 
   it("adds the product a Guest clicked once they are signed in again, only once", async () => {

@@ -271,7 +271,18 @@ describe("account server actions and queries (PGlite + real Better Auth)", () =>
 
     it("refuses an empty, too long or non-string name", async () => {
       asBrowser({ cookie: await cookieFor(emailA) });
-      for (const bad of ["", "   ", "x".repeat(81), 7, null, undefined]) {
+      for (const bad of [
+        "",
+        "   ",
+        "x".repeat(81),
+        7,
+        null,
+        undefined,
+        "two\nlines",
+        "tab\there",
+        "nul\u0000byte",
+        "esc\u001b[31m",
+      ]) {
         expect(await actions.updateProfileName(bad)).toEqual({
           ok: false,
           code: "invalid",

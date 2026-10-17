@@ -23,6 +23,7 @@ export function SectionsMenu() {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const listId = useId();
+  const separator = ", ";
 
   useEffect(() => {
     if (!open) return;
@@ -55,7 +56,13 @@ export function SectionsMenu() {
         onClick={() => setOpen((value) => !value)}
         className="type-catalog-action text-ink border-ink hov:bg-overlay-tint-10 focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus motion-hover flex h-[46px] w-full cursor-pointer items-center justify-between rounded-full border pr-4 pl-5 text-left outline-0"
       >
-        {t("label")}
+        {/* Figma draws the generic label on all four screens, so the sighted label stays; the current section is added for screen readers. */}
+        <span>
+          {t("label")}
+          {current ? (
+            <span className="sr-only">{separator + t(current)}</span>
+          ) : null}
+        </span>
         <Icon
           name="chevron"
           size={16}

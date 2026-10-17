@@ -632,7 +632,6 @@
       "title": "Orders",
       "subtitle": "Your orders",
       "demoOrder": "Demo order {number}",
-      "order": "Order {number}",
       "quantity": "Quantity {count}",
       "more": "+{count} more",
       "view": "View order",

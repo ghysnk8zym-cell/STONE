@@ -232,11 +232,15 @@ test.describe("signed in as the seeded Client (read only)", () => {
         ? // Phones show the Current order card and the All orders row.
           [t.overview.orders.demoOrder.replace("{number}", "D-1048")]
         : [
-            t.orders.order.replace("{number}", "D-1048"),
-            t.orders.order.replace("{number}", "D-1032"),
+            // Overview rows carry the Demo marker too (review M3).
+            t.orders.demoOrder.replace("{number}", "D-1048"),
+            t.orders.demoOrder.replace("{number}", "D-1032"),
           ];
       for (const order of orders) {
-        await expect(page.getByText(order, { exact: true })).toBeVisible();
+        // The phone card and the desktop rows share the text; only one set is displayed.
+        await expect(
+          page.getByText(order, { exact: true }).locator("visible=true"),
+        ).toBeVisible();
       }
       await expect(
         page.getByRole("link", { name: t.overview.orders.all }),

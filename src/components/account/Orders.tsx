@@ -73,7 +73,7 @@ function OrderRow({ order }: { order: AccountOrder }) {
         ) : null}
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="type-catalog-field-value text-stone-catalog-ink truncate">
-            {t("order", { number: order.number })}
+            {t("demoOrder", { number: order.number })}
           </span>
           <span className="type-catalog-meta text-stone-catalog-secondary truncate">
             {itemLine(order)}

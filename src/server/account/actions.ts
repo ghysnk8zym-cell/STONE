@@ -55,7 +55,6 @@ const slugSchema = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 /**
-/**
  * Adds the product to the session user's favourites, or removes it when it is already there, and
  * returns the new state. `desired` makes the call idempotent: true adds (no-op when present), false
  * removes (no-op when absent), so an optimistic client whose picture is stale cannot flip the wrong way.
@@ -119,7 +118,13 @@ export async function toggleFavorite(
   return { ok: true, favorited };
 }
 
-const nameSchema = z.string().trim().min(1).max(NAME_MAX);
+// Plain text on one line: no control characters (newlines, tabs, NUL, ...) anywhere in the name.
+const nameSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(NAME_MAX)
+  .refine((value) => !/\p{Cc}/u.test(value));
 
 /** Saves the session user's display name (plain text, 1 to 80 characters after trimming). */
 export async function updateProfileName(

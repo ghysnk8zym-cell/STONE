@@ -1,0 +1,83 @@
+"use client";
+
+import { useLocale } from "next-intl";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+
+import { toggleFavorite as toggleFavoriteAction } from "@/server/account/actions";
+
+import {
+  AccountContext,
+  type AccountContextValue,
+  type AccountStatus,
+} from "./account-context";
+import { GUEST_STATE, type AccountState } from "./results";
+
+/*
+ * The signed-in state of the visitor for the PUBLIC pages (catalog, product, home, the header and the
+ * tab bar). Those pages are static (SSG / ISR) and cannot read the session at render time without
+ * becoming dynamic, which would give up the static generation Phase 3 built. So the state lives here, in
+ * a client island: it is fetched from `GET /api/me` after hydration (never cached) and drives the hearts,
+ * the Save button and the account entries. The server stays the authority: every change goes through the
+ * guarded `toggleFavorite` action, and the page shows the server's answer once it arrives.
+ *
+ * Trade-off (documented in the Task 4 report): a signed-in visitor's heart is drawn empty for the
+ * fraction of a second between hydration and the response, and there is no flash on later in-site
+ * navigation (this provider sits in the site layout and keeps its state; it re-reads `/api/me` after each
+ * navigation so a sign-in or sign-out is never stale, keeping the old state until the answer arrives).
+ */
+
+const PENDING_KEY = "stone.pending-favorite";
+/** A Guest's heart click is remembered this long while they sign in. */
+const PENDING_MAX_AGE_MS = 30 * 60 * 1000;
+
+function rememberPending(slug: string) {
+  try {
+    sessionStorage.setItem(
+      PENDING_KEY,
+      JSON.stringify({ slug, at: Date.now() }),
+    );
+  } catch {
+    // private mode / blocked storage: the Guest just signs in without the favourite being added
+  }
+}
+
+function takePending(): string | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(PENDING_KEY);
+    const value = JSON.parse(raw) as { slug?: unknown; at?: unknown };
+    if (
+      typeof value.slug === "string" &&
+      typeof value.at === "number" &&
+      Date.now() - value.at < PENDING_MAX_AGE_MS
+    ) {
+      return value.slug;
+    }
+  } catch {
+    // unreadable: ignore
+  }
+  return null;
+}
+
+function parseState(value: unknown): AccountState | null {
+  if (typeof value !== "object" || value === null) return null;
+  const { signedIn, name, favorites } = value as Record<string, unknown>;
+  if (typeof signedIn !== "boolean") return null;
+  return {
+    signedIn,
+    name: typeof name === "string" ? name : null,
+    favorites: Array.isArray(favorites)
+      ? favorites.filter((slug): slug is string => typeof slug === "string")
+      : [],
+  };
+}
+

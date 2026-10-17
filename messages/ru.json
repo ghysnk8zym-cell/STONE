@@ -632,7 +632,6 @@
       "title": "Заказы",
       "subtitle": "Ваши заказы",
       "demoOrder": "Демо-заказ {number}",
-      "order": "Заказ {number}",
       "quantity": "Количество {count}",
       "more": "ещё {count}",
       "view": "Открыть заказ",
