@@ -388,6 +388,9 @@ describe("pnpm db:seed", () => {
     const output = `${result.stdout}\n${result.stderr}`;
     expect(result.status, output).toBe(0);
     expect(result.stdout).toMatch(/products\D+12/);
+    // The admin and the client are created through Better Auth's password hashing.
+    expect(result.stdout).toMatch(/users\D+2\b/);
+    expect(result.stdout).toMatch(/orders\D+2\b/);
     for (const secret of [
       "MARKER",
       options.adminEmail,

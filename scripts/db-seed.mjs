@@ -60,11 +60,18 @@ try {
   const db = await getDb();
   if (!db) fail("set DATABASE_URL (see .env.example)");
 
+  // Users get their passwords hashed by Better Auth; the seed makes the admin an admin afterwards.
+  const { getAuth, createSeedUser } =
+    await import("../src/server/auth/auth.ts");
+  const auth = await getAuth();
+  if (!auth) fail("set DATABASE_URL (see .env.example)");
+
   const counts = await seed(db, {
     adminEmail: env.SEED_ADMIN_EMAIL,
     adminPassword: env.SEED_ADMIN_PASSWORD,
     clientEmail: env.SEED_CLIENT_EMAIL,
     clientPassword: env.SEED_CLIENT_PASSWORD,
+    createUser: (user) => createSeedUser(auth, user),
   });
   console.log(`db:seed done. ${formatSeedSummary(counts)}`);
   // A pooled connection would keep the process alive.

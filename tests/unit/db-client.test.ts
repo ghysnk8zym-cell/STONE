@@ -271,8 +271,10 @@ describe("schema constraints", () => {
 describe("database portability guard", () => {
   it("only src/server/db imports a database driver", () => {
     const dbDir = join(root, "src", "server", "db") + sep;
+    // Import specifiers only (static or dynamic): `provider: "pg"` in the auth config is a
+    // dialect name, not a driver import.
     const driver =
-      /["'](pg|@neondatabase\/serverless|@electric-sql\/pglite|drizzle-orm\/(node-postgres|neon-http|pglite)[^"']*)["']/;
+      /(from\s+|import\(\s*)["'](pg|@neondatabase\/serverless|@electric-sql\/pglite|drizzle-orm\/(node-postgres|neon-http|pglite)[^"']*)["']/;
     const offenders = sourceFiles(join(root, "src"))
       .filter((file) => !file.startsWith(dbDir))
       .filter((file) => driver.test(readFileSync(file, "utf8")))

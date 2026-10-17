@@ -29,7 +29,7 @@ Decisions and their reasoning live in `docs/adr/` (ADR-001 … ADR-005) and the 
 
 ## Request flow
 
-1. `src/middleware.ts` first applies the route gate (`src/lib/route-gate.ts`, below), then next-intl maps `/` → `/ru`, keeps `/ru/*` and `/en/*`, and redirects paths without a locale to `/ru/<path>`. Phase 4 adds the optimistic auth cookie check here.
+1. `src/middleware.ts` first applies the route gate (`src/lib/route-gate.ts`, below), then next-intl maps `/` → `/ru`, keeps `/ru/*` and `/en/*`, and redirects paths without a locale to `/ru/<path>`. Before that, an optimistic auth check sends a Guest without a session cookie from `/{locale}/account/*` and `/{locale}/admin/*` to `/{locale}/sign-in?next=…` (`next` sanitised by `src/lib/safe-next.ts`), and every request gets the `x-stone-path` header for the guards. The cookie is not proof: `requireUser` / `requireRole` in `src/server/auth/guards.ts` validate the session against the database (Better Auth, cookie cache off) in every protected page, action and route.
 2. `src/app/[locale]/layout.tsx` validates the locale (`hasLocale` → `notFound()`; `dynamicParams = false` is not used, it broke `/ru` and `/en` on Workers), renders `<html lang>` and provides messages.
 3. `next.config.ts` inlines `INDEXING` at build time and adds `X-Robots-Tag: noindex, nofollow` to every response unless it is `on`; `src/app/robots.ts` reads the same inlined value. `public/_headers` adds the header to static files that bypass Next.js on Cloudflare/Netlify.
 4. Unknown paths under a locale are rewritten by the route gate to `src/app/[locale]/(site)/404/page.tsx` with status 404. `[...rest]` (`notFound()`) remains as the fallback for paths the middleware matcher skips.

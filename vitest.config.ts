@@ -10,5 +10,10 @@ export default defineConfig({
     // The first PGlite start (WebAssembly) takes seconds, and several test files start one
     // at the same time on a loaded machine.
     testTimeout: 30_000,
+    // Same for hooks (default 10 s) that start PGlite and hash test passwords with scrypt.
+    hookTimeout: 60_000,
+    // next-intl's ESM build imports `next/server` without an extension, which Node's resolver
+    // rejects; letting Vite resolve it makes the real middleware importable in tests.
+    server: { deps: { inline: ["next-intl"] } },
   },
 });
