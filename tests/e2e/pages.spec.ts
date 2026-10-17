@@ -758,13 +758,16 @@ test.describe("long product names", () => {
           lineHeight: parseFloat(style.lineHeight),
           overflow: heading.scrollWidth - heading.clientWidth,
           cardOverflow: card.scrollWidth - card.clientWidth,
-          ellipsis: style.textOverflow,
+          // -webkit-line-clamp draws the ellipsis itself (text-overflow stays "clip")
+          clamp: style.getPropertyValue("-webkit-line-clamp"),
+          truncated: heading.scrollHeight > heading.clientHeight,
         };
       }, LONG);
     expect(box.height).toBeLessThanOrEqual(box.lineHeight * 2 + 1);
     expect(box.overflow).toBeLessThanOrEqual(0);
     expect(box.cardOverflow).toBeLessThanOrEqual(0);
-    expect(box.ellipsis).toBe("ellipsis");
+    expect(box.clamp).toBe("2");
+    expect(box.truncated).toBe(true);
   }
 
   for (const width of [320, undefined]) {
