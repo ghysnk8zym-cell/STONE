@@ -46,8 +46,11 @@ const FOCUSABLE =
 export function Carousel({ label, itemClassName, children }: CarouselProps) {
   const t = useTranslations("components.carousel");
   const scrollerRef = useRef<HTMLDivElement>(null);
+  // Both ends start "reached", so the server HTML draws both arrows soft-disabled: without
+  // JavaScript they cannot scroll (the track still scrolls natively). `update()` sets the real
+  // state on mount.
   const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(false);
+  const [atEnd, setAtEnd] = useState(true);
   const [needsFocusStop, setNeedsFocusStop] = useState(false);
 
   const update = useCallback(() => {

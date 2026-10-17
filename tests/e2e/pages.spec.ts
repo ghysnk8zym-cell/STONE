@@ -530,6 +530,32 @@ test.describe("catalog", () => {
   }
 });
 
+test.describe("home without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("carousel arrows look disabled because they cannot scroll", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "arrows are hidden on phones",
+    );
+    // at 1024 the promo cards overflow the track, so with JavaScript Next would be enabled
+    await page.setViewportSize({ width: 1024, height: 900 });
+    await page.goto("/ru");
+    const promo = page.getByRole("region", { name: HOME.sections.promo });
+    for (const name of [
+      ru.components.carousel.prev,
+      ru.components.carousel.next,
+    ]) {
+      await expect(promo.getByRole("button", { name })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+    }
+  });
+});
+
 test.describe("catalog without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 

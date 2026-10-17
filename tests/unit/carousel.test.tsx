@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { NextIntlClientProvider } from "next-intl";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Carousel } from "@/components/carousel/Carousel";
+
+import en from "../../messages/en.json";
 
 import { renderWithIntl } from "./render";
 
@@ -148,5 +152,21 @@ describe("Carousel", () => {
   it("exposes the label as a named group", () => {
     setup();
     expect(screen.getByRole("group", { name: "Catalog" })).toBeTruthy();
+  });
+
+  it("server-renders both arrows soft-disabled (they only work after hydration)", () => {
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <Carousel label="Catalog">
+          <a href="/a">One</a>
+          <a href="/b">Two</a>
+        </Carousel>
+      </NextIntlClientProvider>,
+    );
+    const arrows = [...html.matchAll(/<button[^>]*>/g)].map((m) => m[0]);
+    expect(arrows).toHaveLength(2);
+    for (const arrow of arrows) {
+      expect(arrow).toContain('aria-disabled="true"');
+    }
   });
 });
