@@ -5,19 +5,14 @@ import { gateRoute, NOT_FOUND_SEGMENT } from "./lib/route-gate";
 import { sanitizeNext } from "./lib/safe-next";
 import { routing } from "./i18n/routing";
 import { hasSessionCookie, REQUEST_PATH_HEADER } from "./server/auth/constants";
-import { seed } from "./server/catalog/seed";
 
 // middleware.ts (not proxy.ts): OpenNext on Cloudflare does not yet support the
 // Node.js proxy runtime (ADR-001).
 const intl = createMiddleware(routing);
 
-// TODO(Phase 4a Task 5): the catalog now comes from the database (getCatalog()), but middleware
-// cannot await a database on every host, so the gate still uses the static seed slugs. Products
-// added in the database are therefore not reachable until Task 5 replaces this list.
-const gateOptions = {
-  locales: routing.locales,
-  slugs: seed.map((product) => product.slug),
-};
+// The gate only normalises the case and checks the shape of a product slug: whether a product
+// exists is the route's decision (the catalog is in the database, which the middleware cannot await).
+const gateOptions = { locales: routing.locales };
 
 /** Areas that need a session: /{locale}/account and /{locale}/admin, and everything below them. */
 const PROTECTED_AREAS = new Set(["account", "admin"]);

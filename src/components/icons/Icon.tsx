@@ -22,7 +22,12 @@ export type IconName =
   | "sign-out"
   | "chevron-right"
   | "bell"
-  | "heart-filled";
+  | "heart-filled"
+  | "box"
+  | "diamond"
+  | "users"
+  | "tag"
+  | "plus";
 
 export type IconSize = 12 | 16 | 24;
 

@@ -17,6 +17,8 @@ export type {
   Localizer,
   Material,
   Product,
+  ProductCopy,
+  ProductLocale,
 } from "./types";
 export { COLORS, COLOR_GROUPS, FINISHES, MATERIALS, SORTS } from "./types";
 export { seed as products };

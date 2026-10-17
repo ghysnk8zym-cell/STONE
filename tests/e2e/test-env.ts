@@ -37,6 +37,15 @@ export const SEEDED = {
   },
 } as const;
 
+/**
+ * The second Client of the admin test (scripts/e2e-extra-seed.mjs): it owns order D-9001, which the admin test
+ * may change; nothing else reads it.
+ */
+export const ORDERS_CLIENT = {
+  email: need("E2E_ORDERS_EMAIL"),
+  password: need("E2E_ORDERS_PASSWORD"),
+} as const;
+
 /** Password for accounts the tests create themselves (fake). */
 export const NEW_PASSWORD = "e2e-new-account-password-1";
 

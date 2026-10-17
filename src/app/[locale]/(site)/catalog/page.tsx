@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { IconButton } from "@/components/buttons/IconButton";
 import { ProductCard, type Price } from "@/components/cards/ProductCard";
 import type { Locale } from "@/i18n/routing";
+import { productName } from "@/lib/product-copy";
 import { sortByLabel } from "@/lib/sort-by-label";
 import {
   COLOR_GROUPS,
@@ -72,9 +73,19 @@ export default async function CatalogPage({
 
   // product slugs and materials are data, so the keys are checked by the seed/message parity test
   type CatalogKey = Parameters<typeof c>[0];
-  const name = (slug: string) => c(`products.${slug}.name` as CatalogKey);
+  // Messages are the fallback for the name (the database repository prefers the stored translation of
+  // `locale` for search and sorting); a product that is only in the database falls back to its slug.
+  const name = (slug: string) =>
+    c.has(`products.${slug}.name` as CatalogKey)
+      ? c(`products.${slug}.name` as CatalogKey)
+      : slug;
   const material = (m: Product["material"]) => c(`material.${m}` as CatalogKey);
-  const localizer: Localizer = { name, material, locale };
+  const localizer: Localizer = {
+    name,
+    material,
+    locale,
+    preferStoredNames: true,
+  };
 
   const catalog = await getCatalog();
   const [products, total, facets] = await Promise.all([
@@ -188,7 +199,7 @@ export default async function CatalogPage({
                 <li key={p.slug} className="min-w-0">
                   <ProductCard
                     href={`/catalog/${p.slug}`}
-                    name={name(p.slug)}
+                    name={productName(p, locale, c)}
                     meta={c("meta" as CatalogKey, {
                       material: material(p.material),
                       w: p.formatMm[0],

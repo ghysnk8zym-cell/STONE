@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ShowcaseCard } from "@/components/cards/ShowcaseCard";
 import type { Price } from "@/components/cards/Price";
 import type { Locale } from "@/i18n/routing";
+import { productName } from "@/lib/product-copy";
 import { discountPercent, getCatalog, type Product } from "@/server/catalog";
 
 import { Backdrop } from "./_home/Backdrop";
@@ -78,7 +79,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
 
   // product slugs and materials are data, so the key is checked at the seed/message parity test
   type CatalogKey = Parameters<typeof c>[0];
-  const name = (p: Product) => c(`products.${p.slug}.name` as CatalogKey);
+  const name = (p: Product) => productName(p, locale, c);
   const material = (p: Product) => c(`material.${p.material}` as CatalogKey);
   const favorite = (p: Product) =>
     cc("productCard.favorite", { name: name(p) });

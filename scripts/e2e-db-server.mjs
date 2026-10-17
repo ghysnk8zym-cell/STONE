@@ -1,7 +1,8 @@
 // Starts the Playwright e2e server that HAS a database (playwright.config.ts, `auth-*` projects):
 //   1. removes stale `stone-e2e-pglite-*` directories left by earlier runs (see below),
 //   2. makes a fresh temporary directory under the OS temp dir for a PGlite database,
-//   3. migrates and seeds it (`scripts/db-seed.mjs`: catalog, demo data, the two test users),
+//   3. migrates and seeds it (`scripts/db-seed.mjs`: catalog, demo data, the two test users; then
+//      `scripts/e2e-extra-seed.mjs`: a second Client with orders for the admin test),
 //   4. runs `next start` (the same build as the no-database servers) on E2E_PORT,
 //   5. deletes the directory when the server exits normally or on SIGINT / SIGTERM.
 // An in-memory database would be lost between the seed process and the server, so a directory is used.
@@ -49,6 +50,19 @@ const seed = spawnSync(process.execPath, ["scripts/db-seed.mjs"], {
 if (seed.status !== 0) {
   remove(dataDir);
   console.error("e2e-db-server: the seed failed, not starting the server");
+  process.exit(1);
+}
+
+// A second Client with orders of its own for the admin e2e test (see the script).
+const extra = spawnSync(process.execPath, ["scripts/e2e-extra-seed.mjs"], {
+  env,
+  stdio: "inherit",
+});
+if (extra.status !== 0) {
+  remove(dataDir);
+  console.error(
+    "e2e-db-server: the extra seed failed, not starting the server",
+  );
   process.exit(1);
 }
 

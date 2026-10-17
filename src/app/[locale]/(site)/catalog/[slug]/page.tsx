@@ -1,32 +1,52 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Button } from "@/components/buttons/Button";
 import { IconButton } from "@/components/buttons/IconButton";
 import { FavoriteSaveButton } from "@/features/account/FavoriteControls";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
-import { routing, type Locale } from "@/i18n/routing";
+import type { Locale } from "@/i18n/routing";
 import { imageSize } from "@/lib/image-size";
-import { getCatalog, products, type Product } from "@/server/catalog";
+import { productDescription, productName } from "@/lib/product-copy";
+import { getCatalog, type Product } from "@/server/catalog";
 
 import { PAGE_SURFACE_ATTR, PAGE_SURFACE_CATALOG } from "../../page-surface";
 import { Calculator } from "./Calculator";
 import { Gallery, type GalleryCrop } from "./Gallery";
 import { SpecRows } from "./SpecRows";
 
-export function generateStaticParams() {
-  return routing.locales.flatMap((locale) =>
-    products.map((product) => ({ locale, slug: product.slug })),
-  );
-}
+/*
+ * Rendered per request, deliberately not SSG / ISR. The catalog lives in the database (Phase 4a) and the middleware
+ * gate cannot know which slugs exist, so an unknown slug reaches this route and calls notFound(). On an ISR route
+ * Next writes that 404 to the route cache like any page (measured with `next start`: `x-nextjs-cache: HIT` and
+ * `Cache-Control: s-maxage=31536000`), one entry per requested slug, and there is no per-slug way to opt out (a dynamic
+ * API in the not-found branch makes the on-demand render a 500). Rendering per request keeps the answer to "found" or
+ * "404, not cached", and an admin's edit, unpublish or new product is visible at once without depending on
+ * revalidatePath (the Cloudflare build has no incremental cache and renders per request anyway).
+ * See docs/ARCHITECTURE.md, "Route gate and the localised 404".
+ */
+export const dynamic = "force-dynamic";
+
+/** One lookup per request: the page and generateMetadata both need the product. */
+const findProduct = cache(async (slug: string) =>
+  (await getCatalog()).getBySlug(slug),
+);
 
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/catalog/[slug]">): Promise<Metadata> {
   const { locale, slug } = await params;
-  const product = await (await getCatalog()).getBySlug(slug);
-  if (!product) return {};
+  const product = await findProduct(slug);
+  if (!product) {
+    // The not-found UI is drawn by the client for this route; without this the tab would keep the site title.
+    const nf = await getTranslations({
+      locale: locale as Locale,
+      namespace: "meta.notFound",
+    });
+    return { title: nf("title"), description: nf("description") };
+  }
   const c = await getTranslations({
     locale: locale as Locale,
     namespace: "catalog",
@@ -35,10 +55,9 @@ export async function generateMetadata({
     locale: locale as Locale,
     namespace: "meta.product",
   });
-  type CatalogKey = Parameters<typeof c>[0];
   const values = {
-    name: c(`products.${product.slug}.name` as CatalogKey),
-    description: c(`products.${product.slug}.description` as CatalogKey),
+    name: productName(product, locale, c),
+    description: productDescription(product, locale, c),
   };
   return { title: t("title", values), description: t("description", values) };
 }
@@ -65,14 +84,14 @@ export default async function ProductPage({
 }: PageProps<"/[locale]/catalog/[slug]">) {
   const { locale, slug } = await params;
   setRequestLocale(locale as Locale);
-  const product = await (await getCatalog()).getBySlug(slug);
+  const product = await findProduct(slug);
   if (!product) notFound();
 
   const t = await getTranslations("pages.product");
   const c = await getTranslations("catalog");
   // product slugs and enum values are data: the keys are checked by the catalog messages test
   type CatalogKey = Parameters<typeof c>[0];
-  const name = c(`products.${product.slug}.name` as CatalogKey);
+  const name = productName(product, locale, c);
   const material = c(`material.${product.material}` as CatalogKey);
   const [w, h, d] = product.formatMm;
 
@@ -122,7 +141,7 @@ export default async function ProductPage({
                 <FavoriteSaveButton slug={product.slug} label={t("save")} />
               </div>
               <p className="type-catalog-field-value text-ink-secondary">
-                {c(`products.${product.slug}.description` as CatalogKey)}
+                {productDescription(product, locale, c)}
               </p>
               <SpecRows
                 rows={[

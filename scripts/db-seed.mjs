@@ -1,32 +1,7 @@
 // `pnpm db:seed`: fills the database behind DATABASE_URL with the catalog and demo data.
 // Idempotent. Prints counts only: never emails, passwords, URLs or the secret.
-//
-// The app code is TypeScript with extensionless imports and `server-only` markers, which Node
-// cannot load as is. The resolve hook below teaches Node's built-in type stripping those two
-// things, so the seed runs the same modules as the app without a compile step or a new dependency.
-import { registerHooks } from "node:module";
-
-registerHooks({
-  resolve(specifier, context, nextResolve) {
-    if (specifier === "server-only") {
-      // Marks a module as server-only for bundlers; there is nothing to enforce in a script.
-      return { url: "data:text/javascript,", shortCircuit: true };
-    }
-    try {
-      return nextResolve(specifier, context);
-    } catch (error) {
-      if (!specifier.startsWith(".")) throw error;
-      for (const candidate of [`${specifier}.ts`, `${specifier}/index.ts`]) {
-        try {
-          return nextResolve(candidate, context);
-        } catch {
-          // try the next candidate
-        }
-      }
-      throw error;
-    }
-  },
-});
+// The type-stripping hooks (extensionless imports, server-only) live in ts-hooks.mjs.
+import "./ts-hooks.mjs";
 
 function fail(message) {
   console.error(`db:seed: ${message}`);
