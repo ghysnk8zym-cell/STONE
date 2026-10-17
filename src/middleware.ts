@@ -40,6 +40,8 @@ export const config = {
     // Skip API routes, Next internals and any path with a file extension.
     "/((?!api|_next|_vercel|.*\\..*).*)",
     // Product paths with a dot (`/ru/catalog/x.rsc`) too: they would reach the ISR route otherwise.
-    "/:locale/catalog/:path*",
+    // Locales are listed literally (the matcher must be static): a `:locale` wildcard also matched
+    // /images/catalog/*.webp and redirected every catalog image. Kept in sync by a unit test.
+    "/(ru|en)/catalog/:path*",
   ],
 };

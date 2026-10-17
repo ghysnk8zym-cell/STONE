@@ -134,6 +134,28 @@ test.describe("site shell", () => {
  */
 const HOME = ru.pages.home;
 
+test.describe("static images", () => {
+  test("catalog images are served directly, not redirected by the middleware", async ({
+    request,
+  }) => {
+    const response = await request.get(
+      "/images/catalog/black-marble-390.webp",
+      { maxRedirects: 0 },
+    );
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("image/webp");
+  });
+
+  test("product page images load", async ({ page }) => {
+    await page.goto("/en/catalog/black-marble");
+    const image = page.locator("main img").first();
+    await expect(image).toBeVisible();
+    await expect
+      .poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .toBeGreaterThan(0);
+  });
+});
+
 test.describe("home", () => {
   test("home renders three sections with Figma cards", async ({ page }) => {
     const response = await page.goto("/ru");
