@@ -183,7 +183,15 @@ Phase 3:
 - [ ] Old price strike-through: kept on every card (catalog frames draw it, home frames do not).
 - [ ] Cost calculator: limits (area 0.01 to 10 000 m2, wall sides 0.01 to 100 m), +10 % extra tiles, default 2.00 m2;
       the mode switch has no animation (Figma may have a smart-animate); ru wraps the calculator header and total
-      label at 390.
+      label at 390. Below 390 (no Figma frame) the total label can wrap above the amount and the amount scales down
+      with the card, so the largest total (10 000 m²) stays inside at 320. Inputs accept "10 000" (space, NBSP or NNBSP
+      thousands groups).
+- [ ] Sale filter has no visible indicator (Offers → `?sale=1`): nothing on the catalog shows it is on, the counter
+      ("Показано 4 из 12") is unexplained and only Back or the empty-state reset clears it. Figma Chip/Applied 338:546
+      could show it later as a visible, removable "On sale" chip.
+- [ ] Carousel arrows without JavaScript: both are drawn disabled (Figma disabled look), because they cannot scroll
+      before hydration; the track still scrolls natively. With JavaScript they enable as before.
+- [ ] Product names on cards are clamped to two lines with an ellipsis (spec); no current name is that long.
 
 Carried over from Phase 2 (still apply):
 
