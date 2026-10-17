@@ -9,6 +9,14 @@ describe("parseDecimal", () => {
     expect(parseDecimal(" 2 ")).toBe(2);
   });
 
+  it("accepts thousands groups of three separated by a space, NBSP or NNBSP", () => {
+    // ru formats 10 000 with NBSP/NNBSP, and the range error itself prints «10 000»
+    expect(parseDecimal("1 000")).toBe(1000);
+    expect(parseDecimal("10 000")).toBe(10000);
+    expect(parseDecimal("10 000,5")).toBe(10000.5);
+    expect(parseDecimal(" 1 000 000.25 ")).toBe(1000000.25);
+  });
+
   it("rejects malformed input", () => {
     for (const bad of [
       "",
@@ -20,7 +28,13 @@ describe("parseDecimal", () => {
       "1e3",
       "-2",
       "+2",
-      "1 000",
+      "1 00",
+      "1 0000",
+      "1000 000",
+      "1  000",
+      "1\t000",
+      "1 000 00",
+      "1 000,",
       "1,000.5",
       ".",
     ]) {

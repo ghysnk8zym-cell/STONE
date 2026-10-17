@@ -20,13 +20,16 @@ export const LIMITS = {
   height: [0.01, 100],
 } as const;
 
-const DECIMAL = /^\d+(?:[.,]\d+)?$/;
+// Integer part: plain digits, or groups of three separated by one space, NBSP or NNBSP
+// ("10 000", as ru formats it). Then an optional "." or "," fraction.
+const DECIMAL = /^(?:\d+|\d{1,3}(?:[   ]\d{3})+)(?:[.,]\d+)?$/;
+const GROUP_SEPARATOR = /[   ]/g;
 
-/** Parses "2.5" / "2,5" (outer whitespace trimmed). Anything else yields null. */
+/** Parses "2.5" / "2,5" / "10 000,5" (outer whitespace trimmed). Anything else yields null. */
 export function parseDecimal(input: string): number | null {
   const trimmed = input.trim();
   if (!DECIMAL.test(trimmed)) return null;
-  const value = Number(trimmed.replace(",", "."));
+  const value = Number(trimmed.replace(GROUP_SEPARATOR, "").replace(",", "."));
   return Number.isFinite(value) ? value : null;
 }
 
