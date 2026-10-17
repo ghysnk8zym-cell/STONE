@@ -9,7 +9,9 @@ import { seed } from "./server/catalog/seed";
 // Node.js proxy runtime (ADR-001). The auth cookie check is added in Phase 4.
 const intl = createMiddleware(routing);
 
-// Phase 4 (database catalog) must keep this list in step with the products that can render.
+// TODO(Phase 4a Task 5): the catalog now comes from the database (getCatalog()), but middleware
+// cannot await a database on every host, so the gate still uses the static seed slugs. Products
+// added in the database are therefore not reachable until Task 5 replaces this list.
 const gateOptions = {
   locales: routing.locales,
   slugs: seed.map((product) => product.slug),

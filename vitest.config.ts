@@ -7,5 +7,8 @@ export default defineConfig({
   test: {
     include: ["tests/unit/**/*.test.ts?(x)"],
     environment: "node",
+    // The first PGlite start (WebAssembly) takes seconds, and several test files start one
+    // at the same time on a loaded machine.
+    testTimeout: 30_000,
   },
 });

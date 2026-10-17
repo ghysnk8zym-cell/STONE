@@ -6,9 +6,9 @@ import { ProductCard, type Price } from "@/components/cards/ProductCard";
 import type { Locale } from "@/i18n/routing";
 import { sortByLabel } from "@/lib/sort-by-label";
 import {
-  catalog,
   COLOR_GROUPS,
   discountPercent,
+  getCatalog,
   parseCatalogQuery,
   SORTS,
   type CatalogQuery,
@@ -76,6 +76,7 @@ export default async function CatalogPage({
   const material = (m: Product["material"]) => c(`material.${m}` as CatalogKey);
   const localizer: Localizer = { name, material, locale };
 
+  const catalog = await getCatalog();
   const [products, total, facets] = await Promise.all([
     catalog.list(query, localizer),
     catalog.total(),

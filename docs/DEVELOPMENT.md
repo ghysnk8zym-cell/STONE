@@ -33,10 +33,13 @@ pnpm dev                     # http://localhost:3000 → redirects to /ru
 | `pnpm typecheck`               | Route type generation + `tsc --noEmit`                        |
 | `pnpm test`                    | Vitest unit tests (`tests/unit`)                              |
 | `pnpm test:e2e`                | Playwright (`tests/e2e`); builds must exist (`pnpm build`)    |
+| `pnpm db:seed`                 | Idempotent database seed (see below)                          |
 | `pnpm cf:build`                | OpenNext build for Cloudflare Workers (Linux/WSL/CI only)     |
 | `pnpm cf:size`                 | Fails if the Worker gzip size exceeds 3 MiB (run after build) |
 | `pnpm cf:preview`              | Build and run the Worker locally with wrangler (Linux/WSL)    |
 | `pnpm cf:deploy` / `cf:upload` | Used by Cloudflare Workers Builds (production / previews)     |
+
+Database seed: `pnpm db:seed` reads `DATABASE_URL` and the four `SEED_*` values from the ignored `.env.local` (`node --env-file-if-exists`), upserts the 12 products with ru/en names and descriptions taken from `messages/*.json`, and, when the Client user exists, the demo orders D-1048 and D-1032 and three favourites. It prints counts only and can be re-run safely (it resets seeded products to the seed values). With a `pglite://` URL it needs no database server. Without `DATABASE_URL` the site serves the static catalog (`getCatalog()` in `src/server/catalog`).
 
 First Playwright run: `pnpm exec playwright install chromium`.
 

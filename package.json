@@ -20,6 +20,7 @@
     "cf:size": "node scripts/check-worker-size.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed": "node --env-file-if-exists=.env.local scripts/db-seed.mjs",
     "images": "node scripts/optimize-images.mjs",
     "qa:visual": "node scripts/visual-compare.mjs",
     "qa:visual:pages": "node scripts/visual-compare.mjs --pages"

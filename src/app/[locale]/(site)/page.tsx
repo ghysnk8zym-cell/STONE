@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ShowcaseCard } from "@/components/cards/ShowcaseCard";
 import type { Price } from "@/components/cards/Price";
 import type { Locale } from "@/i18n/routing";
-import { catalog, discountPercent, type Product } from "@/server/catalog";
+import { discountPercent, getCatalog, type Product } from "@/server/catalog";
 
 import { Backdrop } from "./_home/Backdrop";
 import { Hero } from "./_home/Hero";
@@ -70,6 +70,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const t = await getTranslations("pages.home");
   const c = await getTranslations("catalog");
   const cc = await getTranslations("components");
+  const catalog = await getCatalog();
   const [featured, promo] = await Promise.all([
     catalog.listFeatured(),
     catalog.listPromo(),
