@@ -29,11 +29,22 @@ Decisions and their reasoning live in `docs/adr/` (ADR-001 … ADR-005) and the 
 
 ## Request flow
 
-1. `src/middleware.ts` (next-intl) maps `/` → `/ru`, keeps `/ru/*` and `/en/*`, and redirects paths without a locale to `/ru/<path>`. Phase 4 adds the optimistic auth cookie check here.
-2. `src/app/[locale]/layout.tsx` validates the locale (`dynamicParams = false`), renders `<html lang>` and provides messages.
+1. `src/middleware.ts` first applies the route gate (`src/lib/route-gate.ts`, below), then next-intl maps `/` → `/ru`, keeps `/ru/*` and `/en/*`, and redirects paths without a locale to `/ru/<path>`. Phase 4 adds the optimistic auth cookie check here.
+2. `src/app/[locale]/layout.tsx` validates the locale (`hasLocale` → `notFound()`; `dynamicParams = false` is not used, it broke `/ru` and `/en` on Workers), renders `<html lang>` and provides messages.
 3. `next.config.ts` inlines `INDEXING` at build time and adds `X-Robots-Tag: noindex, nofollow` to every response unless it is `on`; `src/app/robots.ts` reads the same inlined value. `public/_headers` adds the header to static files that bypass Next.js on Cloudflare/Netlify.
-4. Unknown paths under a locale hit `src/app/[locale]/[...rest]/page.tsx`, which renders the localized 404.
+4. Unknown paths under a locale are rewritten by the route gate to `src/app/[locale]/(site)/404/page.tsx` with status 404. `[...rest]` (`notFound()`) remains as the fallback for paths the middleware matcher skips.
 5. On Cloudflare, pages are rendered per request (OpenNext default, no incremental cache). The read-only static-assets cache was tried and returned 404 for prerendered pages (`NoFallbackError`); revisit with an R2/KV cache when traffic or CPU limits require it.
+
+## Route gate and the localised 404
+
+Decision (Phase 3 final review, I1 and I2): `src/middleware.ts` runs `gateRoute()` from `src/lib/route-gate.ts` before next-intl.
+
+- Known product slugs pass. A known slug in another case or encoding (`/ru/catalog/Black-Marble`) gets a 308 to the canonical slug. Any other path under a locale that is not in `PUBLIC_ROUTES` is rewritten to `/{locale}/404` with status 404. The browser keeps the requested URL.
+- Why not `dynamicParams = false` on `catalog/[slug]`: that is the standard fix, but it is the same switch that broke `/ru` and `/en` on Workers at the locale level (OpenNext has no incremental cache here, the prerender lookup fails, `NoFallbackError`). On a nested segment the lookup would be the same, so every product page would risk a 404 on Cloudflare. The gate works the same way on every host.
+- Why it matters: `catalog/[slug]` is SSG with on-demand ISR. Without the gate, every unknown slug was rendered and written to the route cache. On a case-insensitive file system (Windows, default macOS) `Black-Marble` overwrote the prerendered `black-marble` entry with a 404 until the next build.
+- Why a page and not `notFound()`: `notFound()` thrown during render escapes the HTML shell (React's server renderer has no error boundaries). Next then sends the empty `<html id="__next_error__">` recovery shell with status 404, and the not-found UI appears only after client-side rendering. Without JavaScript the page was blank, and this predates Phase 3. `(site)/404/page.tsx` is a normal, dynamic render, so the h1, body and catalog link are in the server HTML.
+- Maintenance: a new page under `src/app/[locale]` must be added to `PUBLIC_ROUTES`, or it will be served as a 404. `tests/unit/route-gate.test.ts` scans the app directory and fails when a page is missing. When Phase 4 moves products to a database, the middleware slug list must come from the same source.
+- Known limits: `/ru/catalog/<known-slug>.rsc` (Next strips `.rsc` before the middleware) can still write one 404 cache entry per known slug, so at most 24. Single-segment dotted paths (`/zz.txt`) reach the `[locale]` route outside the middleware matcher, which predates Phase 3.
 
 ## Portability rules
 
@@ -57,7 +68,7 @@ Decisions and their reasoning live in `docs/adr/` (ADR-001 … ADR-005) and the 
 - Routes (all under `src/app/[locale]/(site)/`, locales `ru` and `en`, slugs identical in both, ADR-004):
   `/` (home, `_home/` holds Hero, Backdrop and ShowcaseSection), `/catalog` (filters, search, sort and
   grid, state in the URL query, works without JavaScript), `/catalog/[slug]` (product page with gallery and cost
-  calculator; unknown slug is a localised 404 through `(site)/not-found.tsx`, `[...rest]` catches other unknown paths).
+  calculator; unknown slugs and paths are a localised 404 through the route gate and `(site)/404/page.tsx`).
   `/_styleguide` stays outside the group. `/create-your-stone`, `/cart` and `/account` are not built (inert, below).
 - Catalog data: `src/server/catalog/` is a repository behind the `CatalogRepository` interface (`types.ts`:
   `Product`, `CatalogQuery`, `Localizer`). `seed.ts` holds the 12 Figma products (prices are placeholders from
