@@ -70,12 +70,13 @@ Decision (Phase 3 final review, I1 and I2): `src/middleware.ts` runs `gateRoute(
   `/` (home, `_home/` holds Hero, Backdrop and ShowcaseSection), `/catalog` (filters, search, sort and
   grid, state in the URL query, works without JavaScript), `/catalog/[slug]` (product page with gallery and cost
   calculator; unknown slugs and paths are a localised 404 through the route gate and `(site)/404/page.tsx`).
-  `/_styleguide` stays outside the group. `/create-your-stone`, `/cart` and `/account` are not built (inert, below).
+  `/_styleguide` stays outside the group. `/create-your-stone` and `/cart` are not built (inert, below); the account area and sign-in arrived in Phase 4a (below).
 - Catalog data: `src/server/catalog/` is a repository behind the `CatalogRepository` interface (`types.ts`:
   `Product`, `CatalogQuery`, `Localizer`). `seed.ts` holds the 12 Figma products (prices are placeholders from
   Figma, `discountPercent` is stored as drawn), `static-repository.ts` implements list/filter/sort/search/get on the
-  seed, `query.ts` parses and validates URL params (invalid values fall back to defaults), `index.ts` exports the
-  `catalog` singleton (`server-only`). Phase 4 swaps in a database-backed implementation without touching pages.
+  seed, `query.ts` parses and validates URL params (invalid values fall back to defaults), `index.ts` exports
+  `getCatalog()` (`server-only`), which since Phase 4a returns the database repository when `DATABASE_URL` is set and
+  the static one otherwise, without touching the pages.
   Colour filters use Figma groups (`ColorGroup`: dark, grey, light, warm) through `Product.colorGroup`.
 - Cost calculator: pure functions in `src/lib/calculator.ts` (area and wall modes, +10 % extra tiles, cents arithmetic,
   limits 0.01 to 10 000 m2 and 0.01 to 100 m); the client island only holds input state. The server renders the
@@ -100,6 +101,59 @@ Decision (Phase 3 final review, I1 and I2): `src/middleware.ts` runs `gateRoute(
 - Data the Figma admin draws and the model does not have: stock per product, payment status of an order, the Create Your Stone requests (4b). They are not drawn and not invented: Overview shows revenue and order count from the orders, the 7 days up to the newest order as the chart, and the first three published products with their price; Orders has one status (In progress = Processing, Delivered = Fulfilled).
 - Writes and rules: a product and its ru / en copy are written as one atomic unit (`src/server/admin/atomic.ts`: an interactive transaction on `pg` and PGlite; on the Neon HTTP driver, which has no interactive transactions, `db.batch`, one request in one transaction), so a failed save leaves nothing half-written. The slug `new` is reserved (`/admin/products/new` is the Add page). Order status: an admin moves an order freely between In progress and Delivered, in either direction (a mistaken "delivered" must be undoable); there is no other state and no history yet.
 - Worker size: the admin routes reuse the shared server chunks (`[locale]/layout.tsx` imports the guards and account queries as side effects, see the comment there); the admin modules only add drizzle queries and zod schemas that are already in those chunks.
+
+## Auth, database and guards (Phase 4a)
+
+Decisions: `docs/adr/ADR-002-auth-database.md` and the Phase 4 spec. Who may do what: `docs/ROLES.md`. Threats and settings: `docs/SECURITY.md`.
+
+### Layout
+
+| Path                                            | Role                                                                                                                                                                                                                                                                                                                                                                           |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/server/db/`                                | The only place that knows the database. `client.ts` picks the driver from `DATABASE_URL` (Neon host: HTTP driver; other `postgres://`: `pg`; `pglite://`: in-process PGlite, migrated on first use); `schema.ts` (Drizzle: Better Auth tables + `role`, `rate_limit`, `product`, `product_translation`, `favorite`, `order`, `order_item`); `seed.ts`; `unavailable-driver.ts` |
+| `drizzle/`                                      | Committed SQL migrations (`pnpm db:generate`, applied with `pnpm db:migrate`)                                                                                                                                                                                                                                                                                                  |
+| `src/server/auth/`                              | `auth.ts` (Better Auth config: cookies, rate limits, database sessions, cookie cache off), `session.ts` (`getSession`, request-cached), `guards.ts` (`requireUser`, `requireRole`), `next.ts` (`handleAuthRequest` for `/api/auth/*`, `callAuthEndpoint` for server actions), `constants.ts`, `request-locale.ts`                                                              |
+| `src/server/account/`, `src/server/admin/`      | Server actions (`"use server"`) and queries for the account and admin areas; `admin/atomic.ts` writes a product and its translations as one unit                                                                                                                                                                                                                               |
+| `src/server/catalog/`                           | `CatalogRepository` with two implementations: static (no database) and `db-repository.ts`; `getCatalog()` chooses per request                                                                                                                                                                                                                                                  |
+| `src/server/platform/`                          | The hosting seam; now also `clientIp(headers)`, the rate-limit key (`docs/SECURITY.md`)                                                                                                                                                                                                                                                                                        |
+| `src/features/auth/`, `account/`, `admin/`      | UI logic that is not a component: forms and their state, the favourites island (`AccountStateProvider`), result types shared by actions and clients (codes only)                                                                                                                                                                                                               |
+| `src/app/[locale]/(auth)/`                      | Sign-in and sign-up, without the site shell; `actions.ts` holds the public actions                                                                                                                                                                                                                                                                                             |
+| `src/app/[locale]/(site)/account/`, `sign-out/` | Account pages and the sign-out confirmation, inside the site shell                                                                                                                                                                                                                                                                                                             |
+| `src/app/[locale]/admin/`                       | Admin pages, outside the site shell                                                                                                                                                                                                                                                                                                                                            |
+| `src/app/api/{auth,me,health/db}/`              | Route handlers (`docs/ROLES.md` lists which are public and why)                                                                                                                                                                                                                                                                                                                |
+
+### Guards
+
+- One boundary: `requireUser(locale)` / `requireRole("admin", locale)`. They read the session from the database on every call (`getSession` is wrapped in React `cache`, so the second call in a request is free). A Guest is redirected to `/{locale}/sign-in?next=<page>`; a signed-in user without the role gets `notFound()`.
+- Called in the layout, in **every** page and as the **first statement** of every server action; a layout is not re-rendered on every client navigation, so the layout call alone is not a boundary. The middleware only does an optimistic cookie check.
+- The page path reaches the guards through the `x-stone-path` request header, which the middleware always overwrites; actions get the locale from it (`requestLocale()`).
+- Enforced by `tests/unit/server-actions-guarded.test.ts` (static scan of every `"use server"` module and route handler) and `tests/e2e/access.spec.ts`.
+- Better Auth is used through its handler (`callAuthEndpoint`), never `auth.api.*`, because only the handler applies rate limiting and the origin check. Results given to the browser go through `toClientResult` (no session token).
+
+### No-database mode
+
+`getDb()` is async and returns `null` without `DATABASE_URL`. Then `catalog` is the static repository, the auth pages show the localised "unavailable" state (also when the database cannot be reached), `/api/auth/*` answers 503 JSON, `/api/me` answers as a Guest and `/api/health/db` answers 503. The Cloudflare preview runs this way until the owner adds Neon (`docs/DEPLOYMENT.md`).
+
+### Favourites island
+
+Public pages (home) are static and cannot read the session, so a client island decides who is looking: `AccountStateProvider` (mounted in the `(site)` layout) fetches `GET /api/me` once per layout mount, when the sign-out confirmation is left and on `visibilitychange`. Hearts and the account entries read it; the toggle is the guarded `toggleFavorite` server action (optimistic, sends the wanted state so a stale client cannot flip the wrong way; a click before the state is known is queued). A Guest is sent to `/sign-in?next=<page and query>` and the product is added once they are back. `html[data-account-state]` (loading, guest, signed-in) is the readiness signal for tests. Trade-off for the owner: a signed-in visitor sees an unsaved heart briefly on a full page load.
+
+### Admin and product copy
+
+Described in "Admin area" above. Names and descriptions of products come from `product_translation` (`src/lib/product-copy.ts`), then from `messages`, then the slug. The admin has no language switch (the URL locale is the language) and shows a message below 1024 px.
+
+### Slug handling
+
+The route gate (`src/lib/route-gate.ts`) normalises and checks the **shape** of a product slug (lowercase `a-z0-9` with single dashes; another case or encoding gets a 308 to the lowercase form; anything else is a 404). Whether a product exists is the route's decision: `catalog/[slug]` is rendered per request, and an unknown or unpublished slug redirects (307, `no-store`) to the server-rendered `/{locale}/404`. The slug `new` is reserved (the Add product page). A slug never changes after creation. Reasons and measurements: "Route gate and the localised 404" above.
+
+### Worker bundle guard
+
+Turbopack writes the shared server chunks once per route group, so Better Auth, Drizzle and zod were bundled once for the public pages, once for the account pages and once for the auth pages (about 330 KiB gzip of copies; the Worker limit is 3 MiB). Two measures keep it at one copy:
+
+1. `src/app/[locale]/layout.tsx` imports `@/server/auth/guards` and `@/server/account/queries` for their side effects (they only declare functions). The common parent puts those modules into one shared chunk. **Do not remove those imports**, and add a module there when a new route group pulls in a big server dependency (the admin group reused the shared copy without a change).
+2. `pnpm cf:size` (`scripts/check-worker-size.mjs`, pure parts in `scripts/worker-size.mjs`, unit-tested) prints the ten largest server chunks and **fails when the Better Auth marker is in more than one `chunks/ssr` file**, or in none (a stale marker). It runs in the CI `cloudflare` job after `pnpm cf:build`.
+
+Worker size after each step (gzip, limit 3072 KiB): 1732 (database layer), 1820 (seed and catalog), 2113 (auth core), 2196 (auth screens), 2348 (account, after dedupe), 2393 (admin).
 
 ## Motion
 

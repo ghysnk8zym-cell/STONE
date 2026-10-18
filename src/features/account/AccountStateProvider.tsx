@@ -22,8 +22,8 @@ import { GUEST_STATE, type AccountState } from "./results";
 
 /*
  * The signed-in state of the visitor for the PUBLIC pages (catalog, product, home, the header and the
- * tab bar). Those pages are static (SSG / ISR) and cannot read the session at render time without
- * becoming dynamic, which would give up the static generation Phase 3 built. So the state lives here, in
+ * tab bar). The shell (and the static home page) cannot read the session at render time without
+ * making every public page dynamic, which would give up the static generation Phase 3 built. So the state lives here, in
  * a client island: it is fetched from `GET /api/me` (never cached) and drives the hearts, the Save button
  * and the account entries. The server stays the authority: every change goes through the guarded
  * `toggleFavorite` action, and the page shows the server's answer once it arrives.

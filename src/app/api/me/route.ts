@@ -9,9 +9,9 @@ const headers = { "Cache-Control": "private, no-store" };
 
 /**
  * What the site shell needs to draw the hearts and the account entries: whether the visitor is
- * signed in, the display name and the slugs of their favourites. The public catalog and product pages
- * are static (SSG/ISR) and cannot read the session, so a client island fetches this once per page
- * load (src/features/account/AccountStateProvider.tsx).
+ * signed in, the display name and the slugs of their favourites. The home page is static and cannot read
+ * the session (the catalog and product pages are rendered per request but share the same shell), so a
+ * client island fetches this once per page load (src/features/account/AccountStateProvider.tsx).
  *
  * Deliberately public: it is how a Guest finds out they are one, so it does not call `requireUser`
  * (which redirects). It reads only the caller's own session and returns neither the id nor the email,
