@@ -1,11 +1,18 @@
 import AxeBuilder from "@axe-core/playwright";
-import type { APIRequestContext, Locator, Page } from "@playwright/test";
+import type { BrowserContext, Locator, Page } from "@playwright/test";
 
 import en from "../../messages/en.json";
 import ru from "../../messages/ru.json";
 
-import { expect, test } from "./auth-fixtures";
-import { NEW_PASSWORD, SEEDED, uniqueEmail } from "./test-env";
+import {
+  createAccount,
+  expect,
+  signInInContext,
+  signInSucceeds,
+  signUpInContext,
+  test,
+} from "./auth-fixtures";
+import { NEW_PASSWORD, SEEDED } from "./test-env";
 
 /*
  * The account area and the live favourites (Phase 4a Task 4). Runs in the `auth-desktop` (1440) and `auth-mobile`
@@ -46,34 +53,6 @@ async function accountStateKnown(page: Page, state: "guest" | "signed-in") {
   );
 }
 
-/** Signs up through the API: the account exists and the browser context holds its session. */
-async function signUpAndSignIn(
-  request: APIRequestContext,
-  baseURL: string,
-  clientIp: string,
-  name = "",
-) {
-  const email = uniqueEmail();
-  const response = await request.post("/api/auth/sign-up/email", {
-    data: { email, password: NEW_PASSWORD, name },
-    headers: { origin: baseURL, "x-forwarded-for": clientIp },
-  });
-  expect(response.status()).toBe(200);
-  return email;
-}
-
-async function signInViaApi(
-  request: APIRequestContext,
-  baseURL: string,
-  clientIp: string,
-  credentials: { email: string; password: string },
-) {
-  return request.post("/api/auth/sign-in/email", {
-    data: credentials,
-    headers: { origin: baseURL, "x-forwarded-for": clientIp },
-  });
-}
-
 async function fillSignIn(
   page: Page,
   locale: Locale,
@@ -99,6 +78,11 @@ async function clickAndSettle(page: Page, control: Locator) {
   );
   await control.click();
   await answered;
+}
+
+async function sessionCookieValue(context: BrowserContext) {
+  return (await context.cookies()).find((c) => c.name === "stone.session_token")
+    ?.value;
 }
 
 function isMobileProject(testInfo: { project: { name: string } }) {
@@ -141,12 +125,17 @@ test.describe("Guest", () => {
 
   test("the heart on a catalog card sends a Guest to sign-in and back with the product saved", async ({
     page,
-    request,
+    browser,
     baseURL,
     clientIp,
   }) => {
     // An account the Guest will sign in to (created without a session in this browser).
-    const email = await signUpAndSignIn(request, baseURL!, clientIp, "Test");
+    const email = await createAccount(
+      browser,
+      baseURL!,
+      clientIp,
+      NEW_PASSWORD,
+    );
     const heart = page.getByRole("button", {
       name: heartName("ru", "golden-rock"),
     });
@@ -184,11 +173,16 @@ test.describe("Guest", () => {
 
   test("Save on a product page sends a Guest to sign-in and back with the product saved", async ({
     page,
-    request,
+    browser,
     baseURL,
     clientIp,
   }) => {
-    const email = await signUpAndSignIn(request, baseURL!, clientIp, "Test");
+    const email = await createAccount(
+      browser,
+      baseURL!,
+      clientIp,
+      NEW_PASSWORD,
+    );
     const save = page.getByRole("button", { name: en.pages.product.save });
 
     await page.goto("/en/catalog/grey-marble");
@@ -203,14 +197,8 @@ test.describe("Guest", () => {
 });
 
 test.describe("signed in as the seeded Client (read only)", () => {
-  test.beforeEach(async ({ context, baseURL, clientIp }) => {
-    const response = await signInViaApi(
-      context.request,
-      baseURL!,
-      clientIp,
-      SEEDED.client,
-    );
-    expect(response.status()).toBe(200);
+  test.beforeEach(async ({ context }) => {
+    await signInInContext(context, SEEDED.client);
   });
 
   for (const locale of LOCALES) {
@@ -413,10 +401,8 @@ test.describe("favourites of a new Client", () => {
   test("a heart on the catalog appears in Favorites, and removing it there empties the list", async ({
     page,
     context,
-    baseURL,
-    clientIp,
   }) => {
-    await signUpAndSignIn(context.request, baseURL!, clientIp);
+    await signUpInContext(context, NEW_PASSWORD);
     await page.goto("/en/catalog");
     await accountStateKnown(page, "signed-in");
     const heart = page.getByRole("button", {
@@ -455,10 +441,8 @@ test.describe("favourites of a new Client", () => {
   test("Save on the product page toggles and persists", async ({
     page,
     context,
-    baseURL,
-    clientIp,
   }) => {
-    await signUpAndSignIn(context.request, baseURL!, clientIp);
+    await signUpInContext(context, NEW_PASSWORD);
     await page.goto("/ru/catalog/taupe-rock");
     await accountStateKnown(page, "signed-in");
     const save = page.getByRole("button", { name: ru.pages.product.save });
@@ -473,13 +457,8 @@ test.describe("favourites of a new Client", () => {
     await expect(save).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("a new Client sees the empty states", async ({
-    page,
-    context,
-    baseURL,
-    clientIp,
-  }) => {
-    await signUpAndSignIn(context.request, baseURL!, clientIp);
+  test("a new Client sees the empty states", async ({ page, context }) => {
+    await signUpInContext(context, NEW_PASSWORD);
     await page.goto("/en/account/orders");
     await expect(
       page.getByRole("heading", { name: en.account.orders.empty.title }),
@@ -500,16 +479,19 @@ test.describe("profile", () => {
   test("the name can be changed and persists", async ({
     page,
     context,
-    baseURL,
-    clientIp,
   }, testInfo) => {
-    await signUpAndSignIn(context.request, baseURL!, clientIp, "Old Name");
+    await signUpInContext(context, NEW_PASSWORD);
     const t = en.account.profile;
     await page.goto("/en/account/profile");
     const details = page.getByRole("region", { name: t.details });
-    await expect(details.getByText("Old Name", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: t.edit }).click();
     const field = page.getByLabel(t.name, { exact: true });
+    // A new account has no name yet; give it one first.
+    await field.fill("Old Name");
+    await page.getByRole("button", { name: t.save }).click();
+    await expect(page.getByText(t.saved)).toBeVisible();
+    await expect(details.getByText("Old Name", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: t.edit }).click();
     await field.fill("");
     await page.getByRole("button", { name: t.save }).click();
     await expect(page.getByText(t.errors.nameInvalid)).toBeVisible();
@@ -533,16 +515,11 @@ test.describe("profile", () => {
   test("changing the password needs the current password", async ({
     page,
     context,
-    request,
+    browser,
     baseURL,
     clientIp,
   }) => {
-    const email = await signUpAndSignIn(
-      context.request,
-      baseURL!,
-      clientIp,
-      "Pw Test",
-    );
+    const email = await signUpInContext(context, NEW_PASSWORD);
     const t = en.account.profile.password;
     const next = "e2e-changed-password-2";
     await page.goto("/en/account/profile");
@@ -557,46 +534,41 @@ test.describe("profile", () => {
       page.getByRole("alert").filter({ hasText: t.errors.invalidCurrent }),
     ).toBeVisible();
     expect(
-      (
-        await signInViaApi(request, baseURL!, clientIp, {
-          email,
-          password: NEW_PASSWORD,
-        })
-      ).status(),
-    ).toBe(200);
+      await signInSucceeds(browser, baseURL!, clientIp, {
+        email,
+        password: NEW_PASSWORD,
+      }),
+    ).toBe(true);
 
-    // The right one: changed.
+    // The right one: changed. This browser stays signed in, on a rotated session (new cookie), and the old
+    // password stops working while the new one does.
+    const before = await sessionCookieValue(context);
     await form.getByLabel(t.current, { exact: true }).fill(NEW_PASSWORD);
     await form.getByRole("button", { name: t.submit }).click();
     await expect(page.getByText(t.success)).toBeVisible();
+    await page.goto("/en/account/profile");
+    await expect(page.getByTestId("password-form")).toBeVisible();
+    const after = await sessionCookieValue(context);
+    expect(after).toBeTruthy();
+    expect(after).not.toBe(before);
     expect(
-      (
-        await signInViaApi(request, baseURL!, clientIp, {
-          email,
-          password: next,
-        })
-      ).status(),
-    ).toBe(200);
+      await signInSucceeds(browser, baseURL!, clientIp, {
+        email,
+        password: next,
+      }),
+    ).toBe(true);
     expect(
-      (
-        await signInViaApi(request, baseURL!, clientIp, {
-          email,
-          password: NEW_PASSWORD,
-        })
-      ).status(),
-    ).not.toBe(200);
+      await signInSucceeds(browser, baseURL!, clientIp, {
+        email,
+        password: NEW_PASSWORD,
+      }),
+    ).toBe(false);
   });
 });
 
 test.describe("quality", () => {
-  test.beforeEach(async ({ context, baseURL, clientIp }) => {
-    const response = await signInViaApi(
-      context.request,
-      baseURL!,
-      clientIp,
-      SEEDED.client,
-    );
-    expect(response.status()).toBe(200);
+  test.beforeEach(async ({ context }) => {
+    await signInInContext(context, SEEDED.client);
   });
 
   for (const locale of LOCALES) {

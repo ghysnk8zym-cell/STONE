@@ -10,8 +10,6 @@ import { platform } from "../platform";
 import { getAuth } from "./auth";
 import { CLIENT_IP_HEADER } from "./constants";
 
-const noStore = { "Cache-Control": "no-store" };
-
 /** Error name and code only: messages can contain the connection URL. */
 function safeErrorSummary(error: unknown): string {
   const name = error instanceof Error ? error.name : typeof error;
@@ -41,34 +39,15 @@ function withClientIp(source: Headers): Headers {
   return result;
 }
 
-/** The catch-all /api/auth/* route: Better Auth, or 503 JSON without a database. */
-export async function handleAuthRequest(request: Request): Promise<Response> {
-  let auth;
-  try {
-    auth = await getAuth();
-  } catch (error) {
-    console.error(`[auth] unavailable: ${safeErrorSummary(error)}`);
-    auth = null;
-  }
-  if (!auth) {
-    return Response.json(
-      { ok: false, reason: "auth-unavailable" },
-      { status: 503, headers: noStore },
-    );
-  }
-  return auth.handler(
-    new Request(request, { headers: withClientIp(request.headers) }),
-  );
-}
+/*
+ * There is no public /api/auth/* route (docs/SECURITY.md): the browser never calls Better Auth. Sign-in, sign-up,
+ * sign-out and the profile are server actions that call `callAuthEndpoint` below, i.e. the Better Auth handler
+ * in-process, so the rate limit and the origin check still apply and no Better Auth endpoint is reachable over HTTP.
+ */
 
-/** Endpoints that server actions may call (Task 3 sign-in/up/out, Task 4 profile). */
+/** The only endpoints the server actions call: sign-in, sign-up, sign-out and the password change. */
 export type AuthEndpoint =
-  | "/sign-in/email"
-  | "/sign-up/email"
-  | "/sign-out"
-  | "/change-password"
-  | "/revoke-other-sessions"
-  | "/update-user";
+  "/sign-in/email" | "/sign-up/email" | "/sign-out" | "/change-password";
 
 /**
  * Server-side only. On sign-in and sign-up `data` holds the raw session `token` (the cookie value
@@ -131,7 +110,14 @@ export async function callAuthEndpoint(
   path: AuthEndpoint,
   body: Record<string, unknown>,
 ): Promise<AuthEndpointResult> {
-  const auth = await getAuth();
+  let auth;
+  try {
+    auth = await getAuth();
+  } catch (error) {
+    // Name only: a driver error message can contain the connection URL.
+    console.error(`[auth] unavailable: ${safeErrorSummary(error)}`);
+    auth = null;
+  }
   if (!auth) return { ok: false, status: 503, code: "AUTH_UNAVAILABLE" };
 
   const incoming = await headers();

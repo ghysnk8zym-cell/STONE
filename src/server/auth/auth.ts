@@ -1,6 +1,7 @@
 import "server-only";
 
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 // The minimal build leaves out the bundled Kysely adapter: we always pass the Drizzle adapter,
 // and the Worker must stay under 3 MiB (ADR-001).
 import { betterAuth } from "better-auth/minimal";
@@ -11,6 +12,7 @@ import { account, rateLimit, session, user, verification } from "../db/schema";
 import type { SeedUser } from "../db/seed";
 import { getServerEnv, type ServerEnv } from "../env";
 import { AUTH_COOKIE_PREFIX, CLIENT_IP_HEADER } from "./constants";
+import { userFieldsProblem } from "./user-input";
 
 /*
  * Better Auth (ADR-002): email + password, database sessions, database rate limiting.
@@ -102,6 +104,18 @@ export function createAuth(db: Db, config: AuthConfig) {
         },
       },
     },
+    hooks: {
+      // Plain-text names, no image, whoever calls (see user-input.ts).
+      before: createAuthMiddleware(async (ctx) => {
+        const problem = userFieldsProblem(ctx.path, ctx.body);
+        if (problem) {
+          throw new APIError("BAD_REQUEST", {
+            message: problem,
+            code: "INVALID_USER_FIELD",
+          });
+        }
+      }),
+    },
     session: {
       expiresIn: SEVEN_DAYS,
       updateAge: ONE_DAY,
@@ -161,7 +175,7 @@ export async function getAuth(): Promise<Auth | null> {
   if (cached?.db === db) return cached.auth;
   const auth = createAuth(
     db,
-    // handleAuthRequest/callAuthEndpoint set this header from the platform's client-IP rule.
+    // callAuthEndpoint sets this header from the platform's client-IP rule.
     authConfigFromEnv(getServerEnv(), [CLIENT_IP_HEADER]),
   );
   globalForAuth.__stoneAuth = { db, auth };

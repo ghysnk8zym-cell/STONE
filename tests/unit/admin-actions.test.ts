@@ -268,6 +268,13 @@ describe("admin server actions (PGlite + real Better Auth)", () => {
         [{ nameRu: "   " }, "nameRu"],
         [{ nameEn: "Two\nlines" }, "nameEn"],
         [{ nameEn: "x".repeat(121) }, "nameEn"],
+        // invisible formatting characters (bidi overrides, zero-width, BOM, line separators) in names and descriptions
+        [{ nameEn: "Evil\u202eenots" }, "nameEn"],
+        [{ nameRu: "Ка\u200bмень" }, "nameRu"],
+        [{ descriptionEn: "hidden\u2066text" }, "descriptionEn"],
+        [{ descriptionRu: "zero\u200dwidth" }, "descriptionRu"],
+        [{ descriptionEn: "b\ufeffom" }, "descriptionEn"],
+        [{ descriptionEn: "sep\u2028arator" }, "descriptionEn"],
         [{ descriptionRu: "bad\u0000byte" }, "descriptionRu"],
         [{ descriptionEn: "x".repeat(1001) }, "descriptionEn"],
         [{ material: "granite" }, "material"],

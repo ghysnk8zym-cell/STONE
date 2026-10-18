@@ -11,6 +11,7 @@ import type {
   UpdateProfileNameResult,
 } from "@/features/account/results";
 import { routing } from "@/i18n/routing";
+import { hasHiddenCharacters, USER_NAME_MAX } from "@/lib/plain-text";
 import { REQUEST_PATH_HEADER } from "@/server/auth/constants";
 import { requireUser } from "@/server/auth/guards";
 import { callAuthEndpoint, toClientResult } from "@/server/auth/next";
@@ -28,7 +29,7 @@ import { getDb, schema } from "../db";
 
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 128;
-const NAME_MAX = 80;
+const NAME_MAX = USER_NAME_MAX;
 
 /** The locale of the page the action was called from (the middleware sets the path header). */
 async function requestLocale(): Promise<string> {
@@ -118,13 +119,14 @@ export async function toggleFavorite(
   return { ok: true, favorited };
 }
 
-// Plain text on one line: no control characters (newlines, tabs, NUL, ...) anywhere in the name.
+// Plain text on one line: no control characters (newlines, tabs, NUL, ...) and no invisible formatting
+// characters (bidi overrides, zero-width, BOM) anywhere in the name (src/lib/plain-text.ts).
 const nameSchema = z
   .string()
   .trim()
   .min(1)
   .max(NAME_MAX)
-  .refine((value) => !/\p{Cc}/u.test(value));
+  .refine((value) => !hasHiddenCharacters(value));
 
 /** Saves the session user's display name (plain text, 1 to 80 characters after trimming). */
 export async function updateProfileName(
@@ -150,9 +152,9 @@ const newPasswordSchema = z.string().min(PASSWORD_MIN).max(PASSWORD_MAX);
 /**
  * Changes the session user's password. The current one is required and checked by Better Auth. The
  * call goes through the Better Auth handler (`callAuthEndpoint`), so its rate limit (5 per minute and
- * IP) and origin check apply. Other sessions of the user are ended; this one continues. That is a second
- * call on purpose: change-password's own `revokeOtherSessions` option swaps the session token, and the page
- * re-render that follows the action would still read the old (now deleted) cookie and bounce the user to sign-in.
+ * IP) and origin check apply. Every other session of the user is ended and this one is rotated (a new token
+ * and cookie), so a token that leaked before the change is dead. The page re-render that follows the action
+ * reads the new cookie from the cookie store (`getSession`, src/server/auth/session.ts), not the stale request header.
  */
 export async function changePassword(
   current: unknown,
@@ -173,13 +175,12 @@ export async function changePassword(
     await callAuthEndpoint("/change-password", {
       currentPassword: current,
       newPassword: next,
+      // Ends every other session AND rotates this one: Better Auth issues a new session and cookie, which
+      // `callAuthEndpoint` writes to the cookie store. A stolen old token (this device's included) stops working.
+      revokeOtherSessions: true,
     }),
   );
-  if (result.ok) {
-    // The password is changed; a failure here only leaves other devices signed in, so it is not an error.
-    await callAuthEndpoint("/revoke-other-sessions", {});
-    return { ok: true };
-  }
+  if (result.ok) return { ok: true };
   if (result.status === 503) return { ok: false, code: "unavailable" };
   if (result.status === 429) return { ok: false, code: "tooManyAttempts" };
   if (result.code === "INVALID_PASSWORD") {

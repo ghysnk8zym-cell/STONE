@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
+import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Button } from "@/components/buttons/Button";
 import { IconButton } from "@/components/buttons/IconButton";
 import { FavoriteSaveButton } from "@/features/account/FavoriteControls";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
-import type { Locale } from "@/i18n/routing";
+import { routing, type Locale } from "@/i18n/routing";
 import { imageSize } from "@/lib/image-size";
 import { NOT_FOUND_SEGMENT } from "@/lib/route-gate";
 import { productDescription, productName } from "@/lib/product-copy";
@@ -78,7 +79,10 @@ export default async function ProductPage({
   params,
 }: PageProps<"/[locale]/catalog/[slug]">) {
   const { locale, slug } = await params;
-  setRequestLocale(locale as Locale);
+  // The locale is a URL segment: check it before it is used in a redirect target below (the layout checks it too,
+  // but a layout and its page render side by side, so the page cannot rely on that).
+  if (!hasLocale(routing.locales, locale)) notFound();
+  setRequestLocale(locale);
   const product = await findProduct(slug);
   // notFound() here would send the empty error shell (no content without JavaScript, see the comment above), so an
   // unknown or unpublished product is sent to the gate's server-rendered 404 page: 307, no-store, then 404 + noindex.

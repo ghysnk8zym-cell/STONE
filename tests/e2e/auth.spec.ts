@@ -4,7 +4,7 @@ import type { BrowserContext, Page } from "@playwright/test";
 import en from "../../messages/en.json";
 import ru from "../../messages/ru.json";
 
-import { expect, test } from "./auth-fixtures";
+import { expect, signInInContext, test } from "./auth-fixtures";
 import { NEW_PASSWORD, SEEDED, uniqueEmail } from "./test-env";
 
 /*
@@ -23,24 +23,17 @@ async function hasSessionCookie(context: BrowserContext) {
   return (await context.cookies()).some((c) => c.name === SESSION_COOKIE);
 }
 
-/** Signs in through the API (no UI), which stores the session cookie in the browser context. */
-async function signInViaApi(
-  context: BrowserContext,
-  baseURL: string,
-  clientIp: string,
-  credentials: { email: string; password: string },
-) {
-  const response = await context.request.post("/api/auth/sign-in/email", {
-    data: credentials,
-    headers: { origin: baseURL, "x-forwarded-for": clientIp },
-  });
-  expect(response.status()).toBe(200);
-}
-
+/**
+ * The address of the signed-in user as the server sees it, or null for a Guest: read from the profile page (the
+ * Better Auth HTTP API is not exposed, so there is no get-session to ask).
+ */
 async function currentUserEmail(page: Page): Promise<string | null> {
-  const response = await page.request.get("/api/auth/get-session");
-  const body = (await response.json()) as { user?: { email: string } } | null;
-  return body?.user?.email ?? null;
+  const response = await page.request.get("/en/account/profile", {
+    maxRedirects: 0,
+  });
+  if (response.status() !== 200) return null;
+  const match = /[\w.+-]+@example\.test/.exec(await response.text());
+  return match ? match[0] : null;
 }
 
 /** Resolves once React hydrated the form: the password toggle is hidden until then. */
@@ -200,11 +193,7 @@ test.describe("sign-in", () => {
     });
   }
 
-  test("sign-in errors do not reveal account existence", async ({
-    page,
-    baseURL,
-    clientIp,
-  }) => {
+  test("sign-in errors do not reveal account existence", async ({ page }) => {
     // Through the UI: one message for a wrong password and for an unknown email.
     const t = ru.auth;
     const messages: string[] = [];
@@ -233,47 +222,31 @@ test.describe("sign-in", () => {
     expect(messages[0]).toBe(messages[1]);
     expect(statuses).toHaveLength(2);
     expect(statuses[0]).toBe(statuses[1]);
-
-    // And at the API: same status, same code, same message.
-    const answers = [];
-    for (const email of [SEEDED.client.email, "nobody-else@example.test"]) {
-      const response = await page.request.post("/api/auth/sign-in/email", {
-        data: { email, password: "definitely-wrong-password-2" },
-        headers: { origin: baseURL!, "x-forwarded-for": clientIp },
-      });
-      answers.push({ status: response.status(), body: await response.json() });
-    }
-    expect(answers[0]!.status).toBe(401);
-    expect(answers[1]).toEqual(answers[0]);
   });
 
-  test("repeated failed sign-ins are rate limited", async ({
-    page,
-    baseURL,
-    clientIp,
-  }) => {
-    const statuses: number[] = [];
-    for (let attempt = 0; attempt < 12; attempt++) {
-      const response = await page.request.post("/api/auth/sign-in/email", {
-        data: {
-          email: SEEDED.client.email,
-          password: `wrong-password-${attempt}`,
-        },
-        headers: { origin: baseURL!, "x-forwarded-for": clientIp },
+  test("repeated failed sign-ins are rate limited", async ({ page }) => {
+    // Through the form (the only way in): ten refusals with the uniform message, then "too many attempts".
+    const messages = ru.auth.errors;
+    for (let attempt = 0; attempt < 11; attempt++) {
+      await page.goto("/ru/sign-in");
+      await formReady(page, "ru");
+      await submitCredentials(page, "ru", "signIn", {
+        email: SEEDED.client.email,
+        password: `wrong-password-${attempt}`,
       });
-      statuses.push(response.status());
+      const expected =
+        attempt < 10 ? messages.invalidCredentials : messages.tooManyAttempts;
+      await expect(
+        page.getByRole("alert").filter({ hasText: expected }),
+      ).toBeVisible();
     }
-    expect(statuses.slice(0, 10).every((s) => s === 401)).toBe(true);
-    expect(statuses.at(-1)).toBe(429);
   });
 
   test("a signed-in user is sent from sign-in and sign-up to the account page", async ({
     page,
     context,
-    baseURL,
-    clientIp,
   }) => {
-    await signInViaApi(context, baseURL!, clientIp, SEEDED.client);
+    await signInInContext(context, SEEDED.client);
     await page.goto("/ru/sign-in");
     await expect(page).toHaveURL(/\/ru\/account$/);
     await page.goto("/en/sign-up");
@@ -286,11 +259,9 @@ test.describe("sign-out", () => {
     test(`${locale}: confirming ends the session and goes home`, async ({
       page,
       context,
-      baseURL,
-      clientIp,
     }) => {
       const t = MESSAGES[locale].auth.signOutPage;
-      await signInViaApi(context, baseURL!, clientIp, SEEDED.client);
+      await signInInContext(context, SEEDED.client);
       expect(await currentUserEmail(page)).toBe(SEEDED.client.email);
 
       await page.goto(`/${locale}/sign-out`);
@@ -314,10 +285,8 @@ test.describe("sign-out", () => {
   test("staying signed in goes back to the account and keeps the session", async ({
     page,
     context,
-    baseURL,
-    clientIp,
   }) => {
-    await signInViaApi(context, baseURL!, clientIp, SEEDED.client);
+    await signInInContext(context, SEEDED.client);
     await page.goto("/ru/sign-out");
     await page.getByRole("link", { name: ru.auth.signOutPage.stay }).click();
     await page.waitForURL("**/ru/account");
@@ -354,13 +323,8 @@ test.describe("sign-in and sign-up work without JavaScript", () => {
     expect(await hasSessionCookie(context)).toBe(true);
   });
 
-  test("sign-out works as a plain form post", async ({
-    page,
-    context,
-    baseURL,
-    clientIp,
-  }) => {
-    await signInViaApi(context, baseURL!, clientIp, SEEDED.client);
+  test("sign-out works as a plain form post", async ({ page, context }) => {
+    await signInInContext(context, SEEDED.client);
     await page.goto("/en/sign-out");
     await page
       .getByRole("button", { name: en.auth.signOutPage.confirm })
@@ -390,11 +354,9 @@ test.describe("layout and quality", () => {
       test(`/${locale}/${path}: no serious axe violations and no horizontal overflow`, async ({
         page,
         context,
-        baseURL,
-        clientIp,
       }) => {
         if (needsSession) {
-          await signInViaApi(context, baseURL!, clientIp, SEEDED.client);
+          await signInInContext(context, SEEDED.client);
         }
         const response = await page.goto(`/${locale}/${path}`);
         expect(response?.status()).toBe(200);
@@ -424,8 +386,6 @@ test.describe("layout and quality", () => {
   test("sign-in and sign-up draw no site header or footer; sign-out draws the shell", async ({
     page,
     context,
-    baseURL,
-    clientIp,
   }) => {
     for (const path of ["sign-in", "sign-up"]) {
       await page.goto(`/ru/${path}`);
@@ -437,7 +397,7 @@ test.describe("layout and quality", () => {
       // receive the event (a link stacked under the scene is in the accessibility tree but not hit).
       await back.click({ trial: true });
     }
-    await signInViaApi(context, baseURL!, clientIp, SEEDED.client);
+    await signInInContext(context, SEEDED.client);
     await page.goto("/ru/sign-out");
     await expect(page.getByRole("banner")).toBeVisible();
     await expect(page.getByRole("contentinfo")).toBeVisible();

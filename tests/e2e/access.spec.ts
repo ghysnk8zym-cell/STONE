@@ -1,6 +1,4 @@
-import type { APIRequestContext } from "@playwright/test";
-
-import { expect, test } from "./auth-fixtures";
+import { expect, signInInContext, test } from "./auth-fixtures";
 import { SEEDED } from "./test-env";
 
 /*
@@ -44,19 +42,6 @@ function expectedStatus(role: Role, area: "account" | "admin"): number {
   return role === "Admin" ? 200 : 404;
 }
 
-async function signIn(
-  request: APIRequestContext,
-  baseURL: string,
-  clientIp: string,
-  credentials: { email: string; password: string },
-) {
-  const response = await request.post("/api/auth/sign-in/email", {
-    data: credentials,
-    headers: { origin: baseURL, "x-forwarded-for": clientIp },
-  });
-  expect(response.status()).toBe(200);
-}
-
 const ROLES: { role: Role; credentials: typeof SEEDED.client | null }[] = [
   { role: "Guest", credentials: null },
   { role: "Client", credentials: SEEDED.client },
@@ -76,10 +61,9 @@ for (const { role, credentials } of ROLES) {
             page,
             context,
             baseURL,
-            clientIp,
           }) => {
             if (credentials) {
-              await signIn(context.request, baseURL!, clientIp, credentials);
+              await signInInContext(context, credentials);
             }
             const url = `/${locale}/${path}`;
 
@@ -113,6 +97,44 @@ for (const { role, credentials } of ROLES) {
     }
   });
 }
+
+test.describe("the Better Auth HTTP API is not exposed", () => {
+  // The browser never calls it: sign-in, sign-up, sign-out and the profile all go through server actions, which call
+  // Better Auth in-process. A public catch-all would hand every Better Auth endpoint (and any one a later upgrade adds)
+  // to anyone, so the route does not exist.
+  const PATHS = [
+    "get-session",
+    "list-sessions",
+    "update-user",
+    "change-password",
+    "revoke-sessions",
+    "sign-up/email",
+    "sign-in/email",
+    "sign-out",
+  ];
+  for (const path of PATHS) {
+    test(`/api/auth/${path} answers 404 to GET and POST, signed in or not`, async ({
+      context,
+      baseURL,
+      clientIp,
+    }) => {
+      for (const signedIn of [false, true]) {
+        if (signedIn) await signInInContext(context, SEEDED.client);
+        for (const method of ["get", "post"] as const) {
+          const response = await context.request[method](`/api/auth/${path}`, {
+            ...(method === "post" ? { data: {} } : {}),
+            headers: { origin: baseURL!, "x-forwarded-for": clientIp },
+            maxRedirects: 0,
+          });
+          expect(
+            response.status(),
+            `${method} ${path} signedIn=${signedIn}`,
+          ).toBe(404);
+        }
+      }
+    });
+  }
+});
 
 test.describe("a session cookie is not a session", () => {
   for (const path of ["/ru/account", "/en/admin"]) {

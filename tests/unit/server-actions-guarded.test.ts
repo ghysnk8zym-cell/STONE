@@ -38,10 +38,7 @@ const PUBLIC_ROUTE_HANDLERS: Record<string, string> = {
     "How a Guest finds out they are one: reads only the caller's own session, returns no id or email and only the caller's own favourites.",
   "src/app/api/health/db/route.ts#GET":
     "Deployment check that must work before anyone signs in; answers ok / not ok only, reveals nothing else.",
-  "src/app/api/auth/[...all]/route.ts#GET":
-    "The Better Auth endpoint itself (sign-in, sign-up, get-session ...): it authenticates, so it cannot require a session; rate limit and origin check apply.",
-  "src/app/api/auth/[...all]/route.ts#POST":
-    "The Better Auth endpoint itself (sign-in, sign-up, sign-out ...): it authenticates, so it cannot require a session; rate limit and origin check apply.",
+  // There is deliberately no /api/auth route: Better Auth is called in-process by the server actions (docs/SECURITY.md).
 };
 
 function walk(dir: string, match: (file: string) => boolean): string[] {
@@ -117,7 +114,6 @@ describe("every route handler is guarded or public by design", () => {
 
   it("finds the route handlers", () => {
     expect(routes.map(posix).sort()).toEqual([
-      "src/app/api/auth/[...all]/route.ts",
       "src/app/api/health/db/route.ts",
       "src/app/api/me/route.ts",
     ]);

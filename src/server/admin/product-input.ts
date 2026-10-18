@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import {
+  hasHiddenCharacters,
+  hasHiddenCharactersExceptNewline,
+} from "@/lib/plain-text";
 import { SLUG_SHAPE } from "@/lib/route-gate";
 
 import { COLOR_GROUPS, COLORS, FINISHES, MATERIALS } from "../catalog/types";
@@ -19,22 +23,20 @@ export const DESCRIPTION_MAX = 1000;
 export const PRICE_MAX_CENTS = 10_000_000;
 export const DIMENSION_MAX_MM = 10_000;
 
-// C0 controls and DEL are never valid in a name; a description may also have line breaks.
-const CONTROL_LINE = /[\u0000-\u001f\u007f]/;
-const CONTROL_TEXT = /[\u0000-\u0009\u000b-\u001f\u007f]/;
-
+// A name is one line of plain text; a description may also have line feeds. Control characters AND invisible
+// formatting characters (bidi overrides, zero-width, BOM) are refused in both (src/lib/plain-text.ts).
 const name = z
   .string()
   .trim()
   .min(1)
   .max(NAME_MAX)
-  .refine((value) => !CONTROL_LINE.test(value));
+  .refine((value) => !hasHiddenCharacters(value));
 
 const description = z
   .string()
   .trim()
   .max(DESCRIPTION_MAX)
-  .refine((value) => !CONTROL_TEXT.test(value));
+  .refine((value) => !hasHiddenCharactersExceptNewline(value));
 
 const cents = z.number().int().min(0).max(PRICE_MAX_CENTS);
 const mm = z.number().int().min(1).max(DIMENSION_MAX_MM);

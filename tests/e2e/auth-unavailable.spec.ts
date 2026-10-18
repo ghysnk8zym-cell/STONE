@@ -43,13 +43,12 @@ test.describe("auth pages show unavailable without a database", () => {
     }
   }
 
-  test("the auth API answers 503 JSON, not a crash", async ({ request }) => {
-    const response = await request.get("/api/auth/get-session");
-    expect(response.status()).toBe(503);
-    expect(await response.json()).toEqual({
-      ok: false,
-      reason: "auth-unavailable",
-    });
+  test("there is no public auth API, with or without a database", async ({
+    request,
+  }) => {
+    for (const path of ["get-session", "sign-in/email"]) {
+      expect((await request.get(`/api/auth/${path}`)).status()).toBe(404);
+    }
   });
 
   test("the sign-out page sends everyone home", async ({ page }) => {

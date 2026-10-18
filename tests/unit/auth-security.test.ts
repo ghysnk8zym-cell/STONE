@@ -362,56 +362,15 @@ describe("seed users through Better Auth", () => {
   });
 });
 
-describe("auth route handler", () => {
-  function reset() {
-    vi.resetModules();
-    const g = globalThis as { __stoneDb?: unknown; __stoneAuth?: unknown };
-    delete g.__stoneDb;
-    delete g.__stoneAuth;
-  }
-  afterAll(() => {
-    vi.unstubAllEnvs();
-    reset();
-  });
-
-  it("answers 503 JSON without a database", async () => {
-    reset();
-    vi.stubEnv("DATABASE_URL", "");
-    vi.stubEnv("BETTER_AUTH_SECRET", "");
-    const { GET, POST } = await import("@/app/api/auth/[...all]/route");
-    for (const handler of [GET, POST]) {
-      const response = await handler(authRequest("/get-session"));
-      expect(response.status).toBe(503);
-      expect(await response.json()).toEqual({
-        ok: false,
-        reason: "auth-unavailable",
-      });
-      expect(response.headers.get("cache-control")).toBe("no-store");
-    }
-  });
-
-  it("serves Better Auth with a database", async () => {
-    reset();
-    vi.stubEnv("DATABASE_URL", "pglite://memory");
-    vi.stubEnv("BETTER_AUTH_SECRET", TEST_SECRET);
-    vi.stubEnv("BETTER_AUTH_URL", TEST_BASE_URL);
-    const { GET, POST } = await import("@/app/api/auth/[...all]/route");
-    const signUpResponse = await POST(
-      authRequest("/sign-up/email", {
-        body: {
-          email: "route@example.test",
-          password: TEST_PASSWORD,
-          name: "R",
-        },
-      }),
+describe("no public Better Auth route", () => {
+  it("there is no /api/auth route: Better Auth is reachable in-process only", async () => {
+    const { existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    expect(existsSync(join(process.cwd(), "src", "app", "api", "auth"))).toBe(
+      false,
     );
-    expect(signUpResponse.status).toBe(200);
-    const cookie = sessionCookieFrom(signUpResponse)!;
-    const session = await GET(authRequest("/get-session", { cookie }));
-    expect(session.status).toBe(200);
-    expect(await session.json()).toMatchObject({
-      user: { email: "route@example.test", role: "client" },
-    });
+    const next = await import("@/server/auth/next");
+    expect("handleAuthRequest" in next).toBe(false);
   });
 });
 
@@ -517,7 +476,7 @@ describe("client IP for rate limiting (platform rule)", () => {
     expect(ip(cloudflarePlatform, { "x-forwarded-for": "1.1.1.1" })).toBeNull();
   });
 
-  it("the auth route keys the rate limit on the platform IP and ignores a client-set header", async () => {
+  it("the in-process auth call keys the rate limit on the platform IP and ignores a client-set header", async () => {
     vi.resetModules();
     const g = globalThis as { __stoneDb?: unknown; __stoneAuth?: unknown };
     delete g.__stoneDb;
@@ -526,25 +485,32 @@ describe("client IP for rate limiting (platform rule)", () => {
     vi.stubEnv("BETTER_AUTH_SECRET", TEST_SECRET);
     vi.stubEnv("BETTER_AUTH_URL", TEST_BASE_URL);
     try {
-      const { POST } = await import("@/app/api/auth/[...all]/route");
+      const { callAuthEndpoint } = await import("@/server/auth/next");
+      const call = (forwardedFor: string, spoofed?: string) => {
+        request.headers = new Headers({
+          origin: TEST_BASE_URL,
+          host: "localhost:3000",
+          "x-forwarded-for": forwardedFor,
+          ...(spoofed ? { [CLIENT_IP_HEADER]: spoofed } : {}),
+        });
+        return callAuthEndpoint("/sign-in/email", {
+          email: "x@example.test",
+          password: "wrong-pass-1",
+        });
+      };
       const proxySaw = nextTestIp();
       const statuses: number[] = [];
       for (let i = 0; i <= RATE_LIMIT_RULES.signIn.max; i += 1) {
-        const req = authRequest("/sign-in/email", {
-          body: { email: "x@example.test", password: "wrong-pass-1" },
-          // A rotating spoofed left hop and our internal header must not open new buckets.
-          ip: `9.9.9.${i}, ${proxySaw}`,
-        });
-        req.headers.set(CLIENT_IP_HEADER, `8.8.8.${i}`);
-        statuses.push((await POST(req)).status);
+        // A rotating spoofed left hop and our internal header must not open new buckets.
+        const result = await call(`9.9.9.${i}, ${proxySaw}`, `8.8.8.${i}`);
+        statuses.push(result.ok ? 200 : result.status);
       }
       expect(statuses.at(-1)).toBe(429);
       // Another client behind the same kind of proxy has its own bucket (not one shared bucket).
-      const other = authRequest("/sign-in/email", {
-        body: { email: "x@example.test", password: "wrong-pass-1" },
-        ip: `9.9.9.200, ${nextTestIp()}`,
+      expect(await call(`9.9.9.200, ${nextTestIp()}`)).toMatchObject({
+        ok: false,
+        status: 401,
       });
-      expect((await POST(other)).status).toBe(401);
     } finally {
       vi.unstubAllEnvs();
       vi.resetModules();
@@ -591,5 +557,75 @@ describe("results returned to the browser", () => {
         code: "INVALID_EMAIL_OR_PASSWORD",
       }),
     ).toEqual({ ok: false, status: 401, code: "INVALID_EMAIL_OR_PASSWORD" });
+  });
+});
+
+describe("names and images reach Better Auth only as plain text (hooks.before)", () => {
+  let f: Fresh;
+  let cookie: string;
+
+  beforeAll(async () => {
+    f = await freshAuth();
+    const response = await signUp(f.auth, "plain@example.test", {
+      name: "Plain Name",
+    });
+    expect(response.status).toBe(200);
+    cookie = sessionCookieFrom(response)!;
+  });
+
+  const BAD_NAMES = [
+    "evil\u202etxt.exe", // right-to-left override
+    "zero\u200bwidth", // zero-width space
+    "join\u2060er", // word joiner
+    "b\ufeffom", // byte order mark
+    "line\u2028sep", // line separator
+    "two\nlines",
+    "nul\u0000byte",
+    "x".repeat(81),
+  ];
+
+  it("sign-up refuses a name with control or invisible formatting characters, or over 80 characters", async () => {
+    for (const [index, name] of BAD_NAMES.entries()) {
+      const response = await signUp(f.auth, `bad${index}@example.test`, {
+        name,
+      });
+      expect(response.status, JSON.stringify(name)).toBe(400);
+    }
+    const [{ total }] = await f.db.select({ total: count() }).from(schema.user);
+    expect(total).toBe(1); // only the account made in beforeAll
+  });
+
+  it("sign-up refuses an image (a user-chosen URL is never stored)", async () => {
+    const response = await signUp(f.auth, "image@example.test", {
+      image: "https://evil.example/a.png",
+    });
+    expect(response.status).toBe(400);
+  });
+
+  it("sign-up accepts the app's own calls: an empty name, and an ordinary one (also non-Latin)", async () => {
+    expect(
+      (await signUp(f.auth, "empty@example.test", { name: "" })).status,
+    ).toBe(200);
+    expect(
+      (await signUp(f.auth, "named@example.test", { name: "Анна Müller-Ñ" }))
+        .status,
+    ).toBe(200);
+  });
+
+  it("update-user refuses the same names and any image, and accepts a plain name", async () => {
+    const update = (body: Record<string, unknown>) =>
+      f.auth.handler(authRequest("/update-user", { body, cookie }));
+    for (const name of BAD_NAMES) {
+      expect((await update({ name })).status, JSON.stringify(name)).toBe(400);
+    }
+    expect((await update({ image: "https://evil.example/a.png" })).status).toBe(
+      400,
+    );
+    expect((await update({ name: "New Name" })).status).toBe(200);
+    const [row] = await f.db
+      .select({ name: schema.user.name, image: schema.user.image })
+      .from(schema.user)
+      .where(eq(schema.user.email, "plain@example.test"));
+    expect(row).toMatchObject({ name: "New Name", image: null });
   });
 });

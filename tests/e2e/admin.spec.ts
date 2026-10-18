@@ -1,10 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
-import type { APIRequestContext, BrowserContext, Page } from "@playwright/test";
+import type { BrowserContext, Page } from "@playwright/test";
 
 import en from "../../messages/en.json";
 import ru from "../../messages/ru.json";
 
-import { expect, test } from "./auth-fixtures";
+import { expect, signInInContext, test } from "./auth-fixtures";
 import { ORDERS_CLIENT, SEEDED } from "./test-env";
 
 /*
@@ -16,19 +16,6 @@ import { ORDERS_CLIENT, SEEDED } from "./test-env";
  */
 
 const a = en.admin;
-
-async function signInViaApi(
-  request: APIRequestContext,
-  baseURL: string,
-  clientIp: string,
-  credentials: { email: string; password: string },
-) {
-  const response = await request.post("/api/auth/sign-in/email", {
-    data: credentials,
-    headers: { origin: baseURL, "x-forwarded-for": clientIp },
-  });
-  expect(response.status()).toBe(200);
-}
 
 function tag(): string {
   return Math.random().toString(36).slice(2, 8);
@@ -70,10 +57,8 @@ test.describe("access", () => {
   test("a Client gets a 404 on every admin page, in both languages", async ({
     page,
     context,
-    baseURL,
-    clientIp,
   }) => {
-    await signInViaApi(context.request, baseURL!, clientIp, SEEDED.client);
+    await signInInContext(context, SEEDED.client);
     for (const path of [
       "/en/admin",
       "/ru/admin",
@@ -94,10 +79,8 @@ test.describe("access", () => {
   test("below 1024 px a message replaces the admin shell; at 1024 the shell is there", async ({
     page,
     context,
-    baseURL,
-    clientIp,
   }) => {
-    await signInViaApi(context.request, baseURL!, clientIp, SEEDED.admin);
+    await signInInContext(context, SEEDED.admin);
     for (const locale of ["en", "ru"] as const) {
       const t = { en, ru }[locale].admin;
       await page.setViewportSize({ width: 1023, height: 800 });
@@ -123,12 +106,12 @@ test.describe("access", () => {
 });
 
 test.describe("admin screens", () => {
-  test.beforeEach(async ({ context, baseURL, clientIp }, testInfo) => {
+  test.beforeEach(async ({ context }, testInfo) => {
     test.skip(
       testInfo.project.name !== "auth-desktop",
       "the admin layouts start at 1024 px; the flows run in the desktop project",
     );
-    await signInViaApi(context.request, baseURL!, clientIp, SEEDED.admin);
+    await signInInContext(context, SEEDED.admin);
   });
 
   test("the sidebar links all eight sections and every one is a real page", async ({
@@ -495,12 +478,7 @@ test.describe("admin screens", () => {
     }
 
     try {
-      await signInViaApi(
-        clientContext.request,
-        baseURL!,
-        clientIp,
-        ORDERS_CLIENT,
-      );
+      await signInInContext(clientContext, ORDERS_CLIENT);
       await clientSees(orders.status.in_progress);
       await adminSets(t.status.delivered);
       await clientSees(orders.status.delivered);

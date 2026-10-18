@@ -33,7 +33,8 @@ vi.mock("next/headers", () => ({
   headers: async () => request.headers,
   cookies: async () => ({
     get: () => undefined,
-    getAll: () => [],
+    // Like Next: what a server action set earlier in the request is visible to the re-render that follows.
+    getAll: () => request.setCookies,
     set: (name: string, value: string) => {
       request.setCookies.push({ name, value });
     },
@@ -282,6 +283,12 @@ describe("account server actions and queries (PGlite + real Better Auth)", () =>
         "tab\there",
         "nul\u0000byte",
         "esc\u001b[31m",
+        // invisible formatting: bidi overrides, zero-width characters, BOM, line separators
+        "evil\u202etxt.exe",
+        "zero\u200bwidth",
+        "join\u2060er",
+        "b\ufeffom",
+        "line\u2028sep",
       ]) {
         expect(await actions.updateProfileName(bad)).toEqual({
           ok: false,
@@ -351,7 +358,7 @@ describe("account server actions and queries (PGlite + real Better Auth)", () =>
       });
     });
 
-    it("ends the user's other sessions but keeps the current one (no token swap)", async () => {
+    it("rotates the current session (a new cookie) and ends every other one", async () => {
       // Carol has two devices; she changes the password on the first.
       const email = "carol@example.test";
       expect((await signUp(auth, email, { name: "Carol" })).status).toBe(200);
@@ -363,18 +370,26 @@ describe("account server actions and queries (PGlite + real Better Auth)", () =>
       expect(await actions.changePassword(TEST_PASSWORD, NEW_PASSWORD)).toEqual(
         { ok: true },
       );
-      // The action did not rotate this device's cookie: the re-render after it reads the same one.
-      expect(
-        request.setCookies.some((c) => /session_token$/.test(c.name)),
-      ).toBe(false);
+      // A new session cookie was issued for this device ...
+      const rotated = request.setCookies.find((c) =>
+        /session_token$/.test(c.name),
+      );
+      expect(rotated).toBeDefined();
+      const rotatedCookie = `${rotated!.name}=${encodeURIComponent(rotated!.value)}`;
+      expect(rotatedCookie).not.toBe(device1);
+
+      // ... and the re-render that follows the action (same request: the old cookie is still in the request
+      // headers, the new one is in the cookie store) still sees the user, instead of bouncing to sign-in.
+      const { getSession } = await import("@/server/auth/session");
+      expect((await getSession())?.user.email).toBe(email);
 
       const sessionOf = async (cookie: string) => {
         asBrowser({ cookie });
-        return (await (await import("@/server/auth/session")).getSession())
-          ?.user.email;
+        return (await getSession())?.user.email;
       };
-      expect(await sessionOf(device1)).toBe(email);
-      expect(await sessionOf(device2)).toBeUndefined();
+      expect(await sessionOf(rotatedCookie)).toBe(email); // the new session works
+      expect(await sessionOf(device1)).toBeUndefined(); // the old token of this device is gone
+      expect(await sessionOf(device2)).toBeUndefined(); // so is every other device
     });
 
     it("changes the password with the right current one and returns no token", async () => {
