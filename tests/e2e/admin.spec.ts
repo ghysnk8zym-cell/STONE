@@ -314,6 +314,61 @@ test.describe("admin screens", () => {
     );
   });
 
+  test("the static home page follows an admin: a renamed featured product shows its new name, an unpublished one disappears", async ({
+    page,
+    context,
+  }) => {
+    // Split Limestone is in the home "promo" carousel and no other e2e test reads it.
+    const slug = "split-limestone";
+    const original = ru.catalog.products[slug].name;
+    const id = tag();
+    const renamed = `Переименован ${id}`;
+    // The client messages of every page carry all product names, so look at the card itself: the
+    // product's card in the server HTML of the home page (null when the card is not there).
+    const card = async () => {
+      const html = await (await context.request.get("/ru")).text();
+      // the card is an <article> with an overlay link; take the article that holds the link
+      const match = new RegExp(
+        `<article(?:(?!</article>)[\\s\\S])*?href="/ru/catalog/${slug}"(?:(?!</article>)[\\s\\S])*?</article>`,
+      ).exec(html);
+      return match ? match[0].replace(/<[^>]+>/g, " ") : null;
+    };
+    const edit = async (button: string | RegExp, name?: string) => {
+      await page.goto(`/en/admin/products/${slug}`);
+      await expect(page.getByLabel(a.form.nameRu, { exact: true })).toHaveValue(
+        /.+/,
+      );
+      if (name !== undefined) {
+        await page.getByLabel(a.form.nameRu, { exact: true }).fill(name);
+      }
+      await page.getByRole("button", { name: button }).click();
+      await page.waitForURL("**/en/admin/products");
+    };
+
+    try {
+      // warm the static page, so a stale copy would be served if nothing revalidated it
+      expect(await card()).toContain(original);
+
+      await edit(a.form.saveChanges, renamed);
+      const afterRename = await card();
+      expect(afterRename).toContain(renamed);
+      expect(afterRename).not.toContain(original);
+
+      await edit(a.form.unpublish);
+      expect(await card()).toBeNull();
+      expect((await context.request.get(`/ru/catalog/${slug}`)).status()).toBe(
+        404,
+      );
+    } finally {
+      // leave the seeded product as it was (published, original name)
+      await edit(
+        new RegExp(`^(${a.form.publish}|${a.form.saveChanges})$`),
+        original,
+      );
+    }
+    expect(await card()).toContain(original);
+  });
+
   test("a product page that was a 404 becomes 200 once the product is created; wrong-case and unknown slugs cache nothing", async ({
     page,
     context,

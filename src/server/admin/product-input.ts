@@ -39,11 +39,20 @@ const description = z
 const cents = z.number().int().min(0).max(PRICE_MAX_CENTS);
 const mm = z.number().int().min(1).max(DIMENSION_MAX_MM);
 
+/**
+ * Slugs that would collide with a route word: `/admin/products/new` is the Add product page, so a product
+ * called `new` could never be opened for editing. Add a word here when a static sibling of a slug route appears.
+ */
+export const RESERVED_SLUGS: readonly string[] = ["new"];
+
 export const slugSchema = z
   .string()
   .min(1)
   .max(SLUG_MAX)
-  .regex(SLUG_SHAPE, { error: "lowercase letters, digits and single dashes" });
+  .regex(SLUG_SHAPE, { error: "lowercase letters, digits and single dashes" })
+  .refine((slug) => !RESERVED_SLUGS.includes(slug), {
+    error: "reserved word",
+  });
 
 const productFields = z.object({
   nameRu: name,

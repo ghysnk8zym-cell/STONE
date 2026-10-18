@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { cache } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -9,6 +9,7 @@ import { FavoriteSaveButton } from "@/features/account/FavoriteControls";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import type { Locale } from "@/i18n/routing";
 import { imageSize } from "@/lib/image-size";
+import { NOT_FOUND_SEGMENT } from "@/lib/route-gate";
 import { productDescription, productName } from "@/lib/product-copy";
 import { getCatalog, type Product } from "@/server/catalog";
 
@@ -19,13 +20,14 @@ import { SpecRows } from "./SpecRows";
 
 /*
  * Rendered per request, deliberately not SSG / ISR. The catalog lives in the database (Phase 4a) and the middleware
- * gate cannot know which slugs exist, so an unknown slug reaches this route and calls notFound(). On an ISR route
+ * gate cannot know which slugs exist, so an unknown slug reaches this route. On an ISR route
  * Next writes that 404 to the route cache like any page (measured with `next start`: `x-nextjs-cache: HIT` and
  * `Cache-Control: s-maxage=31536000`), one entry per requested slug, and there is no per-slug way to opt out (a dynamic
  * API in the not-found branch makes the on-demand render a 500). Rendering per request keeps the answer to "found" or
  * "404, not cached", and an admin's edit, unpublish or new product is visible at once without depending on
  * revalidatePath (the Cloudflare build has no incremental cache and renders per request anyway).
- * See docs/ARCHITECTURE.md, "Route gate and the localised 404".
+ * An unknown or unpublished slug is redirected (307, no-store) to the gate's 404 page: notFound() thrown during render
+ * makes Next 16.3.8 send an empty error shell. See docs/ARCHITECTURE.md, "Route gate and the localised 404".
  */
 export const dynamic = "force-dynamic";
 
@@ -39,14 +41,7 @@ export async function generateMetadata({
 }: PageProps<"/[locale]/catalog/[slug]">): Promise<Metadata> {
   const { locale, slug } = await params;
   const product = await findProduct(slug);
-  if (!product) {
-    // The not-found UI is drawn by the client for this route; without this the tab would keep the site title.
-    const nf = await getTranslations({
-      locale: locale as Locale,
-      namespace: "meta.notFound",
-    });
-    return { title: nf("title"), description: nf("description") };
-  }
+  if (!product) return {};
   const c = await getTranslations({
     locale: locale as Locale,
     namespace: "catalog",
@@ -85,7 +80,9 @@ export default async function ProductPage({
   const { locale, slug } = await params;
   setRequestLocale(locale as Locale);
   const product = await findProduct(slug);
-  if (!product) notFound();
+  // notFound() here would send the empty error shell (no content without JavaScript, see the comment above), so an
+  // unknown or unpublished product is sent to the gate's server-rendered 404 page: 307, no-store, then 404 + noindex.
+  if (!product) redirect(`/${locale}/${NOT_FOUND_SEGMENT}`);
 
   const t = await getTranslations("pages.product");
   const c = await getTranslations("catalog");

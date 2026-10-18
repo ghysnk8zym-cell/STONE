@@ -228,7 +228,11 @@ describe("admin server actions (PGlite + real Better Auth)", () => {
         expect.arrayContaining([
           "/[locale]/catalog/[slug]#page",
           "/[locale]/catalog#page",
-          "/[locale]#page",
+          // the home page is static: only the concrete paths reach it (the pattern does not)
+          "/ru",
+          "/en",
+          "/ru/catalog",
+          "/en/catalog",
         ]),
       );
     });
@@ -252,6 +256,8 @@ describe("admin server actions (PGlite + real Better Auth)", () => {
         [{ slug: "../etc" }, "slug"],
         [{ slug: "double--dash" }, "slug"],
         [{ slug: "" }, "slug"],
+        // `/admin/products/new` is the Add product page, so `new` cannot be a product
+        [{ slug: "new" }, "slug"],
         [{ slug: "a".repeat(81) }, "slug"],
         [{ priceCents: -1 }, "priceCents"],
         [{ priceCents: 12.5 }, "priceCents"],

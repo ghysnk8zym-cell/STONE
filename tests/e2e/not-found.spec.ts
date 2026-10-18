@@ -10,7 +10,8 @@ import ru from "../../messages/ru.json";
  *   lowercase slug of the right shape reaches `catalog/[slug]`, which is rendered per request and answers 200 or a
  *   404 that is not cached (see the comment in that page).
  * - I2: the localised 404 of the gate is a normal server render, so it works without JavaScript. A slug that
- *   has the right shape but no product is the route's own notFound(): status 404 and head, content with JavaScript.
+ *   has the right shape but no product is redirected by the route (307, no-store) to that same page
+ *   (`/{locale}/404`): notFound() thrown during render makes Next send an empty error shell.
  */
 
 const MESSAGES = { ru, en } as const;
@@ -62,21 +63,35 @@ test.describe("route gate", () => {
 });
 
 test.describe("a slug with the right shape and no product", () => {
-  test("is a 404 that is not cached, and the 404 page shows with JavaScript", async ({
+  test("is a 307 to the localised 404 page; nothing is cached for it", async ({
     page,
     request,
   }) => {
     for (let i = 0; i < 2; i += 1) {
+      const redirect = await request.get("/ru/catalog/nope", {
+        maxRedirects: 0,
+      });
+      expect(redirect.status()).toBe(307);
+      expect(redirect.headers()["location"]).toBe("/ru/404");
+      // rendered per request: nothing from the route cache, nothing stored for the next request
+      expect(redirect.headers()["x-nextjs-cache"]).toBeUndefined();
+      expect(redirect.headers()["cache-control"]).toMatch(/no-store/);
+
       const response = await request.get("/ru/catalog/nope");
       expect(response.status()).toBe(404);
-      // rendered per request: nothing from the route cache, nothing stored for the next request
       expect(response.headers()["x-nextjs-cache"]).toBeUndefined();
       expect(response.headers()["cache-control"]).toMatch(/no-store/);
     }
+    // an English request stays English
+    const en404 = await request.get("/en/catalog/nope", { maxRedirects: 0 });
+    expect(en404.headers()["location"]).toBe("/en/404");
+
     const response = await page.goto("/ru/catalog/nope");
     expect(response?.status()).toBe(404);
     await expect(page.locator("h1")).toHaveText(ru.pages.notFound.title);
     await expect(page).toHaveTitle(ru.meta.notFound.title);
+    // the URL is the 404 page's (owner checklist)
+    expect(new URL(page.url()).pathname).toBe("/ru/404");
   });
 });
 
@@ -84,7 +99,7 @@ test.describe("404 without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
   for (const locale of LOCALES) {
-    for (const path of ["/catalog/no.such.stone", "/foo"]) {
+    for (const path of ["/catalog/nope", "/catalog/no.such.stone", "/foo"]) {
       test(`${locale}${path} is server-rendered`, async ({ page }) => {
         const response = await page.goto(`/${locale}${path}`);
         expect(response?.status()).toBe(404);

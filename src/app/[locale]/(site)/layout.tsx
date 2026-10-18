@@ -24,7 +24,7 @@ import type { Locale } from "@/i18n/routing";
  * - Header, mobile menu and tab bar get `INERT`: Cart and Create Your Stone have no pages yet and render as
  *   non-links. Favorites and the account entries are live (Phase 4a).
  * - `AccountStateProvider` gives the header, the tab bar and the hearts the visitor state from `GET /api/me`,
- *   a client island: the layout reads no cookies, so the public pages stay static (SSG / ISR).
+ *   a client island: the layout reads no cookies, so the public pages stay static where they can be (home is SSG; the catalog and product pages render per request).
  */
 export default async function SiteLayout({
   children,

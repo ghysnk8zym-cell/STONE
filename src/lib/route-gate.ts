@@ -1,8 +1,8 @@
 /*
  * Route gate, applied by src/middleware.ts before next-intl. It decides, from the path alone,
  * whether a request under /{locale} may reach the App Router:
- * - A product slug of the right shape reaches `catalog/[slug]` (SSG with on-demand ISR, `dynamicParams`
- *   stays true, see docs/ARCHITECTURE.md). Whether the product exists is the route's decision (it
+ * - A product slug of the right shape reaches `catalog/[slug]` (rendered per request since Phase 4a
+ *   Task 5, see docs/ARCHITECTURE.md). Whether the product exists is the route's decision (it
  *   reads the catalog, which since Phase 4a lives in the database); the middleware cannot await a
  *   database on every host, so it no longer knows the slug list.
  * - What the gate still guarantees is the part that poisoned the route cache in Phase 3: only

@@ -9,10 +9,12 @@ import type {
   ProductActionResult,
   PublishActionResult,
 } from "@/features/admin/results";
+import { routing } from "@/i18n/routing";
 import { requireRole } from "@/server/auth/guards";
 import { requestLocale } from "@/server/auth/request-locale";
 
 import { getDb, schema, type Db } from "../db";
+import { writeAtomically } from "./atomic";
 import { imageFitFor } from "./images";
 import {
   createProductSchema,
@@ -31,14 +33,19 @@ import {
  * the picture must be a manifest catalog image, texts are plain text. Results are codes only
  * (src/features/admin/results.ts).
  *
- * After a product changes, the pages that show it are revalidated: product pages (ISR), the catalog,
- * the home page (carousels), the account area (names in orders and favourites) and the admin screens.
+ * After a product changes, the pages that show it are revalidated. The product pages and the catalog list are
+ * rendered per request (nothing to revalidate there), but the home page is static: `revalidatePath` with the
+ * route pattern (`/[locale]`) does not reach it, only the concrete paths do, so the home and catalog path of every
+ * locale is listed. Also the account area (names in orders and favourites) and the admin screens.
  */
 
 function refreshCatalog() {
-  revalidatePath("/[locale]/catalog/[slug]", "page");
+  for (const locale of routing.locales) {
+    revalidatePath(`/${locale}`);
+    revalidatePath(`/${locale}/catalog`);
+  }
   revalidatePath("/[locale]/catalog", "page");
-  revalidatePath("/[locale]", "page");
+  revalidatePath("/[locale]/catalog/[slug]", "page");
   revalidatePath("/[locale]/account", "layout");
   revalidatePath("/[locale]/admin", "layout");
 }
@@ -59,17 +66,14 @@ function productValues(input: ProductInput) {
   };
 }
 
-async function saveTranslations(
-  db: Db,
-  productId: string,
-  input: ProductInput,
-) {
+/** The upserts of the ru and en copy, as statements for `writeAtomically`. */
+function translationStatements(db: Db, productId: string, input: ProductInput) {
   const rows = [
     { locale: "ru", name: input.nameRu, description: input.descriptionRu },
     { locale: "en", name: input.nameEn, description: input.descriptionEn },
   ];
-  for (const row of rows) {
-    await db
+  return rows.map((row) =>
+    db
       .insert(schema.productTranslation)
       .values({ productId, ...row })
       .onConflictDoUpdate({
@@ -78,8 +82,8 @@ async function saveTranslations(
           schema.productTranslation.locale,
         ],
         set: { name: row.name, description: row.description },
-      });
-  }
+      }),
+  );
 }
 
 /** PostgreSQL unique_violation, as every driver reports it (also through Drizzle's wrapper error). */
@@ -118,30 +122,24 @@ export async function createProduct(
     .orderBy(desc(schema.product.sortOrder))
     .limit(1);
 
-  let productId: string;
+  // The id is made here so the product and its two translations go in as one atomic write: no product
+  // without a name, and no cleanup step that could itself fail.
+  const productId = crypto.randomUUID();
   try {
-    const [created] = await db
-      .insert(schema.product)
-      .values({
+    await writeAtomically(db, (database) => [
+      database.insert(schema.product).values({
+        id: productId,
         slug,
         ...productValues(fields),
         sortOrder: (last?.sortOrder ?? -1) + 1,
-      })
-      .returning({ id: schema.product.id });
-    productId = created!.id;
+      }),
+      ...translationStatements(database, productId, fields),
+    ]);
   } catch (error) {
     // Two admins creating the same slug at once: the unique index decides.
     if (isUniqueViolation(error)) {
       return { ok: false, code: "slug-taken", fields: ["slug"] };
     }
-    throw error;
-  }
-
-  try {
-    await saveTranslations(db, productId, fields);
-  } catch (error) {
-    // No half-made product (it would be listed without a name): remove it and report the failure.
-    await db.delete(schema.product).where(eq(schema.product.id, productId));
     throw error;
   }
   refreshCatalog();
@@ -170,11 +168,14 @@ export async function updateProduct(
     .limit(1);
   if (!product) return { ok: false, code: "not-found" };
 
-  await db
-    .update(schema.product)
-    .set(productValues(parsed.data))
-    .where(eq(schema.product.id, product.id));
-  await saveTranslations(db, product.id, parsed.data);
+  // Product and translations change together or not at all.
+  await writeAtomically(db, (database) => [
+    database
+      .update(schema.product)
+      .set(productValues(parsed.data))
+      .where(eq(schema.product.id, product.id)),
+    ...translationStatements(database, product.id, parsed.data),
+  ]);
   refreshCatalog();
   return { ok: true, slug: parsedSlug.data };
 }
@@ -204,7 +205,11 @@ export async function setProductPublished(
 
 const statusSchema = z.enum(schema.ORDER_STATUSES);
 
-/** Changes the status of an order; the Client sees it in their Orders. */
+/**
+ * Changes the status of an order; the Client sees it in their Orders. The rule: an admin may move an order freely
+ * between the two statuses (in progress and delivered, either way: a mistaken "delivered" must be undoable); there
+ * is no other state and no history yet. Only the enum values pass.
+ */
 export async function setOrderStatus(
   number: unknown,
   status: unknown,
