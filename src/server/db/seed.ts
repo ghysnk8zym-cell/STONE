@@ -337,14 +337,26 @@ export function isLocalDatabaseUrl(url: string): boolean {
   }
 }
 
+/** The shortest admin password the seed accepts for a remote (shared, internet-reachable) database. */
+export const REMOTE_ADMIN_PASSWORD_MIN = 16;
+
 /**
- * The seed refuses a remote database unless SEED_ALLOW_REMOTE=1. Returns the refusal message
- * (naming variables only, never the URL, which holds credentials) or null when it may run.
+ * The seed refuses a remote database unless SEED_ALLOW_REMOTE=1, and then only with an admin password of at least
+ * REMOTE_ADMIN_PASSWORD_MIN characters (the admin account of a preview is reachable by anyone with the address).
+ * Returns the refusal message (naming variables only, never the URL, which holds credentials, nor the password) or
+ * null when it may run. Local and throwaway databases keep their short test passwords.
  */
 export function seedTargetRefusal(
   databaseUrl: string,
   allowRemote: string | undefined,
+  adminPassword?: string,
 ): string | null {
-  if (isLocalDatabaseUrl(databaseUrl) || allowRemote === "1") return null;
-  return "DATABASE_URL points to a remote database; set SEED_ALLOW_REMOTE=1 to seed it anyway";
+  if (isLocalDatabaseUrl(databaseUrl)) return null;
+  if (allowRemote !== "1") {
+    return "DATABASE_URL points to a remote database; set SEED_ALLOW_REMOTE=1 to seed it anyway";
+  }
+  if ((adminPassword ?? "").length < REMOTE_ADMIN_PASSWORD_MIN) {
+    return `a remote database needs SEED_ADMIN_PASSWORD of at least ${REMOTE_ADMIN_PASSWORD_MIN} characters`;
+  }
+  return null;
 }

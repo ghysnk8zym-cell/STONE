@@ -1,7 +1,12 @@
 # Applies to files served directly from static assets (Cloudflare, Netlify), which
 # bypass next.config headers. Remove the noindex rule only for a real launch (INDEXING=on).
+# The security headers below repeat src/server/security-headers.ts (a unit test keeps them equal).
 /*
   X-Robots-Tag: noindex, nofollow
+  Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
 
 /_next/static/*
   Cache-Control: public,max-age=31536000,immutable

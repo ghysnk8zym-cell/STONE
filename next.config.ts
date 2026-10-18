@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 import { isIndexingEnabled, robotsHeaders } from "./src/server/indexing";
+import { securityHeaders } from "./src/server/security-headers";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -26,6 +27,8 @@ const nodeOnlyDrivers = [
 // has open bugs with Cache Components (see docs/adr/ADR-001 and the Phase 1 ledger).
 const nextConfig: NextConfig = {
   env: { INDEXING: indexing },
+  // No `X-Powered-By: Next.js` (audit F11).
+  poweredByHeader: false,
   // Images are pre-optimised static files in public/ (pnpm images). One custom loader on
   // every host: no runtime optimisation, no sharp at runtime, no Cloudflare Images.
   images: {
@@ -38,8 +41,9 @@ const nextConfig: NextConfig = {
   // run from node_modules instead of being bundled. `pg` is already external by default.
   serverExternalPackages: forWorker ? [] : ["@electric-sql/pglite"],
   async headers() {
-    const headers = robotsHeaders(indexing === "on");
-    return headers.length > 0 ? [{ source: "/:path*", headers }] : [];
+    // The noindex header while the site is not indexed, and always the security baseline (docs/SECURITY.md).
+    const headers = [...robotsHeaders(indexing === "on"), ...securityHeaders()];
+    return [{ source: "/:path*", headers }];
   },
   turbopack: {
     resolveAlias: forWorker

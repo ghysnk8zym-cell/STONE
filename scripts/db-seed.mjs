@@ -28,6 +28,7 @@ try {
   const refusal = seedTargetRefusal(
     env.DATABASE_URL,
     process.env.SEED_ALLOW_REMOTE,
+    env.SEED_ADMIN_PASSWORD,
   );
   if (refusal) fail(refusal);
 

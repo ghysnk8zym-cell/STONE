@@ -17,6 +17,8 @@ const {
   seedTargetRefusal,
 } = await import("@/server/db/seed");
 
+const LONG_PASSWORD = "a-long-enough-admin-password-1";
+
 const options = {
   adminEmail: "admin@example.test",
   adminPassword: "pw-admin-MARKER-1",
@@ -429,9 +431,30 @@ describe("seed target guard", () => {
     expect(refusal).toContain("DATABASE_URL");
     expect(refusal).not.toContain("topsecret");
     expect(refusal).not.toContain("neon.tech");
-    expect(seedTargetRefusal(url, "0")).not.toBeNull();
-    expect(seedTargetRefusal(url, "1")).toBeNull();
+    expect(seedTargetRefusal(url, "0", LONG_PASSWORD)).not.toBeNull();
+    expect(seedTargetRefusal(url, "1", LONG_PASSWORD)).toBeNull();
     expect(seedTargetRefusal("pglite://memory", undefined)).toBeNull();
+  });
+
+  it("on a remote database the admin password must be at least 16 characters (it names the variable, not the value)", () => {
+    const url = "postgres://user:topsecret@ep-x.neon.tech/db";
+    const short = "fifteen-chars!!";
+    expect(short).toHaveLength(15);
+    for (const password of [short, "", undefined]) {
+      const refusal = seedTargetRefusal(url, "1", password);
+      expect(refusal, String(password)).toContain("SEED_ADMIN_PASSWORD");
+      expect(refusal).toContain("16");
+      if (password) expect(refusal).not.toContain(password);
+      expect(refusal).not.toContain("topsecret");
+    }
+    expect(seedTargetRefusal(url, "1", "sixteen-chars!!!!")).toBeNull();
+    // A local or throwaway database keeps the short fake passwords of the tests.
+    expect(
+      seedTargetRefusal("pglite://memory", undefined, "short-pw"),
+    ).toBeNull();
+    expect(
+      seedTargetRefusal("postgres://u:p@localhost/db", undefined, "short-pw"),
+    ).toBeNull();
   });
 });
 

@@ -17,6 +17,21 @@ test.describe("smoke", { tag: "@smoke" }, () => {
     await expect(page).toHaveURL(/\/ru$/);
   });
 
+  test("pages carry the security header baseline and no X-Powered-By", async ({
+    request,
+  }) => {
+    const headers = (await request.get("/ru")).headers();
+    expect(headers["content-security-policy"]).toBe(
+      "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
+    );
+    expect(headers["x-content-type-options"]).toBe("nosniff");
+    expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+    expect(headers["permissions-policy"]).toBe(
+      "camera=(), microphone=(), geolocation=()",
+    );
+    expect(headers["x-powered-by"]).toBeUndefined();
+  });
+
   for (const locale of ["ru", "en"] as const) {
     test(`${locale} renders with matching lang`, async ({ page }) => {
       const response = await page.goto(`/${locale}`);
