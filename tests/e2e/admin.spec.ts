@@ -466,23 +466,32 @@ test.describe("admin screens", () => {
       ).toBeVisible();
     }
     async function adminSets(label: string) {
-      await page.goto("/en/admin/orders");
-      await page.getByRole("link", { name: /D-9001/ }).click();
-      await page.waitForURL(/order=D-9001/);
-      const detail = page.getByRole("complementary", {
-        name: t.detail.title.replace("{number}", "D-9001"),
-      });
-      await expect(
-        detail.getByRole("button", { name: t.detail.update }),
-      ).toBeVisible();
-      await detail
-        .getByLabel(t.detail.fulfillment, { exact: true })
-        .selectOption({ label });
-      await detail.getByRole("button", { name: t.detail.update }).click();
-      await expect(detail.getByText(t.detail.saved)).toBeVisible();
-      await expect(
-        detail.getByText(label, { exact: true }).first(),
-      ).toBeVisible();
+      // The form is a client component. A click before hydration is a native GET submit of the form
+      // (`?status=...`, which drops `order=D-9001` and the detail card with it) and the saved message never
+      // appears: seen on CI, where hydration is slower than the click. So the whole sequence is retried from a fresh
+      // page load until it lands (the same approach as the product edit above).
+      await expect(async () => {
+        await page.goto("/en/admin/orders", { waitUntil: "networkidle" });
+        await page.getByRole("link", { name: /D-9001/ }).click();
+        await page.waitForURL(/order=D-9001/, { timeout: 5_000 });
+        await page.waitForLoadState("networkidle");
+        const detail = page.getByRole("complementary", {
+          name: t.detail.title.replace("{number}", "D-9001"),
+        });
+        await expect(
+          detail.getByRole("button", { name: t.detail.update }),
+        ).toBeVisible();
+        await detail
+          .getByLabel(t.detail.fulfillment, { exact: true })
+          .selectOption({ label });
+        await detail.getByRole("button", { name: t.detail.update }).click();
+        await expect(detail.getByText(t.detail.saved)).toBeVisible({
+          timeout: 5_000,
+        });
+        await expect(
+          detail.getByText(label, { exact: true }).first(),
+        ).toBeVisible();
+      }).toPass({ timeout: 45_000 });
     }
 
     try {
