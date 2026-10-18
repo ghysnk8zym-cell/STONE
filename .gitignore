@@ -87,3 +87,6 @@ next-env.d.ts
 
 # local PGlite database (DATABASE_URL=pglite://.data/pglite)
 /.data/
+
+# Phase 4a page-mode output: only results.md and the curated *-triplet.jpg strips are kept (docs/QA/phase-4a.md)
+/docs/QA/phase-4a/*.png

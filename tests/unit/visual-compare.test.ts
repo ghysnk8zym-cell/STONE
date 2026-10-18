@@ -143,6 +143,42 @@ describe("buildPageJobs", () => {
     ).toEqual([390]);
   });
 
+  it("carries `auth` and `reference` of a Phase 4a page into its jobs", () => {
+    const jobs = buildPageJobs(
+      {
+        "sign-in": {
+          route: "/sign-in",
+          reference: "sign-up",
+          screens: { "1440": "3:1" },
+        },
+        account: {
+          route: "/account",
+          auth: "client",
+          screens: { "390": "4:1" },
+        },
+      },
+      null,
+    );
+    expect(jobs).toEqual([
+      {
+        id: "sign-in",
+        width: 1440,
+        key: "sign-in-1440",
+        route: "/sign-in",
+        node: "3:1",
+        reference: "sign-up",
+      },
+      {
+        id: "account",
+        width: 390,
+        key: "account-390",
+        route: "/account",
+        node: "4:1",
+        auth: "client",
+      },
+    ]);
+  });
+
   it("rejects a page without a route", () => {
     expect(() => buildPageJobs({ x: { screens: {} } }, null)).toThrow(
       'page "x"',
