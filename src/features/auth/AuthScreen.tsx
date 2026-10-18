@@ -83,7 +83,7 @@ function BackToProducts() {
     <div className="relative z-10 flex justify-end px-4 pt-4 pb-[84px] md:pb-0 lg:order-first lg:px-10 lg:pt-7 lg:pb-0">
       <Link
         href="/catalog"
-        className="text-ink-on-dark focusv:outline-2 focusv:outline-accent-focus motion-hover focusv:outline-offset-2 flex items-center gap-3 rounded-[10px] px-2 py-2.5 text-[16px] leading-normal outline-0 lg:text-[20px]"
+        className="text-ink-on-dark focusv:outline-2 focusv:outline-accent-focus motion-hover focusv:outline-offset-2 flex items-center gap-3 rounded-[10px] px-2 py-2.5 text-[16px] leading-5 outline-0 lg:text-[20px] lg:leading-normal"
       >
         {t("backToProducts")}
         <Icon name="arrow" className="size-5! lg:size-6!" />

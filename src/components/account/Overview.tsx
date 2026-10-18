@@ -17,7 +17,8 @@ import { Avatar, CARD, CARD_TITLE, DARK_PANEL } from "./parts";
 /**
  * Banner / Selected offers: the discounted products of the catalog. Text on the left (eyebrow, Lusitana 40/48
  * title, the first two names, the View offers pill), up to three slabs on the right (two below 1440, as Figma
- * draws them); below 768 the slabs sit under the text. Hidden by the page when nothing is discounted.
+ * draws them). Below 768 there are none: the Figma 390 banner is 194 px high with `overflow: clip` (737:6427) and its slab row
+ * (737:6433, 84 px) lies below the clip, so the screen shows the text only. Hidden by the page when nothing is discounted.
  */
 export function OffersBanner({ offers }: { offers: AccountProduct[] }) {
   const t = useTranslations("account.overview.offers");
@@ -45,7 +46,7 @@ export function OffersBanner({ offers }: { offers: AccountProduct[] }) {
           {t("cta")}
         </Button>
       </div>
-      <ul className="flex min-w-0 flex-1 list-none items-center gap-3">
+      <ul className="hidden min-w-0 flex-1 list-none items-center gap-3 md:flex">
         {offers.map((offer, index) => (
           <li
             key={offer.slug}

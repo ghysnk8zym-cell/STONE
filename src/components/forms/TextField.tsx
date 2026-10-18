@@ -123,7 +123,7 @@ export function TextField({
   // `cn()` is not twMerge: the height and the right padding are chosen here, once, not overridden.
   const height = tone === "light" ? "h-13" : screen ? "h-13 lg:h-15" : "h-15";
   const labelClass = screen
-    ? "text-ink-on-dark type-catalog-field-value lg:text-[18px]"
+    ? "text-ink-on-dark type-catalog-field-value max-lg:leading-[1.21] lg:text-[18px]"
     : styles.label;
   const paddingRight = tone === "dark" && !trailing ? "pr-6" : "pr-3";
   const describedBy =
@@ -131,7 +131,12 @@ export function TextField({
     undefined;
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div
+      className={cn(
+        "flex w-full flex-col",
+        screen ? "gap-3 lg:gap-2" : "gap-2",
+      )}
+    >
       <label htmlFor={id} className={labelClass}>
         {label}
       </label>

@@ -117,7 +117,7 @@ export function AuthForm({
         </Button>
       </div>
 
-      <p className="type-catalog-field-value text-ink-on-dark/88 mt-4 flex items-center gap-2.5 text-[16px] min-[390px]:mt-5 lg:mt-7 lg:text-[18px]">
+      <p className="type-catalog-field-value text-ink-on-dark/88 mt-4 flex items-center gap-2.5 text-[16px] max-lg:leading-[1.21] min-[390px]:mt-5 lg:mt-7 lg:text-[18px]">
         <span>{t(signUp ? "signUp.haveAccount" : "signIn.noAccount")}</span>
         <Link
           href={

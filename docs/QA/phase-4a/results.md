@@ -5,16 +5,16 @@ Notes: the height delta is implementation height minus Figma height; a non-zero 
 | id                | route                          | width | mismatch % | impl WxH  | figma WxH | height delta |
 | ----------------- | ------------------------------ | ----- | ---------- | --------- | --------- | ------------ |
 | sign-up           | /en/sign-up                    | 1440  | 1.26       | 1440x900  | 1440x900  | 0            |
-| sign-up           | /en/sign-up                    | 390   | 5.34       | 390x844   | 390x844   | 0            |
+| sign-up           | /en/sign-up                    | 390   | 2.60       | 390x844   | 390x844   | 0            |
 | sign-in           | /en/sign-in                    | 1440  | 1.31       | 1440x900  | 1440x900  | 0            |
-| sign-in           | /en/sign-in                    | 390   | 5.29       | 390x844   | 390x844   | 0            |
+| sign-in           | /en/sign-in                    | 390   | 3.23       | 390x844   | 390x844   | 0            |
 | sign-out          | /en/sign-out (client)          | 1440  | 15.82      | 1440x1054 | 1440x900  | +154         |
 | sign-out          | /en/sign-out (client)          | 390   | 39.81      | 390x1314  | 390x844   | +470         |
 | account           | /en/account (client)           | 1440  | 5.21       | 1440x1320 | 1440x1324 | -4           |
-| account           | /en/account (client)           | 390   | 24.25      | 390x2103  | 390x1995  | +108         |
-| account-orders    | /en/account/orders (client)    | 1440  | 39.93      | 1440x900  | 1440x1244 | -344         |
+| account           | /en/account (client)           | 390   | 5.99       | 390x1995  | 390x1995  | 0            |
+| account-orders    | /en/account/orders (client)    | 1440  | 0.71       | 1440x1244 | 1440x1244 | 0            |
 | account-orders    | /en/account/orders (client)    | 390   | 50.69      | 390x1248  | 390x1652  | -404         |
-| account-favorites | /en/account/favorites (client) | 1440  | 37.50      | 1440x900  | 1440x1210 | -310         |
+| account-favorites | /en/account/favorites (client) | 1440  | 0.88       | 1440x1210 | 1440x1210 | 0            |
 | account-favorites | /en/account/favorites (client) | 390   | 36.16      | 390x1332  | 390x1590  | -258         |
 | account-profile   | /en/account/profile (client)   | 1440  | 36.55      | 1440x1144 | 1440x861  | +283         |
 | account-profile   | /en/account/profile (client)   | 390   | 36.86      | 390x1462  | 390x1203  | +259         |

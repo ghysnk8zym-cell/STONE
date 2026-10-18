@@ -17,7 +17,7 @@
 // reference cannot be read. The component-mode notes below do not apply to page mode.
 //
 // PHASE 4a SET (`--pages --set phase4a`, or QA_SET=phase4a): the sign-in/up/out, account and admin screens.
-// `pagesPhase4a` entries may add `auth: "client" | "admin"` (the script signs in through /api/auth/sign-in/email with
+// `pagesPhase4a` entries may add `auth: "client" | "admin"` (the script signs in through the sign-in form with
 // the seeded test user before the shot) and `reference: "<id>"` (use that id's Figma PNG). It needs the server WITH a
 // database, i.e. the e2e one:  node --env-file=.env.test.example scripts/e2e-db-server.mjs  (E2E_PORT=3002), then
 // BASE_URL=http://localhost:3002 pnpm qa:visual:pages --set phase4a.  References: tests/visual/figma/pages-phase4a/,
@@ -399,7 +399,7 @@ function parseEnvFile(text) {
 let loginCounter = 0;
 
 /**
- * Signs the context in through the Better Auth API with the seeded test user (QA_CLIENT_* / QA_ADMIN_*
+ * Signs the context in through the sign-in form with the seeded test user (QA_CLIENT_* / QA_ADMIN_*
  * environment variables, else the fake values of `.env.test.example`, which is what the e2e database server is seeded
  * with: start it with `node --env-file=.env.test.example scripts/e2e-db-server.mjs`, port E2E_PORT, and set BASE_URL to
  * it). The session cookie then lives in the context. Never run this against a deployed environment: the values are
@@ -419,20 +419,25 @@ async function signInContext(context, baseURL, role) {
     process.env[`QA_${prefix}_PASSWORD`] ?? fake[`SEED_${prefix}_PASSWORD`];
   if (!email || !password) throw new Error(`no ${role} test credentials`);
   loginCounter += 1;
-  const response = await context.request.post(
-    `${baseURL}/api/auth/sign-in/email`,
-    {
-      data: { email, password },
-      // The e2e server has no proxy, its client-IP rule is the last X-Forwarded-For hop: one address per login keeps
-      // the sign-in rate limit (10 per minute and IP) out of the way.
-      headers: {
-        origin: baseURL,
-        "x-forwarded-for": `10.77.0.${loginCounter}`,
-      },
-    },
-  );
-  if (response.status() !== 200) {
-    throw new Error(`sign-in as ${role} failed: HTTP ${response.status()}`);
+  // The e2e server has no proxy, its client-IP rule is the last X-Forwarded-For hop: one address per login keeps
+  // the sign-in rate limit (10 per minute and IP) out of the way.
+  await context.setExtraHTTPHeaders({
+    "x-forwarded-for": `10.77.0.${loginCounter}`,
+  });
+  // Through the real sign-in form (the Better Auth HTTP API is not exposed); the session cookie lands in the context.
+  const page = await context.newPage();
+  try {
+    await page.goto(`${baseURL}/en/sign-in`, { waitUntil: "load" });
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL((url) => !/\/sign-in$/.test(url.pathname), {
+      timeout: 15_000,
+    });
+  } catch {
+    throw new Error(`sign-in as ${role} through the form failed`);
+  } finally {
+    await page.close();
   }
 }
 
