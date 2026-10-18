@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Db } from "../db";
+import type { Db } from "./client";
 
 /** A Drizzle query that has not run yet (it runs when awaited, or inside a batch). */
 type Statement = PromiseLike<unknown>;

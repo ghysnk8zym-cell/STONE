@@ -66,7 +66,7 @@ pnpm dev       # sign in at http://localhost:3000/ru/sign-in; the admin is at /r
 - `pglite://memory` is a throwaway database that vanishes with the process (unit tests use it).
 - `pnpm db:migrate` is for real Postgres (Neon, `postgres://`); the app migrates PGlite itself. After changing `src/server/db/schema.ts` run `pnpm db:generate`, read the SQL it wrote, and commit it with the schema. Never edit an applied migration.
 - The remote seed steps for the owner (Neon, `SEED_ALLOW_REMOTE=1`) are in `docs/DEPLOYMENT.md`, section 3.
-- Without `DATABASE_URL` the site still works: catalog from the static seed, auth pages say "unavailable".
+- Without `DATABASE_URL` the site still works: catalog from the static seed, auth pages say "unavailable". `pnpm build` prerenders the home page from whatever catalog it sees, so on a Node host set `DATABASE_URL` at build time as well as at run time (the home page also re-renders every five minutes, `revalidate = 300`, and after each admin change); `docs/DEPLOYMENT.md` section 5.
 
 First Playwright run: `pnpm exec playwright install chromium`.
 

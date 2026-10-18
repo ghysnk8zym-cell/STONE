@@ -55,7 +55,7 @@ Until you do this the preview still works: the catalog comes from the built-in s
    - The **Connection pooling** switch gives a host containing `-pooler`. Use the **pooled** string for the website (`DATABASE_URL` secret in 3.3).
    - For the migration in 3.4 the **direct** string (switch off) is the safer choice; the pooled one normally works too.
    - If a tool complains about `channel_binding=require`, delete that part of the string.
-5. Keep the strings in your password manager. Free plan limits to know: the database suspends after a few minutes without queries and the next request is slower while it wakes up; there are 100 compute hours and 0.5 GB per project.
+5. Keep the strings in your password manager. Free plan limits to know: the database suspends after a few minutes without queries and the next request is slower while it wakes up; there are 100 compute hours and 0.5 GB per project. **Compute hours are the limit to watch:** the database sleeps only when nobody queries it for a few minutes. A public page view costs 2 to 6 queries (home 4, catalog 6, product 2, plus 2 or 3 for a signed-in visitor), so steady traffic keeps it awake around the clock: 0.25 compute units for 730 hours is about 182 compute hours a month, above the free 100. With real traffic expect to hit the cap (then the database stops answering until the month ends or you upgrade). A test environment with a few visitors a day stays under it.
 
 ### 3.2 Generate the auth secret locally
 
@@ -72,13 +72,14 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 1. Cloudflare dashboard → **Workers & Pages** → **stone** → **Settings** → **Variables and Secrets** → **Add** (_verify in the current dashboard_).
 2. Add each of these. Choose type **Secret** unless the table says otherwise, paste the value, **Save**/**Deploy**:
 
-   | Name                                                                                   | Value                                                                                                                    | Type           |
-   | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------- |
-   | `DATABASE_URL`                                                                         | the Neon connection string from 3.1 (pooled)                                                                             | Secret         |
-   | `BETTER_AUTH_SECRET`                                                                   | the secret from 3.2                                                                                                      | Secret         |
-   | `BETTER_AUTH_URL`                                                                      | the public address of the site, `https://stone.<your-subdomain>.workers.dev` for production (no trailing slash, no path) | Text or Secret |
-   | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_CLIENT_EMAIL`, `SEED_CLIENT_PASSWORD` | the test users you want (see below)                                                                                      | Secret         |
-   - **Preview vs production.** The same names are needed wherever the site runs with a database. A Worker Preview (a pull-request branch) has its own address, so **leave `BETTER_AUTH_URL` unset for previews**: with a fixed address the sign-in origin check would refuse every other host. Unset, the address is taken from the request (always https except on `localhost`). If the dashboard separates _Production_ and _Preview_ values, fill `DATABASE_URL` and `BETTER_AUTH_SECRET` in both; if you see one list, one entry serves both. Afterwards confirm with 3.5 on a preview address.
+   | Name                                                                                   | Value                                        | Type   |
+   | -------------------------------------------------------------------------------------- | -------------------------------------------- | ------ |
+   | `DATABASE_URL`                                                                         | the Neon connection string from 3.1 (pooled) | Secret |
+   | `BETTER_AUTH_SECRET`                                                                   | the secret from 3.2                          | Secret |
+   | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_CLIENT_EMAIL`, `SEED_CLIENT_PASSWORD` | the test users you want (see below)          | Secret |
+   - **`DATABASE_URL` must be a Neon URL on Cloudflare** (host `*.neon.tech`): the Worker build contains only the Neon HTTP driver. Any other host (or `pglite://`) fails at the first database call with the message "DATABASE_URL must be a Neon URL ... when PLATFORM=cloudflare" in the Worker log (the URL is never printed), and the catalog pages answer 500 until it is fixed.
+   - **`BETTER_AUTH_URL`: leave it unset on previews.** Every pull-request branch has its own address, and a fixed value would make the sign-in origin check refuse all the others. Unset, the address is taken from the request (always https except on `localhost`), and `APP_ENV=preview` (set by `wrangler.jsonc`) already makes the session cookies `Secure`. On production it is **optional**: set it to the exact production address (`https://stone.<your-subdomain>.workers.dev`, no trailing slash, no path) or leave it unset; if the dashboard shows one list of variables for production and previews, leave it unset.
+   - **Preview vs production for the secrets.** If the dashboard separates _Production_ and _Preview_ values, fill `DATABASE_URL` and `BETTER_AUTH_SECRET` in both; if you see one list, one entry serves both. Afterwards confirm with 3.5 on a preview address.
    - **`SEED_*`**: only the command in 3.4 reads them; the running site never does. Putting them in Cloudflare is optional (it keeps the values in one place). Choose **strong, unique passwords**: the preview is reachable by anyone with the address, and the Admin account can edit the catalog. Use real-looking emails you control or `@example.test` addresses; do not reuse a password from anywhere.
 
 3. Redeploy so the new values are picked up: **Deployments → Retry build** on the branch (or push any commit).
@@ -93,9 +94,9 @@ PowerShell:
 $env:DATABASE_URL = "<the Neon connection string>"
 $env:BETTER_AUTH_SECRET = "<the secret from 3.2>"
 $env:SEED_ADMIN_EMAIL = "<admin email>"
-$env:SEED_ADMIN_PASSWORD = "<admin password, at least 8 characters, strong>"
+$env:SEED_ADMIN_PASSWORD = "<admin password, at least 16 characters, strong and unique>"
 $env:SEED_CLIENT_EMAIL = "<client email>"
-$env:SEED_CLIENT_PASSWORD = "<client password, at least 8 characters, strong>"
+$env:SEED_CLIENT_PASSWORD = "<client password, at least 8 characters, strong and unique>"
 $env:SEED_ALLOW_REMOTE = "1"   # the seed refuses a remote database without this
 pnpm db:migrate
 pnpm db:seed
@@ -114,7 +115,7 @@ pnpm db:seed
 unset DATABASE_URL BETTER_AUTH_SECRET SEED_ADMIN_EMAIL SEED_ADMIN_PASSWORD SEED_CLIENT_EMAIL SEED_CLIENT_PASSWORD SEED_ALLOW_REMOTE
 ```
 
-- Variables set in the terminal win over `.env.local`, so a local database URL in that file cannot be hit by mistake. Without `SEED_ALLOW_REMOTE=1` the seed stops with a message instead of writing to Neon (a safety net).
+- Variables set in the terminal win over `.env.local`, so a local database URL in that file cannot be hit by mistake. Without `SEED_ALLOW_REMOTE=1` the seed stops with a message instead of writing to Neon (a safety net), and on a remote database it also refuses an admin password shorter than **16 characters** (the message names `SEED_ADMIN_PASSWORD`, never the value).
 - `pnpm db:migrate` creates the tables; it should end with a "migrations applied" message. `pnpm db:seed` ends with `db:seed done.` and counts such as `products: 12, translations: 24, users: 2, orders: 2 ...`. It prints no emails or passwords.
 - Both commands are safe to repeat: the seed only adds what is missing and never overwrites what an admin edited. If it stops with a message that an account with `SEED_ADMIN_EMAIL` already exists and its password is not `SEED_ADMIN_PASSWORD`, someone registered that address first (or it was seeded with another password): pick another `SEED_ADMIN_EMAIL` (or delete that user in the Neon SQL editor) and run it again.
 - Clear your terminal history afterwards if it recorded the values (PowerShell: `Clear-History`, and delete `%APPDATA%\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt` lines that contain them).
@@ -128,7 +129,7 @@ Open the preview address (the Cloudflare pull-request comment, or `stone.<subdom
    - `{"ok":false,"reason":"database-unavailable"}` (503): the value is wrong, the Neon project is suspended or deleted, or the string was cut when pasted. Retry once (a suspended database wakes up), then re-copy the string. The Worker log line is `[health/db] check failed: <error name> <code>`: Cloudflare → stone → **Observability** → **Logs**.
 2. `<url>/ru/catalog` and `<url>/en` still load, and the products are there.
 3. **Sign in as the Client**: `<url>/ru/sign-in` with the Client email and password → you land on `/ru/account` (Orders shows two demo orders, Favorites three products). Use **Sign out** in the account sidebar and confirm. Then `<url>/ru/admin` as the Client must show a **404**.
-4. **Sign in as the Admin**: `<url>/ru/admin` shows the Overview; Products and Orders open; edit nothing you want to keep.
+4. **Sign in as the Admin**: `<url>/ru/admin` shows the Overview; Products and Orders open. Then **create and edit a product**: Products → Add product, fill the form (name in both languages, a price, a picture), **Publish product**; open `<url>/en/catalog` and find it; open it in Products, change the price, **Save changes**, and see the new price in the catalog; finally **Unpublish** it (the catalog card disappears). This is the first time the product writes run against real Neon (a product and its two translations are saved in one batch request), so a failure here matters: send the message shown and the Worker log line.
 5. **Workers CPU / password hashing check (important).** Signing in and signing up hash the password with scrypt, which may need more than the 10 ms of CPU that Workers Free allows (`docs/SECURITY.md`, "Passwords"). Steps 3 and 4 _are_ this check: if both sign-ins work, it passes. Also look at Cloudflare → stone → **Metrics**: _CPU time_ for the sign-in requests and _Errors_ by status.
 6. Optional: GitHub → **Actions** → **Preview smoke** → **Run workflow** → the preview URL.
 
@@ -153,7 +154,7 @@ All variables are listed in `.env.example` and validated by `src/server/env.ts`.
 | `PLATFORM`                                                                             | runtime                               | `node`        | `cloudflare` selects the adapter (client IP from `cf-connecting-ip`)                                                |
 | `DATABASE_URL`                                                                         | runtime, **Secret**                   | unset         | `postgres://` / `postgresql://` (Neon host → the Neon HTTP driver) or `pglite://` (local). Unset = no-database mode |
 | `BETTER_AUTH_SECRET`                                                                   | runtime, **Secret**                   | unset         | at least 32 characters; required when `DATABASE_URL` is set                                                         |
-| `BETTER_AUTH_URL`                                                                      | runtime                               | unset         | public base URL; trusted origin; decides the cookie `Secure` flag. Unset on previews (3.3)                          |
+| `BETTER_AUTH_URL`                                                                      | runtime                               | unset         | public base URL; trusted origin; decides the cookie `Secure` flag. Unset on previews, optional on production (3.3)  |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_CLIENT_EMAIL`, `SEED_CLIENT_PASSWORD` | the terminal that runs `pnpm db:seed` | unset         | read only by the seed; the site never reads them                                                                    |
 | `SEED_ALLOW_REMOTE`                                                                    | the terminal, for one command         | unset         | `1` lets the seed write to a remote database                                                                        |
 
@@ -166,7 +167,8 @@ All variables are listed in `.env.example` and validated by `src/server/env.ts`.
 > - Run the Node server only behind a reverse proxy that overwrites or appends to `X-Forwarded-For`. Auth rate limiting uses its last hop, and a directly reachable `next start` lets clients choose that value.
 > - Set `APP_ENV=production` (or an https `BETTER_AUTH_URL`). Without it, and with no URL configured, session cookies are not `Secure`.
 > - Behind Cloudflare: the origin must accept connections only from Cloudflare's IP ranges. With `Cloudflare -> nginx -> Node`, restore the visitor address on nginx (`real_ip` module), or every visitor behind one Cloudflare edge shares a rate-limit bucket. A proxy that sends `ip:port` hops must strip the port. Details and the reasons: `docs/SECURITY.md`, "Rate limiting".
-> - Database: any `postgres://` URL works (`pg` driver); a `*.neon.tech` host uses the Neon HTTP driver. Run `pnpm db:migrate` and `pnpm db:seed` as in section 3.4.
+> - Database: any `postgres://` URL works (`pg` driver); a `*.neon.tech` host uses the Neon HTTP driver (on Cloudflare only a Neon URL works, see 3.3). Run `pnpm db:migrate` and `pnpm db:seed` as in section 3.4.
+> - **Set `DATABASE_URL` at build time too** (`pnpm build`), not only at run time. The home page is prerendered during the build from the catalog the build could see; built without a database it contains the static seed. The home page re-renders at most every five minutes (`revalidate = 300`) and after every admin product change, so a missing build-time URL is corrected within minutes, but the first requests after a deploy can show the seed products. Cloudflare renders per request and is not affected.
 
 The application code does not depend on Cloudflare. Cloudflare-only files: `wrangler.jsonc`, `open-next.config.ts`, `scripts/*worker-size*`, `public/_headers`, and the `cf:*` scripts.
 

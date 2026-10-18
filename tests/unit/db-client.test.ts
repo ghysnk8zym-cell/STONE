@@ -45,6 +45,29 @@ describe("database driver switch", () => {
     expect(selectDriver("postgres://u:p@notneon.tech/db")).toBe("pg");
   });
 
+  it("on Cloudflare Workers only a Neon URL is allowed: anything else is a clear configuration error (no URL in it)", async () => {
+    vi.stubEnv("PLATFORM", "cloudflare");
+    try {
+      for (const url of [
+        "postgres://user:topsecret@db.example.com:5432/stone",
+        "postgres://user:topsecret@neon.tech.evil.example/db",
+        "pglite://memory",
+      ]) {
+        const error = await createDb(url).then(
+          () => null,
+          (e: Error) => e,
+        );
+        expect(error, url).toBeInstanceOf(Error);
+        expect(error!.message).toContain("DATABASE_URL");
+        expect(error!.message).toContain("neon.tech");
+        expect(error!.message).not.toContain("topsecret");
+        expect(error!.message).not.toContain("db.example.com");
+      }
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("rejects unsupported URL schemes without echoing the value", () => {
     expect(() => selectDriver("mysql://user:topsecret@host/db")).toThrow(
       "Unsupported DATABASE_URL",

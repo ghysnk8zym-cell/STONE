@@ -14,7 +14,7 @@ import { requireRole } from "@/server/auth/guards";
 import { requestLocale } from "@/server/auth/request-locale";
 
 import { getDb, schema, type Db } from "../db";
-import { writeAtomically } from "./atomic";
+import { writeAtomically } from "../db/atomic";
 import { imageFitFor } from "./images";
 import {
   createProductSchema,

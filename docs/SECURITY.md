@@ -138,8 +138,9 @@ These are known and accepted while the site holds fake data and the audience is 
 11. **The 404 for unknown products is a 307 to `/{locale}/404`** (Next 16.3.8 cannot render a server-side 404 from a `notFound()` thrown during render); the URL changes. Not a security issue, listed because the owner decides on it.
 12. **Rate limiting depends on how the host supplies the client IP** (table above). A host that does not meet its row weakens or over-tightens the limit.
 13. **The Neon batch write path is tested only against a fake handle** here; it runs for real for the first time on the preview.
-14. **Cloudflare Workers Free has request and CPU quotas**: a burst of traffic can make the preview return errors. It is a test environment.
-15. **No `script-src` in the CSP** (see "Response headers").
+14. **Neon Free compute hours.** Each public page view runs 2 to 6 queries, so steady traffic keeps the database awake all month: about 182 compute hours against the 100 free ones. With real traffic the free plan runs out; budget for the paid plan or reduce queries (one cached catalog load per request) before launch. When the cap is hit the database stops answering and the site returns errors (the localised error page) until the month ends.
+15. **Cloudflare Workers Free has request and CPU quotas**: a burst of traffic can make the preview return errors. It is a test environment.
+16. **No `script-src` in the CSP** (see "Response headers").
 
 ## Before production
 

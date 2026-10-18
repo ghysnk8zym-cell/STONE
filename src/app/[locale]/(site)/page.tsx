@@ -64,6 +64,15 @@ function price(cents: number): Price {
   return { amount: cents / 100, currency: "USD", isPlaceholder: true };
 }
 
+/*
+ * The home page is static (prerendered per locale) and shows products from the catalog. Admin edits revalidate it
+ * (`revalidatePath` in src/server/admin/actions.ts), but a `next build` that ran WITHOUT `DATABASE_URL` (Docker, CI)
+ * prerendered the static seed and would keep serving it after a redeploy until the next admin edit, bringing back
+ * renamed names and unpublished cards. Re-rendering at most every five minutes bounds that on Node hosts. Set
+ * DATABASE_URL at build time as well (docs/DEPLOYMENT.md). Cloudflare renders per request and is not affected.
+ */
+export const revalidate = 300;
+
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
   setRequestLocale(locale as Locale);

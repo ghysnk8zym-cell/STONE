@@ -5,7 +5,7 @@ vi.mock("server-only", () => ({}));
 
 const { createDb, schema } = await import("@/server/db");
 const { seedCatalog } = await import("@/server/db/seed");
-const { writeAtomically } = await import("@/server/admin/atomic");
+const { writeAtomically } = await import("@/server/db/atomic");
 
 type Db = NonNullable<Awaited<ReturnType<typeof createDb>>>;
 

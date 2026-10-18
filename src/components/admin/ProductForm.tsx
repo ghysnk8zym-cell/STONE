@@ -117,10 +117,18 @@ export function ProductForm({ mode, initial, published, options }: Props) {
     setFormError(null);
     startTransition(async () => {
       const input = { ...payload, published: publish };
-      const result =
-        mode === "create"
-          ? await createProduct({ ...input, slug: values.slug })
-          : await updateProduct(initial.slug, input);
+      let result: ProductActionResult;
+      try {
+        result =
+          mode === "create"
+            ? await createProduct({ ...input, slug: values.slug })
+            : await updateProduct(initial.slug, input);
+      } catch {
+        // The action threw (the database timed out, a 5xx): a rejected promise inside a transition would go to the
+        // error boundary and the admin would lose the form. Show the message and keep what was typed.
+        setFormError(t("errors.generic"));
+        return;
+      }
       if (!result.ok) return fail(result);
       router.push("/admin/products");
       router.refresh();
@@ -130,9 +138,14 @@ export function ProductForm({ mode, initial, published, options }: Props) {
   function unpublish() {
     setFormError(null);
     startTransition(async () => {
-      const result = await setProductPublished(initial.slug, false);
-      if (!result.ok) {
-        setFormError(t(`errors.${result.code}`));
+      try {
+        const result = await setProductPublished(initial.slug, false);
+        if (!result.ok) {
+          setFormError(t(`errors.${result.code}`));
+          return;
+        }
+      } catch {
+        setFormError(t("errors.generic"));
         return;
       }
       router.push("/admin/products");

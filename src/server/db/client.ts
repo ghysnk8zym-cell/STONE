@@ -92,7 +92,15 @@ async function createPglite(url: string): Promise<Db> {
 
 /** Creates a new database connection for `url`, or null when it is unset. Not cached. */
 export async function createDb(url: string | undefined): Promise<Db | null> {
-  switch (selectDriver(url)) {
+  const driver = selectDriver(url);
+  // The Worker build ships the Neon HTTP driver only (`pg` and PGlite are aliased to a throwing stub in next.config.ts).
+  // A URL of another host would otherwise fail deep inside a page render; say what is wrong, without the URL.
+  if (driver && driver !== "neon" && process.env.PLATFORM === "cloudflare") {
+    throw new Error(
+      "DATABASE_URL must be a Neon URL (host *.neon.tech) when PLATFORM=cloudflare: the Worker build has no other database driver (docs/DEPLOYMENT.md)",
+    );
+  }
+  switch (driver) {
     case null:
       return null;
     case "neon":

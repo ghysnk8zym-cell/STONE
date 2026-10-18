@@ -537,6 +537,11 @@
       "title": "Page not found",
       "body": "The page you are looking for does not exist or has moved.",
       "toCatalog": "Open catalog"
+    },
+    "error": {
+      "title": "Something went wrong",
+      "body": "A temporary problem stopped this page from loading. Try again in a moment.",
+      "retry": "Try again"
     }
   },
   "auth": {
@@ -842,7 +847,8 @@
         "slugTaken": "This web address is already used.",
         "summary": "Some fields need attention.",
         "unavailable": "The database is not available. Try again later.",
-        "not-found": "This product no longer exists."
+        "not-found": "This product no longer exists.",
+        "generic": "Something went wrong. Please try again."
       },
       "previewMeta": "{material} · {l}×{w}×{d} mm"
     },
@@ -889,7 +895,8 @@
         "errors": {
           "invalid": "This status cannot be saved.",
           "not-found": "This order no longer exists.",
-          "unavailable": "The database is not available. Try again later."
+          "unavailable": "The database is not available. Try again later.",
+          "generic": "Something went wrong. Please try again."
         }
       }
     }

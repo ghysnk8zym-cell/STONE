@@ -33,12 +33,18 @@ export function OrderStatusForm({
   function save() {
     setMessage(null);
     startTransition(async () => {
-      const result = await setOrderStatus(number, value);
-      if (!result.ok) {
-        setMessage({ ok: false, text: t(`detail.errors.${result.code}`) });
+      try {
+        const result = await setOrderStatus(number, value);
+        if (!result.ok) {
+          setMessage({ ok: false, text: t(`detail.errors.${result.code}`) });
+          return;
+        }
+        setMessage({ ok: true, text: t("detail.saved") });
+      } catch {
+        // The action threw (database timeout, 5xx): show the message instead of the error boundary; the chosen status stays.
+        setMessage({ ok: false, text: t("detail.errors.generic") });
         return;
       }
-      setMessage({ ok: true, text: t("detail.saved") });
       router.refresh();
     });
   }
