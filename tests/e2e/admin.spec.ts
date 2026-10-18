@@ -334,15 +334,21 @@ test.describe("admin screens", () => {
       return match ? match[0].replace(/<[^>]+>/g, " ") : null;
     };
     const edit = async (button: string | RegExp, name?: string) => {
-      await page.goto(`/en/admin/products/${slug}`);
-      await expect(page.getByLabel(a.form.nameRu, { exact: true })).toHaveValue(
-        /.+/,
-      );
-      if (name !== undefined) {
-        await page.getByLabel(a.form.nameRu, { exact: true }).fill(name);
-      }
-      await page.getByRole("button", { name: button }).click();
-      await page.waitForURL("**/en/admin/products");
+      // The buttons are client-side handlers: an early click (before hydration) does nothing and
+      // hydration can overwrite a typed value, so retry the whole fill + click until it lands.
+      await expect(async () => {
+        await page.goto(`/en/admin/products/${slug}`, {
+          waitUntil: "networkidle",
+        });
+        await expect(
+          page.getByLabel(a.form.nameRu, { exact: true }),
+        ).toHaveValue(/.+/);
+        if (name !== undefined) {
+          await page.getByLabel(a.form.nameRu, { exact: true }).fill(name);
+        }
+        await page.getByRole("button", { name: button }).click();
+        await page.waitForURL("**/en/admin/products", { timeout: 5_000 });
+      }).toPass({ timeout: 30_000 });
     };
 
     try {
