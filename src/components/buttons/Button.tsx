@@ -33,6 +33,8 @@ type CommonProps = {
    * navigation, no hover / pressed reaction, no 45 % dim, not focusable.
    */
   inert?: boolean;
+  /** Toggle state of a button (the product page Save): sets `aria-pressed`; the Save heart is drawn filled. */
+  pressed?: boolean;
   state?: InteractionState;
   children: ReactNode;
   className?: string;
@@ -171,13 +173,15 @@ export function Button(props: ButtonProps) {
     iconRight,
     disabled = false,
     inert = false,
+    pressed,
     state,
     children,
     className,
   } = props;
 
   const loading = props.type === "submit" && props.loading === true;
-  const left = iconLeft ?? (variant === "save" ? "heart" : undefined);
+  const base = iconLeft ?? (variant === "save" ? "heart" : undefined);
+  const left = base === "heart" && pressed ? "heart-filled" : base;
   const icon = ICON[variant];
   const classes = cn(BASE, VARIANT[variant], DISABLED, className);
 
@@ -250,6 +254,7 @@ export function Button(props: ButtonProps) {
       className={classes}
       data-state={state}
       disabled={disabled}
+      aria-pressed={pressed}
       aria-disabled={loading ? "true" : undefined}
       aria-busy={loading ? "true" : undefined}
       onClick={handleClick}

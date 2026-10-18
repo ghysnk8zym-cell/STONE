@@ -1,0 +1,631 @@
+import { count, eq } from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+import {
+  authRequest,
+  nextTestIp,
+  sessionCookieFrom,
+  setCookieLine,
+  signIn,
+  signUp,
+  TEST_BASE_URL,
+  TEST_PASSWORD,
+  TEST_SECRET,
+} from "./auth-helpers";
+
+vi.mock("server-only", () => ({}));
+
+const request = vi.hoisted(() => ({
+  headers: new Headers(),
+  setCookies: [] as { name: string; value: string; options: unknown }[],
+}));
+vi.mock("next/headers", () => ({
+  headers: async () => request.headers,
+  cookies: async () => ({
+    get: () => undefined,
+    getAll: () => [],
+    set: (name: string, value: string, options: unknown) => {
+      request.setCookies.push({ name, value, options });
+    },
+  }),
+}));
+
+const { createDb, schema } = await import("@/server/db");
+const {
+  authConfigFromEnv,
+  createAuth,
+  createSeedUser,
+  RATE_LIMIT_RULES,
+  verifySeedUserPassword,
+} = await import("@/server/auth/auth");
+const { authRequestBase, toClientResult } = await import("@/server/auth/next");
+const { CLIENT_IP_HEADER } = await import("@/server/auth/constants");
+const { nodePlatform } = await import("@/server/platform/node");
+const { cloudflarePlatform } = await import("@/server/platform/cloudflare");
+const { SESSION_COOKIE_NAMES } = await import("@/server/auth/constants");
+const { seed } = await import("@/server/db/seed");
+
+async function freshAuth(
+  config: Partial<Parameters<typeof createAuth>[1]> = {},
+) {
+  const db = await createDb("pglite://memory");
+  if (!db) throw new Error("expected a database");
+  const auth = createAuth(db, {
+    secret: TEST_SECRET,
+    baseURL: TEST_BASE_URL,
+    trustedOrigins: [TEST_BASE_URL],
+    secureCookies: false,
+    ipAddressHeaders: ["x-forwarded-for"],
+    ...config,
+  });
+  return { db, auth };
+}
+
+type Fresh = Awaited<ReturnType<typeof freshAuth>>;
+
+describe("auth configuration from the environment", () => {
+  const base = {
+    APP_ENV: "development",
+    INDEXING: "off",
+    PLATFORM: "node",
+    BETTER_AUTH_SECRET: TEST_SECRET,
+  } as const;
+
+  it("trusts the origins of BETTER_AUTH_URL and SITE_URL only", () => {
+    const config = authConfigFromEnv(
+      {
+        ...base,
+        BETTER_AUTH_URL: "https://auth.stone.example/some/path",
+        SITE_URL: "https://stone.example/",
+      },
+      ["x-forwarded-for"],
+    );
+    expect(config.baseURL).toBe("https://auth.stone.example/some/path");
+    expect(config.trustedOrigins).toEqual([
+      "https://auth.stone.example",
+      "https://stone.example",
+    ]);
+  });
+
+  it("uses Secure cookies everywhere except plain-http localhost", () => {
+    const secure = (env: Record<string, string>) =>
+      authConfigFromEnv({ ...base, ...env } as never, []).secureCookies;
+    expect(secure({ BETTER_AUTH_URL: "https://stone.example" })).toBe(true);
+    expect(secure({ BETTER_AUTH_URL: "http://stone.example" })).toBe(true);
+    expect(secure({ BETTER_AUTH_URL: "http://localhost:3000" })).toBe(false);
+    expect(secure({ BETTER_AUTH_URL: "http://127.0.0.1:3000" })).toBe(false);
+    expect(secure({ SITE_URL: "https://stone.example" })).toBe(true);
+    // No URL configured: only local development may go without Secure.
+    expect(secure({})).toBe(false);
+    expect(secure({ APP_ENV: "preview" })).toBe(true);
+    expect(secure({ APP_ENV: "production" })).toBe(true);
+  });
+
+  it("requires the secret", () => {
+    expect(() =>
+      authConfigFromEnv({ ...base, BETTER_AUTH_SECRET: undefined }, []),
+    ).toThrow(/BETTER_AUTH_SECRET/);
+  });
+});
+
+describe("security baseline (real Better Auth on PGlite)", () => {
+  let f: Fresh;
+  const email = "member@example.test";
+
+  beforeAll(async () => {
+    f = await freshAuth();
+    expect((await signUp(f.auth, email)).status).toBe(200);
+  });
+
+  it("session cookie is httpOnly, SameSite=Lax, path / and named as the middleware expects", async () => {
+    const response = await signIn(f.auth, email);
+    expect(response.status).toBe(200);
+    const line = setCookieLine(response, /session_token=/);
+    expect(line).toMatch(/HttpOnly/i);
+    expect(line).toMatch(/SameSite=Lax/i);
+    expect(line).toMatch(/Path=\//i);
+    expect(line).not.toMatch(/;\s*Secure/i);
+    const name = line.split("=")[0];
+    expect(SESSION_COOKIE_NAMES).toContain(name);
+  });
+
+  it("does not cache the session in a cookie", async () => {
+    const response = await signIn(f.auth, email);
+    expect(
+      response.headers.getSetCookie().some((l) => /session_data/.test(l)),
+    ).toBe(false);
+  });
+
+  it("sign-in errors do not reveal whether the email exists", async () => {
+    const unknown = await signIn(f.auth, "nobody@example.test", "whatever-123");
+    const wrong = await signIn(f.auth, email, "wrong-password-123");
+    expect(unknown.status).toBe(401);
+    expect(wrong.status).toBe(unknown.status);
+    expect(await wrong.json()).toEqual(await unknown.json());
+  });
+
+  it("passwords shorter than 8 characters are refused", async () => {
+    const response = await f.auth.handler(
+      authRequest("/sign-up/email", {
+        body: { email: "short@example.test", password: "1234567", name: "S" },
+      }),
+    );
+    expect(response.status).toBe(400);
+    const rows = await f.db
+      .select({ n: count() })
+      .from(schema.user)
+      .where(eq(schema.user.email, "short@example.test"));
+    expect(rows[0]!.n).toBe(0);
+  });
+
+  it("stores only a password hash", async () => {
+    const rows = await f.db
+      .select({ password: schema.account.password })
+      .from(schema.account)
+      .innerJoin(schema.user, eq(schema.user.id, schema.account.userId))
+      .where(eq(schema.user.email, email));
+    expect(rows[0]!.password).toBeTruthy();
+    expect(rows[0]!.password).not.toContain(TEST_PASSWORD);
+  });
+
+  it("rejects a cookie-bearing request from an untrusted origin", async () => {
+    const cookie = sessionCookieFrom(await signIn(f.auth, email))!;
+    const response = await f.auth.handler(
+      authRequest("/sign-out", {
+        body: {},
+        cookie,
+        origin: "https://evil.example",
+      }),
+    );
+    expect(response.status).toBe(403);
+  });
+
+  it("never logs the email of a duplicate sign-up", async () => {
+    const spies = (["log", "info", "warn", "error", "debug"] as const).map(
+      (method) => vi.spyOn(console, method).mockImplementation(() => {}),
+    );
+    await signUp(f.auth, email);
+    const printed = JSON.stringify(spies.flatMap((s) => s.mock.calls));
+    spies.forEach((s) => s.mockRestore());
+    expect(printed).not.toContain(email);
+  });
+});
+
+describe("rate limit is configured", () => {
+  let f: Fresh;
+
+  beforeAll(async () => {
+    f = await freshAuth();
+  });
+
+  it("is enabled, stored in the database and strict on sign-in and sign-up", () => {
+    const options = f.auth.options.rateLimit!;
+    expect(options.enabled).toBe(true);
+    expect(options.storage).toBe("database");
+    expect(options.customRules).toMatchObject({
+      "/sign-in/email": RATE_LIMIT_RULES.signIn,
+      "/sign-up/email": RATE_LIMIT_RULES.signUp,
+    });
+    expect(RATE_LIMIT_RULES.signIn.max).toBeLessThanOrEqual(10);
+    expect(RATE_LIMIT_RULES.signUp.max).toBeLessThanOrEqual(5);
+  });
+
+  it("blocks repeated sign-in attempts from one IP with 429, per IP, in the rate_limit table", async () => {
+    const ip = nextTestIp();
+    const statuses: number[] = [];
+    for (let i = 0; i <= RATE_LIMIT_RULES.signIn.max; i += 1) {
+      const response = await signIn(
+        f.auth,
+        "x@example.test",
+        "wrong-pass-1",
+        ip,
+      );
+      statuses.push(response.status);
+    }
+    expect(statuses.slice(0, -1).every((s) => s === 401)).toBe(true);
+    expect(statuses.at(-1)).toBe(429);
+    expect(
+      (await signIn(f.auth, "x@example.test", "wrong-pass-1", nextTestIp()))
+        .status,
+    ).toBe(401);
+    const rows = await f.db.select({ n: count() }).from(schema.rateLimit);
+    expect(rows[0]!.n).toBeGreaterThan(0);
+  });
+});
+
+describe("secure deployment cookies", () => {
+  it("are Secure with the __Secure- prefix the middleware recognises", async () => {
+    const { auth } = await freshAuth({
+      baseURL: "https://stone.example",
+      trustedOrigins: ["https://stone.example"],
+      secureCookies: true,
+    });
+    const options = { baseURL: "https://stone.example" };
+    await auth.handler(
+      authRequest("/sign-up/email", {
+        ...options,
+        body: { email: "s@example.test", password: TEST_PASSWORD, name: "S" },
+      }),
+    );
+    const response = await auth.handler(
+      authRequest("/sign-in/email", {
+        ...options,
+        body: { email: "s@example.test", password: TEST_PASSWORD },
+      }),
+    );
+    const line = setCookieLine(response, /session_token=/);
+    expect(line).toMatch(/;\s*Secure/i);
+    expect(line.startsWith("__Secure-")).toBe(true);
+    expect(SESSION_COOKIE_NAMES).toContain(line.split("=")[0]);
+  });
+});
+
+describe("seed users through Better Auth", () => {
+  const options = {
+    adminEmail: "seed-admin@example.test",
+    adminPassword: "seed-admin-pass-1",
+    clientEmail: "seed-client@example.test",
+    clientPassword: "seed-client-pass-1",
+  };
+
+  it("creates the admin and client with hashed passwords, idempotently", async () => {
+    const f = await freshAuth();
+    const createUser = (user: Parameters<typeof createSeedUser>[1]) =>
+      createSeedUser(f.auth, user);
+    const first = await seed(f.db, { ...options, createUser });
+    const second = await seed(f.db, { ...options, createUser });
+    expect(first).toMatchObject({ users: 2, orders: 2, favorites: 3 });
+    expect(second).toEqual(first);
+
+    const roles = await f.db
+      .select({ email: schema.user.email, role: schema.user.role })
+      .from(schema.user)
+      .orderBy(schema.user.email);
+    expect(roles).toEqual([
+      { email: options.adminEmail, role: "admin" },
+      { email: options.clientEmail, role: "client" },
+    ]);
+    expect(
+      (await signIn(f.auth, options.adminEmail, options.adminPassword)).status,
+    ).toBe(200);
+    expect(
+      (await signIn(f.auth, options.clientEmail, options.clientPassword))
+        .status,
+    ).toBe(200);
+    // The seed opens no sessions of its own.
+    const sessions = await f.db.select({ n: count() }).from(schema.session);
+    expect(sessions[0]!.n).toBe(2);
+  });
+
+  function hooks(auth: Fresh["auth"]) {
+    return {
+      createUser: (user: Parameters<typeof createSeedUser>[1]) =>
+        createSeedUser(auth, user),
+      verifyPassword: (email: string, password: string) =>
+        verifySeedUserPassword(auth, email, password),
+    };
+  }
+
+  it("does not make an attacker who pre-registered the admin email an admin", async () => {
+    const f = await freshAuth();
+    // Signed up through the public endpoint, with the attacker's own password.
+    expect(
+      (
+        await f.auth.handler(
+          authRequest("/sign-up/email", {
+            body: {
+              email: options.adminEmail.toUpperCase(),
+              password: "attacker-pass-1",
+              name: "Attacker",
+            },
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    const spies = (["log", "info", "warn", "error", "debug"] as const).map(
+      (method) => vi.spyOn(console, method).mockImplementation(() => {}),
+    );
+    const error = await seed(f.db, { ...options, ...hooks(f.auth) })
+      .then(() => null)
+      .catch((e: Error) => e);
+    const printed = JSON.stringify(spies.flatMap((s) => s.mock.calls));
+    spies.forEach((s) => s.mockRestore());
+    expect(error?.name).toBe("SeedRefusalError");
+    for (const secret of [options.adminEmail, options.adminPassword]) {
+      expect(error?.message).not.toContain(secret);
+      expect(printed).not.toContain(secret);
+    }
+    const [row] = await f.db
+      .select({ role: schema.user.role })
+      .from(schema.user)
+      .where(eq(schema.user.email, options.adminEmail));
+    expect(row?.role).toBe("client");
+  });
+
+  it("promotes an existing account that already has the admin password", async () => {
+    const f = await freshAuth();
+    await f.auth.handler(
+      authRequest("/sign-up/email", {
+        body: {
+          email: options.adminEmail,
+          password: options.adminPassword,
+          name: "Owner",
+        },
+      }),
+    );
+    await seed(f.db, { ...options, ...hooks(f.auth) });
+    const [row] = await f.db
+      .select({ role: schema.user.role })
+      .from(schema.user)
+      .where(eq(schema.user.email, options.adminEmail));
+    expect(row?.role).toBe("admin");
+  });
+});
+
+describe("no public Better Auth route", () => {
+  it("there is no /api/auth route: Better Auth is reachable in-process only", async () => {
+    const { existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    expect(existsSync(join(process.cwd(), "src", "app", "api", "auth"))).toBe(
+      false,
+    );
+    const next = await import("@/server/auth/next");
+    expect("handleAuthRequest" in next).toBe(false);
+  });
+});
+
+describe("server-action calls go through the handler (rate limit + origin check)", () => {
+  function reset() {
+    vi.resetModules();
+    const g = globalThis as { __stoneDb?: unknown; __stoneAuth?: unknown };
+    delete g.__stoneDb;
+    delete g.__stoneAuth;
+  }
+  afterAll(() => {
+    vi.unstubAllEnvs();
+    reset();
+  });
+
+  it("signs in, forwards the session cookie to Next and is rate-limited", async () => {
+    reset();
+    vi.stubEnv("DATABASE_URL", "pglite://memory");
+    vi.stubEnv("BETTER_AUTH_SECRET", TEST_SECRET);
+    vi.stubEnv("BETTER_AUTH_URL", TEST_BASE_URL);
+    const { callAuthEndpoint } = await import("@/server/auth/next");
+    const ip = nextTestIp();
+    request.headers = new Headers({
+      origin: TEST_BASE_URL,
+      host: "localhost:3000",
+      "x-forwarded-for": ip,
+    });
+
+    const created = await callAuthEndpoint("/sign-up/email", {
+      email: "action@example.test",
+      password: TEST_PASSWORD,
+      name: "A",
+    });
+    expect(created.ok).toBe(true);
+
+    request.setCookies = [];
+    const result = await callAuthEndpoint("/sign-in/email", {
+      email: "action@example.test",
+      password: TEST_PASSWORD,
+    });
+    expect(result.ok).toBe(true);
+    const set = request.setCookies.find((c) => /session_token$/.test(c.name));
+    expect(set?.options).toMatchObject({ httpOnly: true, sameSite: "lax" });
+
+    const wrong = await callAuthEndpoint("/sign-in/email", {
+      email: "action@example.test",
+      password: "wrong-password-1",
+    });
+    expect(wrong).toEqual({
+      ok: false,
+      status: 401,
+      code: "INVALID_EMAIL_OR_PASSWORD",
+    });
+
+    let last: Awaited<ReturnType<typeof callAuthEndpoint>> = wrong;
+    for (let i = 0; i < RATE_LIMIT_RULES.signIn.max; i += 1) {
+      last = await callAuthEndpoint("/sign-in/email", {
+        email: "action@example.test",
+        password: "wrong-password-1",
+      });
+    }
+    expect(last).toMatchObject({ ok: false, status: 429 });
+  });
+
+  it("refuses a call whose origin is not trusted", async () => {
+    const { callAuthEndpoint } = await import("@/server/auth/next");
+    request.headers = new Headers({
+      origin: "https://evil.example",
+      host: "localhost:3000",
+      cookie: "stone.session_token=x",
+      "x-forwarded-for": nextTestIp(),
+    });
+    const result = await callAuthEndpoint("/sign-out", {});
+    expect(result).toMatchObject({ ok: false, status: 403 });
+  });
+});
+
+describe("client IP for rate limiting (platform rule)", () => {
+  const ip = (
+    platform: { clientIp(h: Headers): string | null },
+    h: Record<string, string>,
+  ) => platform.clientIp(new Headers(h));
+
+  it("Node: the last x-forwarded-for hop, the address the proxy in front saw", () => {
+    expect(ip(nodePlatform, { "x-forwarded-for": "203.0.113.9" })).toBe(
+      "203.0.113.9",
+    );
+    // A client-supplied value is on the left; the proxy appends the real address.
+    expect(
+      ip(nodePlatform, { "x-forwarded-for": "1.1.1.1, 2.2.2.2,203.0.113.9 " }),
+    ).toBe("203.0.113.9");
+    expect(ip(nodePlatform, {})).toBeNull();
+    expect(ip(nodePlatform, { "cf-connecting-ip": "1.1.1.1" })).toBeNull();
+  });
+
+  it("Cloudflare: cf-connecting-ip only", () => {
+    expect(
+      ip(cloudflarePlatform, {
+        "cf-connecting-ip": "198.51.100.4",
+        "x-forwarded-for": "1.1.1.1",
+      }),
+    ).toBe("198.51.100.4");
+    expect(ip(cloudflarePlatform, { "x-forwarded-for": "1.1.1.1" })).toBeNull();
+  });
+
+  it("the in-process auth call keys the rate limit on the platform IP and ignores a client-set header", async () => {
+    vi.resetModules();
+    const g = globalThis as { __stoneDb?: unknown; __stoneAuth?: unknown };
+    delete g.__stoneDb;
+    delete g.__stoneAuth;
+    vi.stubEnv("DATABASE_URL", "pglite://memory");
+    vi.stubEnv("BETTER_AUTH_SECRET", TEST_SECRET);
+    vi.stubEnv("BETTER_AUTH_URL", TEST_BASE_URL);
+    try {
+      const { callAuthEndpoint } = await import("@/server/auth/next");
+      const call = (forwardedFor: string, spoofed?: string) => {
+        request.headers = new Headers({
+          origin: TEST_BASE_URL,
+          host: "localhost:3000",
+          "x-forwarded-for": forwardedFor,
+          ...(spoofed ? { [CLIENT_IP_HEADER]: spoofed } : {}),
+        });
+        return callAuthEndpoint("/sign-in/email", {
+          email: "x@example.test",
+          password: "wrong-pass-1",
+        });
+      };
+      const proxySaw = nextTestIp();
+      const statuses: number[] = [];
+      for (let i = 0; i <= RATE_LIMIT_RULES.signIn.max; i += 1) {
+        // A rotating spoofed left hop and our internal header must not open new buckets.
+        const result = await call(`9.9.9.${i}, ${proxySaw}`, `8.8.8.${i}`);
+        statuses.push(result.ok ? 200 : result.status);
+      }
+      expect(statuses.at(-1)).toBe(429);
+      // Another client behind the same kind of proxy has its own bucket (not one shared bucket).
+      expect(await call(`9.9.9.200, ${nextTestIp()}`)).toMatchObject({
+        ok: false,
+        status: 401,
+      });
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+      delete g.__stoneDb;
+      delete g.__stoneAuth;
+    }
+  });
+});
+
+describe("server-action request base URL", () => {
+  it("uses https off localhost and http on localhost when no base URL is configured", () => {
+    const base = (host: string, extra: Record<string, string> = {}) =>
+      authRequestBase(undefined, new Headers({ host, ...extra }));
+    expect(base("pr-12-stone.example.workers.dev")).toBe(
+      "https://pr-12-stone.example.workers.dev",
+    );
+    expect(base("stone.example", { "x-forwarded-proto": "http" })).toBe(
+      "https://stone.example",
+    );
+    expect(base("localhost:3000")).toBe("http://localhost:3000");
+    expect(base("127.0.0.1:3001")).toBe("http://127.0.0.1:3001");
+    expect(base("[::1]:3000")).toBe("http://[::1]:3000");
+  });
+
+  it("prefers the configured base URL", () => {
+    expect(
+      authRequestBase("https://stone.example", new Headers({ host: "x" })),
+    ).toBe("https://stone.example");
+  });
+});
+
+describe("results returned to the browser", () => {
+  it("toClientResult never carries the session token or user data", () => {
+    const success = toClientResult({
+      ok: true,
+      data: { token: "raw-session-token", user: { id: "u1", email: "e" } },
+    });
+    expect(success).toEqual({ ok: true });
+    expect(JSON.stringify(success)).not.toContain("raw-session-token");
+    expect(
+      toClientResult({
+        ok: false,
+        status: 401,
+        code: "INVALID_EMAIL_OR_PASSWORD",
+      }),
+    ).toEqual({ ok: false, status: 401, code: "INVALID_EMAIL_OR_PASSWORD" });
+  });
+});
+
+describe("names and images reach Better Auth only as plain text (hooks.before)", () => {
+  let f: Fresh;
+  let cookie: string;
+
+  beforeAll(async () => {
+    f = await freshAuth();
+    const response = await signUp(f.auth, "plain@example.test", {
+      name: "Plain Name",
+    });
+    expect(response.status).toBe(200);
+    cookie = sessionCookieFrom(response)!;
+  });
+
+  const BAD_NAMES = [
+    "evil\u202etxt.exe", // right-to-left override
+    "zero\u200bwidth", // zero-width space
+    "join\u2060er", // word joiner
+    "b\ufeffom", // byte order mark
+    "line\u2028sep", // line separator
+    "two\nlines",
+    "nul\u0000byte",
+    "x".repeat(81),
+  ];
+
+  it("sign-up refuses a name with control or invisible formatting characters, or over 80 characters", async () => {
+    for (const [index, name] of BAD_NAMES.entries()) {
+      const response = await signUp(f.auth, `bad${index}@example.test`, {
+        name,
+      });
+      expect(response.status, JSON.stringify(name)).toBe(400);
+    }
+    const [{ total }] = await f.db.select({ total: count() }).from(schema.user);
+    expect(total).toBe(1); // only the account made in beforeAll
+  });
+
+  it("sign-up refuses an image (a user-chosen URL is never stored)", async () => {
+    const response = await signUp(f.auth, "image@example.test", {
+      image: "https://evil.example/a.png",
+    });
+    expect(response.status).toBe(400);
+  });
+
+  it("sign-up accepts the app's own calls: an empty name, and an ordinary one (also non-Latin)", async () => {
+    expect(
+      (await signUp(f.auth, "empty@example.test", { name: "" })).status,
+    ).toBe(200);
+    expect(
+      (await signUp(f.auth, "named@example.test", { name: "Анна Müller-Ñ" }))
+        .status,
+    ).toBe(200);
+  });
+
+  it("update-user refuses the same names and any image, and accepts a plain name", async () => {
+    const update = (body: Record<string, unknown>) =>
+      f.auth.handler(authRequest("/update-user", { body, cookie }));
+    for (const name of BAD_NAMES) {
+      expect((await update({ name })).status, JSON.stringify(name)).toBe(400);
+    }
+    expect((await update({ image: "https://evil.example/a.png" })).status).toBe(
+      400,
+    );
+    expect((await update({ name: "New Name" })).status).toBe(200);
+    const [row] = await f.db
+      .select({ name: schema.user.name, image: schema.user.image })
+      .from(schema.user)
+      .where(eq(schema.user.email, "plain@example.test"));
+    expect(row).toMatchObject({ name: "New Name", image: null });
+  });
+});

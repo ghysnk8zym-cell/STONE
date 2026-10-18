@@ -1,8 +1,9 @@
 import { setRequestLocale } from "next-intl/server";
 
+import { AccountStateProvider } from "@/features/account/AccountStateProvider";
 import { SiteFooter } from "@/components/navigation/SiteFooter";
 import { SiteHeader } from "@/components/navigation/SiteHeader";
-import { PHASE3_INERT } from "@/components/navigation/nav-items";
+import { INERT } from "@/components/navigation/nav-items";
 import { ShellTabBar } from "@/components/navigation/ShellTabBar";
 import type { Locale } from "@/i18n/routing";
 
@@ -20,8 +21,10 @@ import type { Locale } from "@/i18n/routing";
  * - The footer reserves 100 px under its content on phones (`reserveTabBar` -> `max-md:pb-footer-tabbar`)
  *   for the fixed tab bar, so the footer glass extends under the floating bar like in Figma
  *   (docs/ARCHITECTURE.md, Layout notes for Phase 3).
- * - Header, mobile menu and tab bar get `PHASE3_INERT`: Cart, account, Create Your Stone and
- *   Favorites have no pages yet and render as non-links.
+ * - Header, mobile menu and tab bar get `INERT`: Cart and Create Your Stone have no pages yet and render as
+ *   non-links. Favorites and the account entries are live (Phase 4a).
+ * - `AccountStateProvider` gives the header, the tab bar and the hearts the visitor state from `GET /api/me`,
+ *   a client island: the layout reads no cookies, so the public pages stay static where they can be (home is SSG; the catalog and product pages render per request).
  */
 export default async function SiteLayout({
   children,
@@ -31,14 +34,16 @@ export default async function SiteLayout({
   setRequestLocale(locale as Locale);
 
   return (
-    <div
-      data-site-shell
-      className="bg-surface-page has-[>main>[data-page-surface=catalog]]:bg-stone-catalog-page flex min-h-dvh flex-col"
-    >
-      <SiteHeader inert={PHASE3_INERT.nav} />
-      <main className="flex flex-1 flex-col">{children}</main>
-      <SiteFooter reserveTabBar />
-      <ShellTabBar />
-    </div>
+    <AccountStateProvider>
+      <div
+        data-site-shell
+        className="bg-surface-page has-[>main>[data-page-surface=catalog]]:bg-stone-catalog-page flex min-h-dvh flex-col"
+      >
+        <SiteHeader inert={INERT.nav} />
+        <main className="flex flex-1 flex-col">{children}</main>
+        <SiteFooter reserveTabBar />
+        <ShellTabBar />
+      </div>
+    </AccountStateProvider>
   );
 }

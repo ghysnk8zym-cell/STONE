@@ -22,6 +22,18 @@ const names: IconName[] = [
   "home",
   "grid",
   "user",
+  "eye",
+  "orders",
+  "support",
+  "sign-out",
+  "chevron-right",
+  "bell",
+  "heart-filled",
+  "box",
+  "diamond",
+  "users",
+  "tag",
+  "plus",
 ];
 
 describe("Icon", () => {

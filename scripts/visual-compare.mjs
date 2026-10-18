@@ -16,6 +16,13 @@
 // and `docs/QA/phase-3/results.md`. A report, not a gate; exit 1 only when a page cannot be loaded or a
 // reference cannot be read. The component-mode notes below do not apply to page mode.
 //
+// PHASE 4a SET (`--pages --set phase4a`, or QA_SET=phase4a): the sign-in/up/out, account and admin screens.
+// `pagesPhase4a` entries may add `auth: "client" | "admin"` (the script signs in through the sign-in form with
+// the seeded test user before the shot) and `reference: "<id>"` (use that id's Figma PNG). It needs the server WITH a
+// database, i.e. the e2e one:  node --env-file=.env.test.example scripts/e2e-db-server.mjs  (E2E_PORT=3002), then
+// BASE_URL=http://localhost:3002 pnpm qa:visual:pages --set phase4a.  References: tests/visual/figma/pages-phase4a/,
+// output: docs/QA/phase-4a/. Test credentials come from .env.test.example (fake) or QA_{CLIENT,ADMIN}_{EMAIL,PASSWORD}.
+//
 // `tests/visual/figma/references.json` is the source of truth:
 //   references["<id>-<width>"] = { node, note, caveat?, locale?, box?, offset?, sameAs? }
 //     caveat shown in the notes column of the results table (e.g. an unreliable reference)
@@ -204,10 +211,10 @@ export function formatResults(rows, skipped) {
 
 /**
  * Expands the `pages` section of references.json into one job per (page, width), widest first.
- * @param {Record<string, { route?: string, screens?: Record<string, string> }>} pages
+ * @param {Record<string, { route?: string, screens?: Record<string, string>, auth?: string, reference?: string }>} pages
  * @param {Set<string> | null} onlyIds page ids to keep, null for all
  * @param {Set<number> | null} [onlyWidths] widths to keep, null for all
- * @returns {{ id: string, width: number, key: string, route: string, node: string }[]}
+ * @returns {{ id: string, width: number, key: string, route: string, node: string, auth?: string, reference?: string }[]}
  */
 export function buildPageJobs(pages, onlyIds, onlyWidths = null) {
   const jobs = [];
@@ -219,7 +226,15 @@ export function buildPageJobs(pages, onlyIds, onlyWidths = null) {
     for (const width of PAGE_WIDTHS) {
       const node = page.screens?.[String(width)];
       if (!node || (onlyWidths && !onlyWidths.has(width))) continue;
-      jobs.push({ id, width, key: `${id}-${width}`, route: page.route, node });
+      jobs.push({
+        id,
+        width,
+        key: `${id}-${width}`,
+        route: page.route,
+        node,
+        ...(page.auth ? { auth: page.auth } : {}),
+        ...(page.reference ? { reference: page.reference } : {}),
+      });
     }
   }
   return jobs;
@@ -233,7 +248,7 @@ const PAGE_LEGEND = [
 
 /**
  * Markdown report of page mode.
- * @param {{ id: string, width: number, route: string, mismatch: string, impl: string, figma: string }[]} rows
+ * @param {{ id: string, width: number, route: string, mismatch: string, impl: string, figma: string, auth?: string }[]} rows
  * @param {string[]} failures
  * @returns {string}
  */
@@ -247,7 +262,7 @@ export function formatPageResults(rows, failures) {
     ...rows.map((r) => {
       const delta = size(r.impl)[1] - size(r.figma)[1];
       const signed = delta > 0 ? `+${delta}` : String(delta);
-      return `| ${r.id} | /${DEFAULT_LOCALE}${r.route} | ${r.width} | ${r.mismatch} | ${r.impl} | ${r.figma} | ${signed} |`;
+      return `| ${r.id} | /${DEFAULT_LOCALE}${r.route}${r.auth ? ` (${r.auth})` : ""} | ${r.width} | ${r.mismatch} | ${r.impl} | ${r.figma} | ${signed} |`;
     }),
   ];
   if (failures.length > 0) {
@@ -314,7 +329,130 @@ async function settlePage(page) {
   await page.waitForTimeout(300);
 }
 
+/**
+ * Page sets. The default set is the Phase 3 public pages. `--set phase4a` (or QA_SET=phase4a) is the Phase 4a
+ * screens: `pagesPhase4a` in references.json, references in `tests/visual/figma/pages-phase4a/`, output in
+ * `docs/QA/phase-4a/`. An entry with `auth: "client" | "admin"` is shot signed in as the seeded user
+ * (see `signInContext`); `reference` makes it use another id's Figma PNG (the sign-in screen has no frame of its own
+ * and is compared with Create account).
+ */
+const PAGE_SETS = {
+  default: {
+    section: "pages",
+    refDir: PAGES_DIR,
+    outDir: PAGES_OUT_DIR,
+  },
+  phase4a: {
+    section: "pagesPhase4a",
+    refDir: path.join(FIGMA_DIR, "pages-phase4a"),
+    outDir: path.join(ROOT, "docs", "QA", "phase-4a"),
+    // The phone frames of the auth and account screens are 844 high (the pages are `min-h-dvh`).
+    viewportHeight: (width) => (width <= 430 ? 844 : VIEWPORT_HEIGHT),
+    triplets: true,
+  },
+};
+
+/**
+ * Writes `<key>-triplet.jpg`: impl | figma | diff side by side, each 520 px wide (the committed evidence; the full
+ * size PNGs stay git-ignored). Rendered by Chromium itself, so no image library is needed.
+ * @param {import("@playwright/test").Browser} browser
+ * @param {string} outDir
+ * @param {string} key
+ * @param {PNG[]} images
+ */
+async function writeTriplet(browser, outDir, key, images) {
+  const tags = images
+    .map(
+      (image) =>
+        `<img width="520" src="data:image/png;base64,${PNG.sync.write(image).toString("base64")}">`,
+    )
+    .join("");
+  const page = await browser.newPage({
+    viewport: { width: 1576, height: 800 },
+  });
+  try {
+    await page.setContent(
+      `<body style="margin:0;background:#888;display:flex;gap:8px;align-items:flex-start">${tags}</body>`,
+    );
+    await page.waitForFunction(() =>
+      [...document.images].every((img) => img.complete),
+    );
+    await writeFile(
+      path.join(outDir, `${key}-triplet.jpg`),
+      await page.screenshot({ fullPage: true, type: "jpeg", quality: 58 }),
+    );
+  } finally {
+    await page.close();
+  }
+}
+
+/** Parses `KEY=value` lines (the committed fake test values); no quoting rules needed. */
+function parseEnvFile(text) {
+  const values = {};
+  for (const line of text.split(/\r?\n/)) {
+    const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
+    if (match && !line.trimStart().startsWith("#")) values[match[1]] = match[2];
+  }
+  return values;
+}
+
+let loginCounter = 0;
+
+/**
+ * Signs the context in through the sign-in form with the seeded test user (QA_CLIENT_* / QA_ADMIN_*
+ * environment variables, else the fake values of `.env.test.example`, which is what the e2e database server is seeded
+ * with: start it with `node --env-file=.env.test.example scripts/e2e-db-server.mjs`, port E2E_PORT, and set BASE_URL to
+ * it). The session cookie then lives in the context. Never run this against a deployed environment: the values are
+ * test-only, and a real password must not be put here.
+ * @param {import("@playwright/test").BrowserContext} context
+ * @param {string} baseURL
+ * @param {"client" | "admin"} role
+ */
+async function signInContext(context, baseURL, role) {
+  const fake = parseEnvFile(
+    await readFile(path.join(ROOT, ".env.test.example"), "utf8"),
+  );
+  const prefix = role === "admin" ? "ADMIN" : "CLIENT";
+  const email =
+    process.env[`QA_${prefix}_EMAIL`] ?? fake[`SEED_${prefix}_EMAIL`];
+  const password =
+    process.env[`QA_${prefix}_PASSWORD`] ?? fake[`SEED_${prefix}_PASSWORD`];
+  if (!email || !password) throw new Error(`no ${role} test credentials`);
+  loginCounter += 1;
+  // The e2e server has no proxy, its client-IP rule is the last X-Forwarded-For hop: one address per login keeps
+  // the sign-in rate limit (10 per minute and IP) out of the way.
+  await context.setExtraHTTPHeaders({
+    "x-forwarded-for": `10.77.0.${loginCounter}`,
+  });
+  // Through the real sign-in form (the Better Auth HTTP API is not exposed); the session cookie lands in the context.
+  const page = await context.newPage();
+  try {
+    await page.goto(`${baseURL}/en/sign-in`, { waitUntil: "load" });
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL((url) => !/\/sign-in$/.test(url.pathname), {
+      timeout: 15_000,
+    });
+  } catch {
+    throw new Error(`sign-in as ${role} through the form failed`);
+  } finally {
+    await page.close();
+  }
+}
+
 async function mainPages() {
+  const setIndex = process.argv.indexOf("--set");
+  const setName =
+    process.env.QA_SET ??
+    (setIndex >= 0 ? process.argv[setIndex + 1] : undefined) ??
+    "default";
+  const pageSet = PAGE_SETS[setName];
+  if (!pageSet) {
+    console.error(`Unknown page set "${setName}".`);
+    process.exitCode = 1;
+    return;
+  }
   const baseURL = (process.env.BASE_URL ?? "http://localhost:3000").replace(
     /\/$/,
     "",
@@ -330,7 +468,7 @@ async function mainPages() {
   const onlyWidths = csv(process.env.QA_WIDTHS);
   const manifest = await readJson(path.join(FIGMA_DIR, "references.json"), {});
   const jobs = buildPageJobs(
-    manifest.pages ?? {},
+    manifest[pageSet.section] ?? {},
     onlyIds ? new Set(onlyIds) : null,
     onlyWidths ? new Set(onlyWidths.map(Number)) : null,
   );
@@ -340,7 +478,7 @@ async function mainPages() {
     return;
   }
 
-  await mkdir(PAGES_OUT_DIR, { recursive: true });
+  await mkdir(pageSet.outDir, { recursive: true });
   const { chromium } = await import("@playwright/test");
   const browser = await chromium.launch();
   const rows = [];
@@ -349,14 +487,21 @@ async function mainPages() {
   try {
     for (const job of jobs) {
       const context = await browser.newContext({
-        viewport: { width: job.width, height: VIEWPORT_HEIGHT },
+        viewport: {
+          width: job.width,
+          height: pageSet.viewportHeight?.(job.width) ?? VIEWPORT_HEIGHT,
+        },
         deviceScaleFactor: 1,
         reducedMotion: "reduce",
       });
       try {
+        const referenceKey = job.reference
+          ? `${job.reference}-${job.width}`
+          : job.key;
         const figma = PNG.sync.read(
-          await readFile(path.join(PAGES_DIR, `${job.key}.png`)),
+          await readFile(path.join(pageSet.refDir, `${referenceKey}.png`)),
         );
+        if (job.auth) await signInContext(context, baseURL, job.auth);
         const page = await context.newPage();
         const url = `${baseURL}/${DEFAULT_LOCALE}${job.route}`;
         const response = await page.goto(url, { waitUntil: "load" });
@@ -393,14 +538,18 @@ async function mainPages() {
           ["diff", diff],
         ]) {
           await writeFile(
-            path.join(PAGES_OUT_DIR, `${job.key}-${suffix}.png`),
+            path.join(pageSet.outDir, `${job.key}-${suffix}.png`),
             PNG.sync.write(image),
           );
+        }
+        if (pageSet.triplets) {
+          await writeTriplet(browser, pageSet.outDir, job.key, [a, b, diff]);
         }
         rows.push({
           id: job.id,
           width: job.width,
           route: job.route,
+          auth: job.auth,
           mismatch: mismatchPercent(diffPixels, w, h).toFixed(2),
           impl: `${impl.width}x${impl.height}`,
           figma: `${figma.width}x${figma.height}`,
@@ -418,7 +567,7 @@ async function mainPages() {
   }
 
   const table = formatPageResults(rows, failures);
-  await writeFile(path.join(PAGES_OUT_DIR, "results.md"), `${table}\n`);
+  await writeFile(path.join(pageSet.outDir, "results.md"), `${table}\n`);
   console.log(table);
   if (failures.length > 0) process.exitCode = 1;
 }

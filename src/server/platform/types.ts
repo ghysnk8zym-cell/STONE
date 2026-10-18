@@ -7,4 +7,9 @@ export type PlatformName = "node" | "cloudflare";
  */
 export interface PlatformAdapter {
   name: PlatformName;
+  /**
+   * The client IP of a request, from headers this host sets itself (a client cannot choose the
+   * value), or null when there is none. Used as the auth rate-limit key (docs/SECURITY.md).
+   */
+  clientIp(headers: Headers): string | null;
 }

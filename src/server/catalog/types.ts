@@ -44,8 +44,18 @@ export const SORTS = [
 ] as const;
 export type CatalogSort = (typeof SORTS)[number];
 
+export type ProductLocale = "ru" | "en";
+
+/** Name and description of a product in one language (what an admin edits). */
+export type ProductCopy = { name: string; description: string };
+
 export type Product = {
   slug: string;
+  /**
+   * Translations stored with the product (`product_translation`). Present on products read from the
+   * database; the static seed has none and its copy comes from `messages` (see `src/lib/product-copy.ts`).
+   */
+  copy?: Partial<Record<ProductLocale, ProductCopy>>;
   material: Material;
   color: Color;
   /** Catalog filter group for `color`. */
@@ -63,8 +73,8 @@ export type Product = {
   image: string;
   /** "contain" for the studio slabs (Black Marble, Grey Limestone, Grey Marble). */
   imageFit: "cover" | "contain";
-  /** Figma 1440 product screen node id. */
-  figmaNode: string;
+  /** Figma 1440 product screen node id (a design annotation of the static seed; not stored in the database). */
+  figmaNode?: string;
 };
 
 export type CatalogQuery = {
@@ -81,6 +91,11 @@ export type Localizer = {
   material(m: Material): string;
   /** BCP 47 tag used for name sorting (the request locale); the runtime default when omitted. */
   locale?: string;
+  /**
+   * Take names for search and sorting from the stored translation of `locale` (what an admin edited) where the
+   * repository has one, and from `name()` otherwise. The catalog page sets it; the static repository has no stored copy.
+   */
+  preferStoredNames?: boolean;
 };
 
 export interface CatalogRepository {

@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 
 import { cn } from "../cn";
 
@@ -25,6 +25,14 @@ export type TextFieldProps = {
   unit?: string;
   /** Frozen look for the styleguide (`data-state`). */
   state?: "focus";
+  /** Control after the input inside the box (the password reveal button). Interactive content stays outside the label. */
+  trailing?: ReactNode;
+  /**
+   * `screen`: the dark field as the sign-in / sign-up screens draw it (Figma Create account 431:3193 and
+   * breakpoints): label Inter 16 (18 from lg) in ink/on-dark instead of the 14 px label, field 52 px high
+   * below lg and 60 from lg. `default` is Input/Dark 430:504 as drawn in the styleguide.
+   */
+  scale?: "default" | "screen";
 };
 
 /*
@@ -43,7 +51,7 @@ export type TextFieldProps = {
 const TONES = {
   dark: {
     label: "text-label type-catalog-meta",
-    shape: "h-15 rounded-[14px] border bg-[rgba(255,255,255,0.06)]",
+    shape: "rounded-[14px] border bg-[rgba(255,255,255,0.06)]",
     ok: cn(
       "border-[rgba(255,255,255,0.4)]",
       "hov:border-[rgba(255,255,255,0.6)]",
@@ -56,7 +64,7 @@ const TONES = {
       "focusv:border-[#f0a8a0] focusv:outline-1 focusv:-outline-offset-1 focusv:outline-[#f0a8a0]",
       "has-[input:focus-visible]:border-[#f0a8a0] has-[input:focus-visible]:outline-1 has-[input:focus-visible]:-outline-offset-1 has-[input:focus-visible]:outline-[#f0a8a0]",
     ),
-    input: "pr-6 pl-6 text-[18px] text-primary placeholder:text-[#a3a6ab]",
+    input: "pl-6 text-[18px] text-primary placeholder:text-[#a3a6ab]",
     unit: "border-glass text-secondary type-catalog-meta",
     error: "text-[#f0a8a0]",
   },
@@ -76,7 +84,7 @@ const TONES = {
       "has-[input:focus-visible]:border-[#a3362d] has-[input:focus-visible]:outline-1 has-[input:focus-visible]:-outline-offset-1 has-[input:focus-visible]:outline-[#a3362d]",
     ),
     input:
-      "pr-3 pl-4 text-stone-catalog-ink type-catalog-field-value placeholder:text-stone-catalog-secondary",
+      "pl-4 text-stone-catalog-ink type-catalog-field-value placeholder:text-stone-catalog-secondary",
     unit: "border-stone-catalog-line text-stone-catalog-secondary type-catalog-meta",
     error: "text-[#a3362d]",
   },
@@ -104,18 +112,32 @@ export function TextField({
   disabled = false,
   unit,
   state,
+  trailing,
+  scale = "default",
 }: TextFieldProps) {
   const id = useId();
   const errorId = `${id}-error`;
   const unitId = `${id}-unit`;
   const styles = TONES[tone];
+  const screen = scale === "screen" && tone === "dark";
+  // `cn()` is not twMerge: the height and the right padding are chosen here, once, not overridden.
+  const height = tone === "light" ? "h-13" : screen ? "h-13 lg:h-15" : "h-15";
+  const labelClass = screen
+    ? "text-ink-on-dark type-catalog-field-value max-lg:leading-[1.21] lg:text-[18px]"
+    : styles.label;
+  const paddingRight = tone === "dark" && !trailing ? "pr-6" : "pr-3";
   const describedBy =
     [error ? errorId : null, unit ? unitId : null].filter(Boolean).join(" ") ||
     undefined;
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <label htmlFor={id} className={styles.label}>
+    <div
+      className={cn(
+        "flex w-full flex-col",
+        screen ? "gap-3 lg:gap-2" : "gap-2",
+      )}
+    >
+      <label htmlFor={id} className={labelClass}>
         {label}
       </label>
       <div
@@ -123,6 +145,7 @@ export function TextField({
         className={cn(
           "motion-hover flex w-full items-center overflow-clip outline-0 has-[input:disabled]:opacity-45",
           styles.shape,
+          height,
           error ? styles.err : styles.ok,
         )}
       >
@@ -145,6 +168,7 @@ export function TextField({
           inputMode={inputMode ?? (type === "number" ? "decimal" : undefined)}
           className={cn(
             "h-full min-w-0 flex-1 bg-transparent outline-0 disabled:cursor-not-allowed",
+            paddingRight,
             styles.input,
           )}
         />
@@ -157,6 +181,12 @@ export function TextField({
             )}
           >
             {unit}
+          </span>
+        ) : null}
+        {trailing ? (
+          // A trailing control that is `hidden` (the password toggle before hydration) leaves no padding behind.
+          <span className="shrink-0 pr-2 has-[>[hidden]]:hidden">
+            {trailing}
           </span>
         ) : null}
       </div>

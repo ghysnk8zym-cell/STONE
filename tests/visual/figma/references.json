@@ -722,5 +722,106 @@
       }
     }
   },
-  "pagesDoc": "pages = full-screen Figma frames (get_screenshot, 1:1 CSS px, maxDimension large) compared by `scripts/visual-compare.mjs --pages`. PNG of <id> at <width> is tests/visual/figma/pages/<id>-<width>.png; route is appended to /<locale> (locale en). screens maps width to the Figma node."
+  "pagesDoc": "pages = full-screen Figma frames (get_screenshot, 1:1 CSS px, maxDimension large) compared by `scripts/visual-compare.mjs --pages`. PNG of <id> at <width> is tests/visual/figma/pages/<id>-<width>.png; route is appended to /<locale> (locale en). screens maps width to the Figma node.",
+  "pagesPhase4aDoc": "Phase 4a screens (scripts/visual-compare.mjs --pages --set phase4a). Figma PNGs (get_screenshot, 1:1 CSS px) are tests/visual/figma/pages-phase4a/<id>-<width>.png; `auth` signs in as the seeded test user first; `reference` uses another id's PNG (Sign in has no Figma frame and is compared with Create account). Widths: auth and account 1440 and 390, admin 1440 and 1024 (the only admin layouts besides 1920).",
+  "pagesPhase4a": {
+    "sign-up": {
+      "route": "/sign-up",
+      "name": "Create account (431:3193)",
+      "screens": {
+        "390": "431:3250",
+        "1440": "431:3193"
+      }
+    },
+    "sign-in": {
+      "route": "/sign-in",
+      "name": "Sign in (no frame: compared with Create account 431:3193)",
+      "reference": "sign-up",
+      "screens": {
+        "390": "431:3250",
+        "1440": "431:3193"
+      }
+    },
+    "sign-out": {
+      "route": "/sign-out",
+      "name": "Sign out (803:20474)",
+      "auth": "client",
+      "screens": {
+        "390": "803:20615",
+        "1440": "803:20474"
+      }
+    },
+    "account": {
+      "route": "/account",
+      "name": "Account (736:5318)",
+      "auth": "client",
+      "screens": {
+        "390": "737:6405",
+        "1440": "736:5318"
+      }
+    },
+    "account-orders": {
+      "route": "/account/orders",
+      "name": "Account / Orders (742:7324)",
+      "auth": "client",
+      "screens": {
+        "390": "742:7736",
+        "1440": "742:7324"
+      }
+    },
+    "account-favorites": {
+      "route": "/account/favorites",
+      "name": "Account / Favorites (742:11470)",
+      "auth": "client",
+      "screens": {
+        "390": "742:12144",
+        "1440": "742:11470"
+      }
+    },
+    "account-profile": {
+      "route": "/account/profile",
+      "name": "Account / Profile (742:16191)",
+      "auth": "client",
+      "screens": {
+        "390": "742:16557",
+        "1440": "742:16191"
+      }
+    },
+    "admin-overview": {
+      "route": "/admin",
+      "name": "Admin / Overview (1077:51932)",
+      "auth": "admin",
+      "screens": {
+        "1024": "1077:55042",
+        "1440": "1077:51932"
+      }
+    },
+    "admin-products": {
+      "route": "/admin/products",
+      "name": "Admin / Products (1077:52506)",
+      "auth": "admin",
+      "screens": {
+        "1024": "1077:55616",
+        "1440": "1077:52506"
+      }
+    },
+    "admin-add-product": {
+      "route": "/admin/products/new",
+      "name": "Admin / Add product (1077:52622)",
+      "auth": "admin",
+      "screens": {
+        "1024": "1077:55732",
+        "1440": "1077:52622"
+      }
+    },
+    "admin-orders": {
+      "route": "/admin/orders",
+      "name": "Admin / Orders (1077:52201)",
+      "auth": "admin",
+      "screens": {
+        "1024": "1077:55311",
+        "1440": "1077:52201"
+      }
+    }
+  }
 }

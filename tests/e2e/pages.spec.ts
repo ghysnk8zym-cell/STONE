@@ -66,13 +66,13 @@ test.describe("site shell", () => {
     );
     expect(Math.abs(docHeight - footerBottom)).toBeLessThanOrEqual(1);
 
-    // Inert tabs are not links; Home and Catalog are.
+    // Only Cart is inert (not a link); Home, Catalog, Favorites and the account tab are links (Phase 4a).
     await expect(tabBar.getByRole("link", { name: "Главная" })).toHaveAttribute(
       "href",
       "/ru",
     );
-    await expect(tabBar.locator("a[href]")).toHaveCount(2);
-    await expect(tabBar.locator("[aria-disabled=true]")).toHaveCount(3);
+    await expect(tabBar.locator("a[href]")).toHaveCount(4);
+    await expect(tabBar.locator("[aria-disabled=true]")).toHaveCount(1);
   });
 
   for (const locale of LOCALES) {
@@ -262,11 +262,11 @@ test.describe("home", () => {
     await expect(promo.getByText(HOME.placeholderPrices)).toBeVisible();
   });
 
-  test("phone cards carry inert hearts, desktop cards none", async ({
+  test("phone cards carry live hearts, desktop cards none", async ({
     page,
   }, testInfo) => {
     await page.goto("/ru");
-    const hearts = page.locator("article [role=button][aria-disabled=true]");
+    const hearts = page.locator("article button[aria-pressed]");
     if (testInfo.project.name === "mobile") {
       await expect(hearts).toHaveCount(6);
       await expect(hearts.first()).toBeVisible();
@@ -497,16 +497,17 @@ test.describe("catalog", () => {
     await expect(page.getByText(CAT.placeholderPrices)).toBeVisible();
   });
 
-  test("cards link to products, hearts and the custom order CTA are inert", async ({
+  test("cards link to products, hearts are live buttons and the custom order CTA is inert", async ({
     page,
   }) => {
     await page.goto("/ru/catalog");
     await expect(
       page.locator('article a[href="/ru/catalog/black-marble"]'),
     ).toHaveCount(1);
+    await expect(page.locator("article button[aria-pressed]")).toHaveCount(12);
     await expect(
       page.locator("article [role=button][aria-disabled=true]"),
-    ).toHaveCount(12);
+    ).toHaveCount(0);
     await expect(
       page.getByRole("main").getByText(CAT.customOrder.cta),
     ).toBeVisible();

@@ -19,15 +19,32 @@ export declare function parseReferenceKey(
   key: string,
 ): { id: string; width: number; key: string } | null;
 export declare function buildPageJobs(
-  pages: Record<string, { route?: string; screens?: Record<string, string> }>,
+  pages: Record<
+    string,
+    {
+      route?: string;
+      screens?: Record<string, string>;
+      auth?: string;
+      reference?: string;
+    }
+  >,
   onlyIds: Set<string> | null,
   onlyWidths?: Set<number> | null,
-): { id: string; width: number; key: string; route: string; node: string }[];
+): {
+  id: string;
+  width: number;
+  key: string;
+  route: string;
+  node: string;
+  auth?: string;
+  reference?: string;
+}[];
 export declare function formatPageResults(
   rows: {
     id: string;
     width: number;
     route: string;
+    auth?: string;
     mismatch: string;
     impl: string;
     figma: string;

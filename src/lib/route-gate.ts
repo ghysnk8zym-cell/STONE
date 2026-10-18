@@ -1,24 +1,47 @@
 /*
  * Route gate, applied by src/middleware.ts before next-intl. It decides, from the path alone,
  * whether a request under /{locale} may reach the App Router:
- * - Known product slugs only reach `catalog/[slug]`. That route is SSG with on-demand ISR
- *   (`dynamicParams` stays true, see docs/ARCHITECTURE.md), so any other slug would be rendered
- *   and written to the route cache. On a case-insensitive file system `Black-Marble` would
- *   overwrite the prerendered `black-marble` entry with a 404.
- * - A known slug in another case or encoding is redirected (308) to its canonical form.
+ * - A product slug of the right shape reaches `catalog/[slug]` (rendered per request since Phase 4a
+ *   Task 5, see docs/ARCHITECTURE.md). Whether the product exists is the route's decision (it
+ *   reads the catalog, which since Phase 4a lives in the database); the middleware cannot await a
+ *   database on every host, so it no longer knows the slug list.
+ * - What the gate still guarantees is the part that poisoned the route cache in Phase 3: only
+ *   lowercase slugs ever reach the route. A slug in another case or encoding (`Black-Marble`) is
+ *   redirected (308) to its lowercase form, so on a case-insensitive file system it can never
+ *   overwrite the prerendered `black-marble` entry. A segment that is not a slug at all (dots, spaces,
+ *   garbage) is a 404 here and never reaches the route.
  * - Every other unknown path is rewritten to the `/{locale}/404` page with status 404. That page
- *   renders the localised 404 normally; `notFound()` would only send the empty
- *   `__next_error__` shell, with the content left to client-side rendering.
+ *   renders the localised 404 normally.
  */
 
 /** Segment of the internal 404 page: src/app/[locale]/(site)/404/page.tsx. */
 export const NOT_FOUND_SEGMENT = "404";
+
+/** The shape of a product slug (also enforced by the admin form's zod schema). */
+export const SLUG_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Static public paths under /{locale}. Add new pages here (tests/unit/route-gate.test.ts checks it). */
 const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   "",
   "catalog",
   "_styleguide",
+  "sign-in",
+  "sign-up",
+  "sign-out",
+  // Phase 4a: the pages themselves call requireUser / requireRole (the middleware only does the
+  // optimistic redirect).
+  "account",
+  "account/orders",
+  "account/favorites",
+  "account/profile",
+  "admin",
+  "admin/orders",
+  "admin/products",
+  "admin/products/new",
+  "admin/create-your-stone",
+  "admin/customers",
+  "admin/promotions",
+  "admin/site-content",
 ]);
 
 export type RouteGate =
@@ -28,7 +51,6 @@ export type RouteGate =
 
 export interface RouteGateOptions {
   locales: readonly string[];
-  slugs: readonly string[];
 }
 
 function decode(segment: string): string | undefined {
@@ -39,9 +61,20 @@ function decode(segment: string): string | undefined {
   }
 }
 
+/** Pages whose last segment is a product slug: `catalog/<slug>` and `admin/products/<slug>`. */
+function slugRoute(path: string[]): { prefix: string; slug: string } | null {
+  if (path.length === 2 && path[0] === "catalog") {
+    return { prefix: "catalog", slug: path[1]! };
+  }
+  if (path.length === 3 && path[0] === "admin" && path[1] === "products") {
+    return { prefix: "admin/products", slug: path[2]! };
+  }
+  return null;
+}
+
 export function gateRoute(
   pathname: string,
-  { locales, slugs }: RouteGateOptions,
+  { locales }: RouteGateOptions,
 ): RouteGate {
   const [locale, ...path] = pathname.split("/").filter(Boolean);
   // No locale prefix: next-intl redirects to /{default}/..., which passes the gate again.
@@ -51,14 +84,14 @@ export function gateRoute(
 
   if (PUBLIC_ROUTES.has(path.join("/"))) return { action: "next" };
 
-  if (path.length === 2 && path[0] === "catalog") {
-    const slug = path[1]!;
-    if (slugs.includes(slug)) return { action: "next" };
-    const canonical = decode(slug)?.toLowerCase();
-    if (canonical !== undefined && slugs.includes(canonical)) {
+  const route = slugRoute(path);
+  if (route) {
+    const canonical = decode(route.slug)?.toLowerCase();
+    if (canonical !== undefined && SLUG_SHAPE.test(canonical)) {
+      if (canonical === route.slug) return { action: "next" };
       return {
         action: "redirect",
-        pathname: `/${locale}/catalog/${canonical}`,
+        pathname: `/${locale}/${route.prefix}/${canonical}`,
       };
     }
   }

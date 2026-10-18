@@ -11,9 +11,8 @@ export type TabBarCurrent =
 
 /**
  * `label` is a key of `components.tabBar` in messages/*.json. Slugs are identical in both locales
- * (ADR-004). "Sign in" (key `account`) points at /account, like the header account button: the
- * sign-in screen is a Figma gap (docs/FIGMA-INVENTORY.md section 5.1) and /account is the
- * destination the auth guard will redirect guests from.
+ * (ADR-004). "Sign in" (key `account`) is session-aware (the `account` prop): a Guest goes to /sign-in, a signed-in
+ * visitor sees "Account" and goes to /account, like the header account button.
  */
 const TABS = [
   { key: "home", href: "/", icon: "home" },
@@ -57,17 +56,32 @@ const INERT = "cursor-default";
 export function TabBar({
   current,
   inert = [],
+  account = { href: "/account", signedIn: false },
+  fill = "header",
 }: {
   current?: TabBarCurrent;
   /** Tabs whose page does not exist yet: rendered as non-link items with `aria-disabled`. */
   inert?: readonly TabBarCurrent[];
+  /** Target and label of the last tab: "Sign in" for a Guest, "Account" when signed in. */
+  account?: { href: string; signedIn: boolean };
+  /**
+   * Fill of the bar: `header` (surface/header, 62 %) as on Home v2 and Product, `footer` (surface/footer, 82 %) as the
+   * Account screens draw it (Account 390 737:6583). On the light account pages only the denser fill keeps the idle
+   * labels at 4.5:1.
+   */
+  fill?: "header" | "footer";
 }) {
   const t = useTranslations("components.tabBar");
+  const label = (key: TabBarCurrent) =>
+    key === "account" && account.signedIn ? t("accountSignedIn") : t(key);
 
   return (
     <nav
       aria-label={t("label")}
-      className="glass-blur border-glass bg-surface-header fixed inset-x-4 bottom-[max(16px,env(safe-area-inset-bottom))] z-30 mx-auto max-w-[358px] rounded-[20px] border px-[11px] py-[7px] md:hidden"
+      className={cn(
+        "glass-blur border-glass fixed inset-x-4 bottom-[max(16px,env(safe-area-inset-bottom))] z-30 mx-auto max-w-[358px] rounded-[20px] border px-[11px] py-[7px] md:hidden",
+        fill === "footer" ? "bg-surface-footer" : "bg-surface-header",
+      )}
     >
       <ul className="flex h-[52px] items-center justify-between">
         {TABS.map(({ key, href, icon }) => (
@@ -79,16 +93,16 @@ export function TabBar({
                 className={cn(ITEM_BASE, "text-secondary", INERT)}
               >
                 <Icon name={icon} />
-                {t(key)}
+                {label(key)}
               </span>
             ) : (
               <Link
-                href={href}
+                href={key === "account" ? account.href : href}
                 aria-current={current === key ? "page" : undefined}
                 className={cn(ITEM, current === key ? CURRENT : IDLE)}
               >
                 <Icon name={icon} />
-                {t(key)}
+                {label(key)}
               </Link>
             )}
           </li>

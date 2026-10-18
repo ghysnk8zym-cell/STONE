@@ -4,7 +4,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ShowcaseCard } from "@/components/cards/ShowcaseCard";
 import type { Price } from "@/components/cards/Price";
 import type { Locale } from "@/i18n/routing";
-import { catalog, discountPercent, type Product } from "@/server/catalog";
+import { productName } from "@/lib/product-copy";
+import { discountPercent, getCatalog, type Product } from "@/server/catalog";
 
 import { Backdrop } from "./_home/Backdrop";
 import { Hero } from "./_home/Hero";
@@ -63,6 +64,15 @@ function price(cents: number): Price {
   return { amount: cents / 100, currency: "USD", isPlaceholder: true };
 }
 
+/*
+ * The home page is static (prerendered per locale) and shows products from the catalog. Admin edits revalidate it
+ * (`revalidatePath` in src/server/admin/actions.ts), but a `next build` that ran WITHOUT `DATABASE_URL` (Docker, CI)
+ * prerendered the static seed and would keep serving it after a redeploy until the next admin edit, bringing back
+ * renamed names and unpublished cards. Re-rendering at most every five minutes bounds that on Node hosts. Set
+ * DATABASE_URL at build time as well (docs/DEPLOYMENT.md). Cloudflare renders per request and is not affected.
+ */
+export const revalidate = 300;
+
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
   setRequestLocale(locale as Locale);
@@ -70,6 +80,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const t = await getTranslations("pages.home");
   const c = await getTranslations("catalog");
   const cc = await getTranslations("components");
+  const catalog = await getCatalog();
   const [featured, promo] = await Promise.all([
     catalog.listFeatured(),
     catalog.listPromo(),
@@ -77,7 +88,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
 
   // product slugs and materials are data, so the key is checked at the seed/message parity test
   type CatalogKey = Parameters<typeof c>[0];
-  const name = (p: Product) => c(`products.${p.slug}.name` as CatalogKey);
+  const name = (p: Product) => productName(p, locale, c);
   const material = (p: Product) => c(`material.${p.material}` as CatalogKey);
   const favorite = (p: Product) =>
     cc("productCard.favorite", { name: name(p) });
@@ -109,6 +120,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               title={name(p)}
               subtitle={material(p)}
               favoriteLabel={favorite(p)}
+              favoriteSlug={p.slug}
               image={{ src: p.image, alt: "" }}
               imageFit={p.imageFit}
               className="w-full"
@@ -131,6 +143,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               title={name(p)}
               subtitle={format(p)}
               favoriteLabel={favorite(p)}
+              favoriteSlug={p.slug}
               image={{ src: p.image, alt: "" }}
               imageFit={p.imageFit}
               price={price(p.priceCents)}

@@ -22,7 +22,8 @@
         "ProductCard",
         "CardShowcase:Product",
         "ProductGallery:main",
-        "ProductGallery:thumb2 (same fill, Figma crop transform)"
+        "ProductGallery:thumb2 (same fill, Figma crop transform)",
+        "SignOut:Art (Render / Black Marble, rotated 30deg; byte-identical to this catalog image)"
       ]
     },
     {
@@ -171,7 +172,8 @@
       "usage": [
         "ProductCard",
         "ProductGallery:main",
-        "ProductGallery:thumb2 (same fill, Figma crop transform)"
+        "ProductGallery:thumb2 (same fill, Figma crop transform)",
+        "SignOut:Art (Render / Grey Marble, rotated 30deg; byte-identical to this catalog image)"
       ]
     },
     {
@@ -416,6 +418,42 @@
       "usage": [
         "Home v2 Background / 555 1 (rock backdrop behind the glass panels, all layouts)"
       ]
+    },
+    {
+      "file": "images/auth/create-account-landscape",
+      "node": "431:3193",
+      "sourceWidth": 1672,
+      "sourceHeight": 940,
+      "requestedWidths": [
+        1024,
+        1440,
+        1920
+      ],
+      "widths": [
+        1024,
+        1440
+      ],
+      "usage": [
+        "Auth screens (sign-in / sign-up) background from 1024: Create account 431:3193, 840:21796, 840:21822"
+      ]
+    },
+    {
+      "file": "images/auth/create-account-portrait",
+      "node": "431:3250",
+      "sourceWidth": 941,
+      "sourceHeight": 1672,
+      "requestedWidths": [
+        390,
+        768,
+        1024
+      ],
+      "widths": [
+        390,
+        768
+      ],
+      "usage": [
+        "Auth screens (sign-in / sign-up) background below 1024: Create account 431:3250, 840:21848, 840:21874"
+      ]
     }
   ],
   "icons": [
@@ -470,6 +508,10 @@
     {
       "name": "user",
       "node": "712:478"
+    },
+    {
+      "name": "eye",
+      "node": "430:484"
     }
   ]
 }

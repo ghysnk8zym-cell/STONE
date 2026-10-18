@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
+import { useAccountHref } from "@/features/account/account-context";
 import { Link } from "@/i18n/navigation";
 
 import { IconButton } from "../buttons/IconButton";
@@ -52,6 +53,7 @@ export function MobileMenu({
   inert = [],
 }: MobileMenuProps) {
   const t = useTranslations("components.nav");
+  const accountHref = useAccountHref();
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
 
@@ -155,7 +157,7 @@ export function MobileMenu({
                 </span>
               ) : (
                 <Link
-                  href={item.href}
+                  href={item.key === "account" ? accountHref : item.href}
                   onClick={onClose}
                   aria-current={current === item.key ? "page" : undefined}
                   className={cn(

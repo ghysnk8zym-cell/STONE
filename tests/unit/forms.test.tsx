@@ -168,6 +168,42 @@ describe("TextField", () => {
       unmount();
     }
   });
+
+  it("renders a trailing control inside the field box, after the input, outside the label", () => {
+    renderWithIntl(
+      <TextField
+        label="Password"
+        name="password"
+        type="password"
+        trailing={<button type="button">Show</button>}
+      />,
+    );
+    const input = screen.getByLabelText("Password");
+    const button = screen.getByRole("button", { name: "Show" });
+    expect(input.parentElement).toBe(button.closest("div"));
+    expect(
+      input.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    // The input keeps its own right padding class apart from the default one.
+    expect(input.className).toContain("pr-3");
+    expect(input.className).not.toContain("pr-6");
+  });
+
+  it("the screen scale (sign-in / sign-up) is 52 px high below lg and uses the screen label", () => {
+    const { container } = renderWithIntl(
+      <TextField label="Email" name="email" scale="screen" />,
+    );
+    const box = container.querySelector("input")!.parentElement!;
+    expect(box.className).toContain("h-13");
+    expect(box.className).toContain("lg:h-15");
+    expect(screen.getByText("Email").className).toContain("text-ink-on-dark");
+    // The default scale is unchanged: 60 px, the Phase 2 label.
+    const plain = renderWithIntl(<TextField label="Plain" name="plain" />);
+    expect(
+      plain.container.querySelector("input")!.parentElement!.className,
+    ).toContain("h-15");
+    expect(screen.getByText("Plain").className).toContain("text-label");
+  });
 });
 
 describe("SearchField", () => {

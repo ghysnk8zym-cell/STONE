@@ -19,14 +19,14 @@ export const NAV_ITEMS = [
 }[];
 
 /**
- * Controls that stay inert (non-link, `aria-disabled`) in Phase 3 because their pages are not
- * built yet (owner decision A, docs/superpowers/specs/2026-10-14-phase-3-pages-design.md).
- * Remove an entry when its page ships. `tabBar` feeds `TabBar`, `nav` feeds `SiteHeader` and the
- * mobile menu.
+ * Controls that stay inert (non-link, `aria-disabled`) because their pages are not built yet (owner decision
+ * A, docs/superpowers/specs/2026-10-14-phase-3-pages-design.md): Cart and Create Your Stone have no Figma
+ * screens. Favorites and the account entries went live in Phase 4a. Remove an entry when its page ships.
+ * `tabBar` feeds `TabBar`, `nav` feeds `SiteHeader` and the mobile menu.
  */
-export const PHASE3_INERT = {
-  tabBar: ["favorites", "cart", "account"],
-  nav: ["create", "cart", "account"],
+export const INERT = {
+  tabBar: ["cart"],
+  nav: ["create", "cart"],
 } as const satisfies {
   tabBar: readonly TabBarCurrent[];
   nav: readonly NavCurrent[];

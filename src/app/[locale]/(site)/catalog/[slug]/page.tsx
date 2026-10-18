@@ -1,30 +1,47 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { cache } from "react";
+import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Button } from "@/components/buttons/Button";
 import { IconButton } from "@/components/buttons/IconButton";
+import { FavoriteSaveButton } from "@/features/account/FavoriteControls";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { routing, type Locale } from "@/i18n/routing";
 import { imageSize } from "@/lib/image-size";
-import { catalog, products, type Product } from "@/server/catalog";
+import { NOT_FOUND_SEGMENT } from "@/lib/route-gate";
+import { productDescription, productName } from "@/lib/product-copy";
+import { getCatalog, type Product } from "@/server/catalog";
 
 import { PAGE_SURFACE_ATTR, PAGE_SURFACE_CATALOG } from "../../page-surface";
 import { Calculator } from "./Calculator";
 import { Gallery, type GalleryCrop } from "./Gallery";
 import { SpecRows } from "./SpecRows";
 
-export function generateStaticParams() {
-  return routing.locales.flatMap((locale) =>
-    products.map((product) => ({ locale, slug: product.slug })),
-  );
-}
+/*
+ * Rendered per request, deliberately not SSG / ISR. The catalog lives in the database (Phase 4a) and the middleware
+ * gate cannot know which slugs exist, so an unknown slug reaches this route. On an ISR route
+ * Next writes that 404 to the route cache like any page (measured with `next start`: `x-nextjs-cache: HIT` and
+ * `Cache-Control: s-maxage=31536000`), one entry per requested slug, and there is no per-slug way to opt out (a dynamic
+ * API in the not-found branch makes the on-demand render a 500). Rendering per request keeps the answer to "found" or
+ * "404, not cached", and an admin's edit, unpublish or new product is visible at once without depending on
+ * revalidatePath (the Cloudflare build has no incremental cache and renders per request anyway).
+ * An unknown or unpublished slug is redirected (307, no-store) to the gate's 404 page: notFound() thrown during render
+ * makes Next 16.3.8 send an empty error shell. See docs/ARCHITECTURE.md, "Route gate and the localised 404".
+ */
+export const dynamic = "force-dynamic";
+
+/** One lookup per request: the page and generateMetadata both need the product. */
+const findProduct = cache(async (slug: string) =>
+  (await getCatalog()).getBySlug(slug),
+);
 
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/catalog/[slug]">): Promise<Metadata> {
   const { locale, slug } = await params;
-  const product = await catalog.getBySlug(slug);
+  const product = await findProduct(slug);
   if (!product) return {};
   const c = await getTranslations({
     locale: locale as Locale,
@@ -34,10 +51,9 @@ export async function generateMetadata({
     locale: locale as Locale,
     namespace: "meta.product",
   });
-  type CatalogKey = Parameters<typeof c>[0];
   const values = {
-    name: c(`products.${product.slug}.name` as CatalogKey),
-    description: c(`products.${product.slug}.description` as CatalogKey),
+    name: productName(product, locale, c),
+    description: productDescription(product, locale, c),
   };
   return { title: t("title", values), description: t("description", values) };
 }
@@ -63,15 +79,20 @@ export default async function ProductPage({
   params,
 }: PageProps<"/[locale]/catalog/[slug]">) {
   const { locale, slug } = await params;
-  setRequestLocale(locale as Locale);
-  const product = await catalog.getBySlug(slug);
-  if (!product) notFound();
+  // The locale is a URL segment: check it before it is used in a redirect target below (the layout checks it too,
+  // but a layout and its page render side by side, so the page cannot rely on that).
+  if (!hasLocale(routing.locales, locale)) notFound();
+  setRequestLocale(locale);
+  const product = await findProduct(slug);
+  // notFound() here would send the empty error shell (no content without JavaScript, see the comment above), so an
+  // unknown or unpublished product is sent to the gate's server-rendered 404 page: 307, no-store, then 404 + noindex.
+  if (!product) redirect(`/${locale}/${NOT_FOUND_SEGMENT}`);
 
   const t = await getTranslations("pages.product");
   const c = await getTranslations("catalog");
   // product slugs and enum values are data: the keys are checked by the catalog messages test
   type CatalogKey = Parameters<typeof c>[0];
-  const name = c(`products.${product.slug}.name` as CatalogKey);
+  const name = productName(product, locale, c);
   const material = c(`material.${product.material}` as CatalogKey);
   const [w, h, d] = product.formatMm;
 
@@ -118,12 +139,10 @@ export default async function ProductPage({
                 <h1 className="text-ink min-w-0 flex-1 [font-family:var(--font-display)] text-[28px] leading-9 md:text-[44px] md:leading-[52px] min-[90rem]:text-[56px] min-[90rem]:leading-16">
                   {name}
                 </h1>
-                <Button variant="save" inert>
-                  {t("save")}
-                </Button>
+                <FavoriteSaveButton slug={product.slug} label={t("save")} />
               </div>
               <p className="type-catalog-field-value text-ink-secondary">
-                {c(`products.${product.slug}.description` as CatalogKey)}
+                {productDescription(product, locale, c)}
               </p>
               <SpecRows
                 rows={[

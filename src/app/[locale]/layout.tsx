@@ -7,6 +7,15 @@ import {
   setRequestLocale,
 } from "next-intl/server";
 
+// Worker size (Phase 4a review R1). Turbopack writes the shared server chunks once per route group
+// (public pages, account pages, auth pages): Better Auth + drizzle + zod were then three copies of about
+// 320 KiB gzip together. These side-effect imports put the modules every group needs into the graph of
+// this common parent, so the groups share one copy. They run nothing at render time (both only declare
+// functions). Do not remove them, and add a module here when a new route group pulls in a big server
+// dependency; `pnpm cf:size` fails when Better Auth appears in more than one SSR chunk.
+import "@/server/auth/guards";
+import "@/server/account/queries";
+
 import { fontVariables } from "@/app/fonts";
 import { clientMessages } from "@/i18n/client-messages";
 import { routing } from "@/i18n/routing";

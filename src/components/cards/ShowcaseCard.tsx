@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { useId } from "react";
 
+import { FavoriteHeart } from "@/features/account/FavoriteControls";
 import { Link } from "@/i18n/navigation";
 
 import type { InteractionState } from "../buttons/Button";
@@ -39,10 +40,12 @@ type Common = {
   className?: string;
   /**
    * Product / promo only: accessible name of the Heart that Figma draws on the phone (Mobile) cards
-   * (390 frames; none on Desktop). Rendered inert: favourites are not built yet (owner decision A).
+   * (390 frames; none on Desktop). Inert unless `favoriteSlug` is given.
    * Hidden from 768 px up.
    */
   favoriteLabel?: string;
+  /** With `favoriteLabel`: the Heart is live (the catalog favourite of this slug) instead of inert. */
+  favoriteSlug?: string;
 };
 
 export type ShowcaseCardProps = Common &
@@ -156,6 +159,7 @@ export function ShowcaseCard({
   state,
   className,
   favoriteLabel,
+  favoriteSlug,
 }: ShowcaseCardProps) {
   const titleId = useId();
   const overlay =
@@ -241,7 +245,16 @@ export function ShowcaseCard({
               layout === "responsive" && "md:hidden",
             )}
           >
-            <IconButton icon="heart" tone="light" label={favoriteLabel} inert />
+            {favoriteSlug !== undefined ? (
+              <FavoriteHeart slug={favoriteSlug} label={favoriteLabel} />
+            ) : (
+              <IconButton
+                icon="heart"
+                tone="light"
+                label={favoriteLabel}
+                inert
+              />
+            )}
           </span>
         )}
       </div>
