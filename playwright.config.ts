@@ -12,14 +12,14 @@ const productionBaseURL = `http://localhost:${productionPort}`;
 // Third `next start` of the same build, WITH a database: a throwaway PGlite database, migrated and seeded
 // by scripts/e2e-db-server.mjs with the fake values of .env.test.example. Only the `auth-*` projects
 // (the sign-up / sign-in / sign-out flows, tests/e2e/auth.spec.ts, the account area and favourites,
-// tests/e2e/account.spec.ts, and the admin area, tests/e2e/admin.spec.ts) use it. The two servers above have no
+// tests/e2e/account.spec.ts, the admin area, tests/e2e/admin.spec.ts, and the role access matrix, tests/e2e/access.spec.ts) use it. The two servers above have no
 // database (DATABASE_URL is forced empty, so a developer's .env.local cannot switch one on), as the
 // preview does until the owner adds Neon: the Phase 3 tests and the "unavailable" tests run there.
 const authPort = 3002;
 const authBaseURL = `http://localhost:${authPort}`;
-// Anchored: only files named exactly `auth.spec.ts`, `account.spec.ts` or `admin.spec.ts` (not `oauth.spec.ts`)
+// Anchored: only files named exactly `auth.spec.ts`, `account.spec.ts`, `admin.spec.ts` or `access.spec.ts` (not `oauth.spec.ts`)
 // belong to the database server. A new spec that needs the database is added here on purpose.
-const AUTH_SPEC = /(^|[\\/])(auth|account|admin)\.spec\.ts$/;
+const AUTH_SPEC = /(^|[\\/])(auth|account|admin|access)\.spec\.ts$/;
 const NO_DATABASE = { DATABASE_URL: "", BETTER_AUTH_SECRET: "" };
 
 // Tests tagged @production only make sense against the production-mode server.
