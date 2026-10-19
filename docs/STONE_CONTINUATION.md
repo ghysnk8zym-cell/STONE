@@ -5,13 +5,13 @@ Read with `docs/STONE_HANDOFF.md` (state at 2026-10-18, still accurate for histo
 
 ## 1. Where the work is
 
-| Item                                    | Value                                                                                                                                                                 |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Working directory                       | `C:\Users\nartsiss\Documents\Documents STONE\.claude\worktrees\phase-2-design-system` (a git worktree; the folder name is historical)                                 |
-| Branch                                  | `feat/phase-4-auth` (PR #5, open; stacked on #4 → #3 → #2 → #1; `main` = initial commit only)                                                                         |
-| HEAD (committed)                        | `a94afcf` — everything below is **uncommitted** in the working tree at the time of writing (see §6 for the push proposal)                                             |
-| Local backup made before this milestone | `C:\Users\nartsiss\Documents\STONE-backups\2026-10-19-before-shop-work\` (`tree\` copy without node_modules/.next, `tracked-changes.patch`, `status.txt`, `HEAD.txt`) |
-| Implementer/review notes (git-ignored)  | `.superpowers/sdd/2026-10-19-test-shop/cart-checkout-report.md`, `.superpowers/sdd/2026-10-17-phase-4a-auth-account-admin/`                                           |
+| Item                                    | Value                                                                                                                                                                                                                                                                            |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Working directory                       | `C:\Users\nartsiss\Documents\Documents STONE\.claude\worktrees\phase-2-design-system` (a git worktree; the folder name is historical)                                                                                                                                            |
+| Branch                                  | `feat/test-shop` — draft PR #6 (base `feat/phase-4-auth` = PR #5; stack #1 → #2 → #3 → #4 → #5 → #6; `main` = initial commit only). Owner approved commit + push on 2026-10-20.                                                                                                  |
+| Commits                                 | `188229c` (all milestone work), `e6ba2d0` (CI Docker job fix), plus this note. **CI run 39336297414 on `e6ba2d0`: all six jobs green** (quality, build, e2e, cloudflare, node-standalone, docker); Worker gzip **2631.33 KiB / 3072 KiB**; artifact `open-next-build` (17.4 MB). |
+| Local backup made before this milestone | `C:\Users\nartsiss\Documents\STONE-backups\2026-10-19-before-shop-work\` (`tree\` copy without node_modules/.next, `tracked-changes.patch`, `status.txt`, `HEAD.txt`)                                                                                                            |
+| Implementer/review notes (git-ignored)  | `.superpowers/sdd/2026-10-19-test-shop/cart-checkout-report.md`, `.superpowers/sdd/2026-10-17-phase-4a-auth-account-admin/`                                                                                                                                                      |
 
 ## 2. Completed (uncommitted) work
 
@@ -35,11 +35,12 @@ Read with `docs/STONE_HANDOFF.md` (state at 2026-10-18, still accurate for histo
 - `pnpm build`: passes (implementer run after the review fixes).
 - E2E: full suite after the first implementation **625 passed, 76 skipped (per-project/viewport skips, unchanged), 0 failed**; after the review fixes the shop/account/admin/product specs **139 passed, 23 skipped, 0 failed**. A full e2e run after the fixes has not been done locally (use CI).
 - Independent review of the shop server code: no critical issues; its 3 important + minor findings are fixed (see the report).
-- **Not run:** `pnpm cf:build` / Worker size (Linux only → CI), anything against real Neon or Cloudflare.
+- **CI (Linux, run 39336297414, commit `e6ba2d0`):** all six jobs green, incl. the full e2e suite, `cf:build` + 3 MiB gate (2631.33 KiB) and the Docker/standalone smokes.
+- **Not run:** anything against real Neon or Cloudflare.
 
 ## 4. Unfinished work and known issues
 
-1. Nothing is committed/pushed; CI has not run on this code.
+1. Committed and pushed to `feat/test-shop` (draft PR #6); nothing merged.
 2. Not deployed. Real Neon (HTTP driver writes, sequences, grants) and real Workers runtime (password hashing CPU on Workers Free, photo processing) are unverified.
 3. ±1 race on the 50-order demo cap (documented in `docs/SECURITY.md`); sign-out without JavaScript does not clear the cart.
 4. Cart/checkout/order screens and the test banner have no Figma frames — owner visual approval needed. Owner checklists in `docs/QA/*` remain open.
