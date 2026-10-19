@@ -24,6 +24,7 @@ export const SLUG_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   "",
   "catalog",
+  "create-your-stone",
   "_styleguide",
   "sign-in",
   "sign-up",
@@ -34,6 +35,9 @@ const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   "account/orders",
   "account/favorites",
   "account/profile",
+  // Test shop: the cart is public (a Guest builds a cart); the checkout page sends a Guest to sign-in.
+  "cart",
+  "checkout",
   "admin",
   "admin/orders",
   "admin/products",
@@ -43,6 +47,9 @@ const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   "admin/promotions",
   "admin/site-content",
 ]);
+
+/** An order number (`D-1048`, `T-2001`), as the admin status action also validates it. */
+export const ORDER_NUMBER_SHAPE = /^[A-Z]-\d{3,9}$/;
 
 export type RouteGate =
   | { action: "next" }
@@ -83,6 +90,16 @@ export function gateRoute(
   }
 
   if (PUBLIC_ROUTES.has(path.join("/"))) return { action: "next" };
+
+  // One order of the signed-in user: the page itself checks ownership (404 otherwise).
+  if (
+    path.length === 3 &&
+    path[0] === "account" &&
+    path[1] === "orders" &&
+    ORDER_NUMBER_SHAPE.test(path[2]!)
+  ) {
+    return { action: "next" };
+  }
 
   const route = slugRoute(path);
   if (route) {

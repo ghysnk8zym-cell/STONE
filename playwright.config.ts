@@ -17,9 +17,10 @@ const productionBaseURL = `http://localhost:${productionPort}`;
 // preview does until the owner adds Neon: the Phase 3 tests and the "unavailable" tests run there.
 const authPort = 3002;
 const authBaseURL = `http://localhost:${authPort}`;
-// Anchored: only files named exactly `auth.spec.ts`, `account.spec.ts`, `admin.spec.ts` or `access.spec.ts` (not `oauth.spec.ts`)
+// Anchored: the named auth/account/admin/customers/promotions/access/shop (test checkout) specs (not `oauth.spec.ts`)
 // belong to the database server. A new spec that needs the database is added here on purpose.
-const AUTH_SPEC = /(^|[\\/])(auth|account|admin|access)\.spec\.ts$/;
+const AUTH_SPEC =
+  /(^|[\\/])(auth|account|admin|customers|promotions|site-content|stone-requests|public-requests|access|shop)\.spec\.ts$/;
 const NO_DATABASE = { DATABASE_URL: "", BETTER_AUTH_SECRET: "" };
 
 // Tests tagged @production only make sense against the production-mode server.

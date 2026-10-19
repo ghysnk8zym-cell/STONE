@@ -55,9 +55,11 @@ export default async function AdminEditProductPage({
         subtitle={name}
       />
       <ProductForm
+        key={product.slug}
         mode="edit"
         initial={productValuesOf(product)}
         published={product.published}
+        revision={product.revision}
         options={options}
       />
       <AdminFootnote>{t("new.footnote")}</AdminFootnote>

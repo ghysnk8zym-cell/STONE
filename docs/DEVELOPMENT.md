@@ -14,6 +14,10 @@
 
 ## First run
 
+The self-contained [README quickstart](../README.md#local-quickstart-with-working-authentication)
+includes local PGlite, fake accounts, first-run requirements and the installed-tool
+fallback when a pnpm shim is missing. Use it for the handoff acceptance check.
+
 ```bash
 pnpm install
 cp .env.example .env.local   # then edit values; never commit .env.local
@@ -22,24 +26,25 @@ pnpm dev                     # http://localhost:3000 → redirects to /ru
 
 ## Scripts
 
-| Script                         | What it does                                                   |
-| ------------------------------ | -------------------------------------------------------------- |
-| `pnpm dev`                     | Next.js dev server                                             |
-| `pnpm build`                   | Standard `next build` (portable: Node, Vercel, Netlify)        |
-| `pnpm start`                   | Serve the production build                                     |
-| `pnpm lint`                    | ESLint (includes no-JSX-literals and platform-import rules)    |
-| `pnpm format`                  | Prettier write                                                 |
-| `pnpm format:check`            | Prettier check (CI)                                            |
-| `pnpm typecheck`               | Route type generation + `tsc --noEmit`                         |
-| `pnpm test`                    | Vitest unit tests (`tests/unit`)                               |
-| `pnpm test:e2e`                | Playwright (`tests/e2e`); builds must exist (`pnpm build`)     |
-| `pnpm db:generate`             | Writes a new SQL migration in `drizzle/` after a schema change |
-| `pnpm db:migrate`              | Applies `drizzle/` to the database behind `DATABASE_URL`       |
-| `pnpm db:seed`                 | Idempotent database seed (see below)                           |
-| `pnpm cf:build`                | OpenNext build for Cloudflare Workers (Linux/WSL/CI only)      |
-| `pnpm cf:size`                 | Fails if the Worker gzip size exceeds 3 MiB (run after build)  |
-| `pnpm cf:preview`              | Build and run the Worker locally with wrangler (Linux/WSL)     |
-| `pnpm cf:deploy` / `cf:upload` | Used by Cloudflare Workers Builds (production / previews)      |
+| Script                         | What it does                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------- |
+| `pnpm dev`                     | Next.js dev server                                                                 |
+| `pnpm build`                   | Standard `next build` (portable: Node, Vercel, Netlify)                            |
+| `pnpm build:node`              | Opt-in standalone artifact; clean source without env files; see NODE_DEPLOYMENT.md |
+| `pnpm start`                   | Serve the production build                                                         |
+| `pnpm lint`                    | ESLint (includes no-JSX-literals and platform-import rules)                        |
+| `pnpm format`                  | Prettier write                                                                     |
+| `pnpm format:check`            | Prettier check (CI)                                                                |
+| `pnpm typecheck`               | Route type generation + `tsc --noEmit`                                             |
+| `pnpm test`                    | Vitest unit tests (`tests/unit`)                                                   |
+| `pnpm test:e2e`                | Playwright (`tests/e2e`); builds must exist (`pnpm build`)                         |
+| `pnpm db:generate`             | Writes a new SQL migration in `drizzle/` after a schema change                     |
+| `pnpm db:migrate`              | Applies `drizzle/` to the database behind `DATABASE_URL`                           |
+| `pnpm db:seed`                 | Idempotent database seed (see below)                                               |
+| `pnpm cf:build`                | OpenNext build for Cloudflare Workers (Linux/WSL/CI only)                          |
+| `pnpm cf:size`                 | Fails if the Worker gzip size exceeds 3 MiB (run after build)                      |
+| `pnpm cf:preview`              | Build and run the Worker locally with wrangler (Linux/WSL)                         |
+| `pnpm cf:deploy` / `cf:upload` | Used by Cloudflare Workers Builds (production / previews)                          |
 
 Database seed: `pnpm db:seed` reads `DATABASE_URL` and the four `SEED_*` values from the ignored `.env.local` (`node --env-file-if-exists`), upserts the 12 products with ru/en names and descriptions taken from `messages/*.json`, creates the Admin and the Client through Better Auth (emails lowercased, passwords hashed by Better Auth; the Admin role is set by the seed, never by sign-up, and an already existing account is promoted only if it holds SEED_ADMIN_PASSWORD, otherwise the seed stops with an error), and links the demo orders D-1048 and D-1032 and three favourites. It prints counts only and can be re-run safely: it only inserts missing rows and never overwrites existing products, translations or orders, so admin edits survive. It refuses to run against a remote database (anything but `pglite://` or a `localhost`/`127.0.0.1` postgres URL) unless `SEED_ALLOW_REMOTE=1` is set. With a `pglite://` URL it needs no database server. Without `DATABASE_URL` the site serves the static catalog (`getCatalog()` in `src/server/catalog`).
 
@@ -66,7 +71,7 @@ pnpm dev       # sign in at http://localhost:3000/ru/sign-in; the admin is at /r
 - `pglite://memory` is a throwaway database that vanishes with the process (unit tests use it).
 - `pnpm db:migrate` is for real Postgres (Neon, `postgres://`); the app migrates PGlite itself. After changing `src/server/db/schema.ts` run `pnpm db:generate`, read the SQL it wrote, and commit it with the schema. Never edit an applied migration.
 - The remote seed steps for the owner (Neon, `SEED_ALLOW_REMOTE=1`) are in `docs/DEPLOYMENT.md`, section 3.
-- Without `DATABASE_URL` the site still works: catalog from the static seed, auth pages say "unavailable". `pnpm build` prerenders the home page from whatever catalog it sees, so on a Node host set `DATABASE_URL` at build time as well as at run time (the home page also re-renders every five minutes, `revalidate = 300`, and after each admin change); `docs/DEPLOYMENT.md` section 5.
+- Without `DATABASE_URL` the site still works: catalog from the static seed, auth pages say "unavailable", home text uses messages. Home reads content and catalog at request time with `connection()`, including on Node, so confirmed edits are not hidden by the old ISR cache. Configure the runtime database; a build-time database is no longer required for Home freshness. See `docs/DEPLOYMENT.md` section 5.
 
 First Playwright run: `pnpm exec playwright install chromium`.
 
@@ -106,3 +111,25 @@ The repository enables the [obra/superpowers](https://github.com/obra/superpower
 
 Alternative (official marketplace): `/plugin install superpowers@claude-plugins-official`.
 Commands verified against the obra/superpowers README on 2026-10-13.
+
+## Local Phase 4b follow-up migrations
+
+`0002_product-revision.sql` adds the nonnegative product revision used by Product and Promotions editors. `0003_site-content.sql` adds localized home text overrides with a composite key and locale/text constraints. Both migrations and their generated snapshots are checked in the working tree for review; no remote database has been migrated during this work. Unit and browser database fixtures apply them only to isolated PGlite databases.
+
+Keep seeding and translation repair offline from active editors: the initial catalog seed can insert a missing translation without advancing the product revision. Normal editor writes use revision comparison and a single atomic product/translation statement. Revision exhaustion fails closed and requires an explicit maintenance plan; do not reset versions while old editors may remain open.
+
+Site content is limited to existing home text fields in `ru` and `en`. Clearing an override through Restore default returns that field to its message fallback. There are no drafts, scheduling, media uploads, editable URLs, or remote migration commands in this slice.
+
+`0004_stone-requests.sql` adds Create Your Stone request records and constraints.
+The seed links Q-1048/Q-1047/Q-1046 to the existing configured Client, skips a missing
+client, and inserts without overwriting existing records. These are synthetic
+requests, with catalog reference images and illustrative per-piece prices. No new
+credentials or customers are created by that seed step. The admin can save a quote
+or track its status; neither operation delivers messages or starts payment.
+
+`tests/e2e/stone-requests.spec.ts` belongs to the isolated database projects. It
+checks both languages, stale saves, a selected request leaving its active filter
+while retaining an unsaved quote, Overview, the existing Customers link and axe at
+1440/1024/390. At 390 the existing admin-unavailable notice is the designed state.
+Migration 0004 has only been exercised locally; review and explicitly approve a
+specific remote target before applying it there.

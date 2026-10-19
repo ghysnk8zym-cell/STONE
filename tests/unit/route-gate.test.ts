@@ -16,6 +16,8 @@ describe("route gate", () => {
       "/ru",
       "/en/",
       "/ru/catalog",
+      "/ru/create-your-stone",
+      "/en/create-your-stone",
       "/en/catalog/black-marble",
       "/ru/_styleguide",
     ]) {
@@ -54,7 +56,26 @@ describe("route gate", () => {
       "/ru/account/x",
       "/ru/Account",
       "/en/account/orders/D-1",
+      "/en/account/orders/t-2001",
+      "/en/account/orders/T-2001/x",
+      "/en/account/orders/T%2D2001x",
     ]) {
+      expect(gate(path), path).toMatchObject({ action: "not-found" });
+    }
+  });
+
+  it("lets the cart, the checkout and one order (by number) through", () => {
+    for (const locale of ["ru", "en"]) {
+      for (const page of [
+        "cart",
+        "checkout",
+        "account/orders/T-2001",
+        "account/orders/D-1048",
+      ]) {
+        expect(gate(`/${locale}/${page}`), page).toEqual({ action: "next" });
+      }
+    }
+    for (const path of ["/ru/cart/x", "/ru/Cart", "/en/checkout/now"]) {
       expect(gate(path), path).toMatchObject({ action: "not-found" });
     }
   });
@@ -178,7 +199,9 @@ describe("route gate covers the app directory", () => {
 
   for (const segments of routes) {
     const sample = segments
-      .map((s) => (s === "[slug]" ? seed[0]!.slug : s))
+      .map((s) =>
+        s === "[slug]" ? seed[0]!.slug : s === "[number]" ? "T-2001" : s,
+      )
       .join("/");
     it(`/${segments.join("/")} passes`, () => {
       for (const locale of routing.locales) {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { TestBanner } from "@/components/navigation/TestBanner";
 import type { Locale } from "@/i18n/routing";
 import { requireRole } from "@/server/auth/guards";
 
@@ -36,6 +37,7 @@ export default async function AdminLayout({
 
   return (
     <div className="bg-stone-catalog-page min-h-dvh">
+      <TestBanner />
       <main
         data-admin-narrow
         className="text-stone-catalog-ink flex min-h-dvh flex-col items-start justify-center gap-4 px-6 py-16 lg:hidden"

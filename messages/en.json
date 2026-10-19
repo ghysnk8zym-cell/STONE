@@ -1,4 +1,61 @@
 {
+  "stoneRequest": {
+    "title": "Create Your Stone",
+    "subtitle": "Share your idea. Request a custom quote.",
+    "back": "Back to catalog",
+    "reference": "Your reference",
+    "referenceHint": "Upload a photo, texture sketch or technical drawing",
+    "choose": "Choose file",
+    "replace": "Replace",
+    "remove": "Remove",
+    "added": "Reference added",
+    "preview": "Reference preview",
+    "previewEmpty": "Your reference will appear here",
+    "photoHelp": "JPEG, PNG or WebP, up to 5 MB. We save an optimized PNG up to 512 px, not the original.",
+    "preparing": "Preparing reference…",
+    "details": "Stone details",
+    "detailsHint": "Enter the dimensions you need.",
+    "material": "Material",
+    "materialPlaceholder": "Select material",
+    "color": "Color",
+    "texture": "Texture",
+    "colorPlaceholder": "Describe the color",
+    "texturePlaceholder": "Describe the texture",
+    "lengthMm": "Length",
+    "widthMm": "Width",
+    "thicknessMm": "Thickness",
+    "quantity": "Quantity",
+    "mm": "mm",
+    "pieces": "pieces",
+    "contact": "Contact details",
+    "contactName": "Full name",
+    "contactEmail": "Email",
+    "contactPhone": "Phone (optional)",
+    "submit": "Request a Quote",
+    "sending": "Saving request…",
+    "submitHint": "Send your reference and specifications for a quote.",
+    "demo": "Demo: use fictional contact details and non-sensitive reference images. No payment is taken and no messages are sent.",
+    "signIn": "Sign in to send a request",
+    "signInHint": "Sign in before filling out the form. Your reference and request will be visible only to you and the administrator.",
+    "unavailable": "Request submission is unavailable in this preview. Nothing will be saved.",
+    "success": "Request saved",
+    "successHint": "Your reference and details are saved for the administrator to review. This confirmation remains available after reloading.",
+    "number": "Request {number}",
+    "newRequest": "Create another request",
+    "recovering": "Checking your previous submission…",
+    "retry": "Try sending again with the same details. A repeated submission will not create another request.",
+    "errors": {
+      "invalid": "Check the required fields. Use whole numbers from 1 to 10,000 and a valid email address.",
+      "field": "Check this value.",
+      "photo": "Choose a valid JPEG, PNG or WebP image up to 5 MB. Very large or damaged images are not supported.",
+      "serverPhoto": "The reference could not be verified. Choose another image.",
+      "rate-limit": "Too many attempts. Wait a minute and try again.",
+      "quota": "The demo request limit has been reached. Nothing new was saved.",
+      "conflict": "This submission was already saved with different details. Reload to recover it, or start a new request.",
+      "unavailable": "We could not confirm that the request was saved. Keep this page open and try again.",
+      "storage": "Browser recovery storage is unavailable. Keep this page open until saving finishes."
+    }
+  },
   "common": {
     "siteName": "STONE"
   },
@@ -581,7 +638,12 @@
     "signOutPage": {
       "title": "Sign out?",
       "confirm": "Sign out",
-      "stay": "Stay signed in"
+      "stay": "Stay signed in",
+      "errors": {
+        "generic": "Sign-out could not be confirmed. Please try again.",
+        "unavailable": "Sign-out is temporarily unavailable. Please try again.",
+        "tooManyAttempts": "Too many attempts. Wait a minute, then try signing out again."
+      }
     }
   },
   "account": {
@@ -648,7 +710,20 @@
         "title": "No orders yet",
         "body": "Orders you place will appear here.",
         "browse": "Open catalog"
-      }
+      },
+      "testOrder": "Test order {number}",
+      "areaLine": "{area} m² × {price} / m²",
+      "area": "{area} m²",
+      "testLabel": "Test order: not paid and not delivered",
+      "demoLabel": "Demo record",
+      "placed": "Thank you! Test order {number} has been placed.",
+      "placedBody": "No payment was taken. You can follow its status here and in your orders.",
+      "lineTotal": "Line total",
+      "total": "Order total",
+      "statusLabel": "Status",
+      "items": "Items",
+      "all": "All orders",
+      "meta": "Order {number}"
     },
     "favorites": {
       "title": "Favorites",
@@ -729,19 +804,199 @@
     },
     "createYourStone": {
       "title": "Create Your Stone",
-      "subtitle": "Demo requests"
+      "subtitle": "Demo requests",
+      "requests": "Requests",
+      "request": "Request {number}",
+      "searchLabel": "Search requests",
+      "searchPlaceholder": "Request, customer or stone",
+      "listDetails": "{name} · {count, plural, one {# piece} other {# pieces}}",
+      "filterStatus": "Filter by status",
+      "all": "All statuses",
+      "statuses": {
+        "new": "New",
+        "draft_quote": "Draft quote",
+        "awaiting_payment": "Awaiting payment"
+      },
+      "none": "No requests found.",
+      "selectRequest": "Select a request",
+      "outsideFilter": "The selected request is outside the current results. It stays open so you can finish your draft.",
+      "count": "{count, plural, one {# request} other {# requests}}",
+      "demoCount": "{count, plural, one {# demo request} other {# demo requests}}",
+      "pagination": "Request pages",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}",
+      "pieces": "{count, plural, one {# piece} other {# pieces}}",
+      "millimetres": "{value} mm",
+      "viewCustomer": "View customer",
+      "contact": "Contact client",
+      "contactUnavailable": "Client messaging is not available.",
+      "reference": "Customer reference",
+      "specifications": "Specifications",
+      "referenceHint": "Catalog reference · demo",
+      "noReference": "No reference image.",
+      "material": "Material",
+      "quantity": "Quantity",
+      "length": "Length",
+      "width": "Width",
+      "thickness": "Thickness",
+      "color": "Color",
+      "finish": "Finish",
+      "draft": "Draft proposal",
+      "draftHint": "Set the price in USD per piece. Saving marks the request as Draft quote.",
+      "unitPrice": "Price per piece (USD)",
+      "total": "Estimated total",
+      "saveDraft": "Save draft",
+      "saving": "Saving…",
+      "saved": "Draft saved.",
+      "send": "Send proposal",
+      "deliveryUnavailable": "Proposal delivery, client messaging and online payment are not available in this demo.",
+      "statusForm": "Request status tracking",
+      "status": "Status",
+      "saveStatus": "Save status",
+      "statusSaved": "Status saved.",
+      "trackingHint": "Status tracking only. Save a quote before choosing Draft quote or Awaiting payment.",
+      "footnote": "Demo requests and prices for design review.",
+      "viewAll": "View all requests",
+      "requestColumn": "Request",
+      "customer": "Customer",
+      "details": "Details",
+      "actions": "Actions",
+      "prepareQuote": "Prepare quote",
+      "reviewDraft": "Review draft",
+      "viewProposal": "View proposal",
+      "errors": {
+        "invalid": "Check the quote or status and try again.",
+        "price": "Enter a price from 0 to 100,000 USD, with at most two decimal places.",
+        "conflict": "This request changed since you opened it. Your draft is kept here. Reload the page to review the latest version before saving.",
+        "not-found": "This request is no longer available.",
+        "unavailable": "Request editing is unavailable in this environment.",
+        "quote-required": "Save a quote before choosing this status.",
+        "generic": "The save could not be confirmed. Your draft is kept here. Reload the page to check the current version."
+      }
     },
     "customers": {
       "title": "Customers",
-      "subtitle": "Demo records"
+      "subtitle": "Demo records",
+      "searchLabel": "Find a customer",
+      "searchPlaceholder": "Search name or email",
+      "none": "No customers match your search.",
+      "selectCustomer": "Select a customer",
+      "count": "{count, plural, one {# customer} other {# customers}}",
+      "pagination": "Customer pages",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "{page} of {pages}",
+      "role": "Role",
+      "roles": {
+        "client": "Client",
+        "admin": "Admin"
+      },
+      "updateRole": "Update role",
+      "saved": "Role updated.",
+      "ownRole": "You cannot change your own role.",
+      "contact": "Contact client",
+      "orders": "Orders",
+      "noOrders": "This customer has no orders yet.",
+      "viewOrder": "View order",
+      "ordersLimit": "Showing the latest 500 orders.",
+      "footnote": "Customer records from the database.",
+      "errors": {
+        "invalid": "Choose a valid role.",
+        "self": "You cannot change your own role.",
+        "not-found": "This customer no longer exists. Refresh the page.",
+        "unavailable": "Customer data is temporarily unavailable. Try again.",
+        "generic": "The role could not be confirmed. Refresh the page before trying again."
+      }
     },
     "promotions": {
       "title": "Promotions",
-      "subtitle": "Demo campaigns"
+      "subtitle": "Product discounts",
+      "products": "Products",
+      "product": "Product",
+      "searchLabel": "Find a promotion product",
+      "searchPlaceholder": "Search products",
+      "none": "No products match your search.",
+      "selectProduct": "Select a product",
+      "noOldPrice": "No old price",
+      "onSale": "Old price set",
+      "publishedHint": "Saving updates this published product immediately.",
+      "draftHint": "This product is a draft. Saving prices does not publish it.",
+      "clearHint": "To remove the old price and badge, leave both optional fields empty. The current price stays as entered.",
+      "summary": "Pricing summary",
+      "notSet": "Not set",
+      "save": "Save prices",
+      "saved": "Prices saved.",
+      "editProduct": "Edit product",
+      "preview": "Storefront preview",
+      "previewHint": "Preview of the entered values.",
+      "viewMaterial": "View material",
+      "draftPreview": "This draft is not visible in the storefront.",
+      "footnote": "Illustrative prices for design review.",
+      "errors": {
+        "field": "Enter a valid value.",
+        "invalid": "Check the price fields. The old price must exceed the current price.",
+        "conflict": "This product changed since you opened it. Reload and review the latest values before saving. Your unsaved input has been kept.",
+        "not-found": "This product no longer exists. Reload the page.",
+        "unavailable": "Product data is temporarily unavailable. Try again.",
+        "generic": "The save could not be confirmed. Reload the page and review the stored prices before trying again."
+      }
     },
     "siteContent": {
       "title": "Site content",
-      "subtitle": "Demo editor"
+      "subtitle": "Home page texts",
+      "editor": "Home text editor",
+      "pages": "Pages",
+      "home": "Home",
+      "edit": "Edit {section}",
+      "language": "Content language",
+      "field": "Field",
+      "limit": "Up to {count} characters. Plain text only.",
+      "defaultText": "Default text",
+      "saveHint": "Save one field at a time. Saving updates the selected language on the home page immediately.",
+      "restore": "Use default",
+      "save": "Save text",
+      "saved": "Text saved.",
+      "restored": "Default text restored.",
+      "preview": "Text preview",
+      "previewHint": "Entered text and the existing home artwork. Open the home page after saving to check the full layout.",
+      "unsaved": "This field has changes",
+      "current": "No changes in this field",
+      "oneField": "One field per save",
+      "openHome": "Open home page",
+      "languages": {
+        "ru": "Russian",
+        "en": "English"
+      },
+      "sections": {
+        "hero": "Hero",
+        "catalog": "Catalog",
+        "promo": "Promotions",
+        "works": "Our works"
+      },
+      "fields": {
+        "line1": "Heading — line 1",
+        "line2": "Heading — line 2",
+        "line3": "Heading — line 3",
+        "line4": "Heading — line 4",
+        "searchButton": "Search button label",
+        "searchLabel": "Search accessible label",
+        "heading": "Section heading",
+        "button": "Action label",
+        "kitchenTitle": "Kitchen — title",
+        "kitchenSubtitle": "Kitchen — description",
+        "fireplaceTitle": "Fireplace — title",
+        "fireplaceSubtitle": "Fireplace — description",
+        "bathroomTitle": "Bathroom — title",
+        "bathroomSubtitle": "Bathroom — description"
+      },
+      "errors": {
+        "invalid": "Check the text length and remove line breaks or hidden characters.",
+        "conflict": "This text changed since you opened it. Reload and review it before saving. Your input is still in the form.",
+        "unavailable": "The database is unavailable. Try again later.",
+        "generic": "The save could not be confirmed. Your input is still in the form. Reload and review before retrying."
+      },
+      "breadcrumb": "Home / {section}"
     },
     "overview": {
       "title": "Overview",
@@ -848,7 +1103,8 @@
         "summary": "Some fields need attention.",
         "unavailable": "The database is not available. Try again later.",
         "not-found": "This product no longer exists.",
-        "generic": "Something went wrong. Please try again."
+        "generic": "Something went wrong. Please try again.",
+        "conflict": "This product changed since you opened it. Reload and review the latest values before saving. Your unsaved input has been kept."
       },
       "previewMeta": "{material} · {l}×{w}×{d} mm"
     },
@@ -897,8 +1153,86 @@
           "not-found": "This order no longer exists.",
           "unavailable": "The database is not available. Try again later.",
           "generic": "Something went wrong. Please try again."
-        }
+        },
+        "areaLine": "{area} m² × {price} / m²"
+      },
+      "selectionOutside": "The selected order is outside these filters. Its details remain open.",
+      "kind": {
+        "demo": "Demo",
+        "test_checkout": "Test order"
       }
+    }
+  },
+  "testBanner": {
+    "text": "Test version: orders are not paid or delivered"
+  },
+  "cart": {
+    "meta": {
+      "title": "Cart — STONE",
+      "description": "Your cart at STONE."
+    },
+    "title": "Cart",
+    "subtitle": "Stone for your project",
+    "back": "Back to catalog",
+    "added": "Added to cart: {area} m²",
+    "full": "The cart is full: remove a line first",
+    "empty": {
+      "title": "Your cart is empty",
+      "body": "Add stone from a product page to see it here.",
+      "browse": "Open catalog"
+    },
+    "loading": "Loading the cart…",
+    "list": "Cart items",
+    "area": "Area (m²)",
+    "areaUnit": "m²",
+    "perSquareMetre": "{price} / m²",
+    "lineTotal": "Line total",
+    "remove": "Remove",
+    "removeLabel": "Remove {name}",
+    "unavailable": "No longer available. Remove it to continue.",
+    "error": {
+      "invalid": "Enter a number, e.g. 2.5",
+      "range": "Enter a value from {min} to {max}",
+      "quote": "The prices could not be loaded. Try again later."
+    },
+    "summary": "Summary",
+    "total": "Total",
+    "indicative": "Prices are indicative",
+    "checkout": "Checkout",
+    "blocked": "Fix the marked lines to continue.",
+    "tooLarge": "One product can be ordered up to {max} m². Reduce the area.",
+    "amountTooLarge": "This order is too large for the test shop. Reduce the areas."
+  },
+  "checkout": {
+    "meta": {
+      "title": "Checkout — STONE",
+      "description": "Place a test order."
+    },
+    "title": "Checkout",
+    "subtitle": "Check your order",
+    "back": "Back to cart",
+    "notice": "Test order: no payment is taken and nothing is delivered.",
+    "items": "Order items",
+    "line": "{area} m² × {price} / m²",
+    "total": "Total",
+    "indicative": "Prices are indicative",
+    "place": "Place test order",
+    "confirmNew": "Confirm the new total",
+    "pricesChanged": "Prices have changed. Check the new total and confirm again.",
+    "empty": {
+      "title": "Nothing to order",
+      "body": "Your cart is empty.",
+      "browse": "Open catalog"
+    },
+    "errors": {
+      "unavailable": "Ordering is not available right now. Try again later.",
+      "invalid": "This order cannot be placed. Reload the page and try again.",
+      "empty": "Your cart is empty.",
+      "product_unavailable": "A product in your cart is no longer available. Return to the cart and remove it.",
+      "limit": "The test order limit for this account has been reached.",
+      "conflict": "This order changed while it was being placed. Reload the page and try again.",
+      "generic": "Something went wrong. Please try again.",
+      "too_large": "This order is too large for the test shop. Return to the cart and reduce the areas."
     }
   }
 }

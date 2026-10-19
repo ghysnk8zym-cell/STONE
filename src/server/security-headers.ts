@@ -6,8 +6,8 @@
  * keeps the two in step.
  *
  * Content-Security-Policy has no `script-src` and no `default-src` ON PURPOSE: Next's own inline bootstrap scripts need a
- * per-request nonce (middleware plus dynamic rendering of every page) before a script policy is possible, which would
- * give up the static home page. That is deferred and documented in docs/SECURITY.md ("Before production"). What is here
+ * per-request nonce (middleware plus dynamic rendering of every page) before a script policy is possible.
+ * That infrastructure is deferred and documented in docs/SECURITY.md ("Before production"). What is here
  * has no such cost: no framing (clickjacking), no <base> hijack, forms and server actions post to this origin only, no
  * plugins.
  */

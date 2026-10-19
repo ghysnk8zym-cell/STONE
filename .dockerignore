@@ -1,0 +1,21 @@
+# Allow only build inputs. No .env, local database, Git, agent reports or credentials.
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!next.config.ts
+!tsconfig.json
+!next-env.d.ts
+!src/
+!src/**
+!messages/
+!messages/**
+!public/
+!public/**
+!assets/
+!assets/figma-manifest.json
+!drizzle/
+!drizzle/**
+!scripts/
+!scripts/build-node.mjs
+!scripts/copy-node-runtime.mjs

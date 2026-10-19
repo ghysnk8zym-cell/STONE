@@ -42,7 +42,7 @@ test.describe("product", () => {
     ).toHaveAttribute("href", "/en/catalog");
   });
 
-  test("Buy now and Add to cart are inert; Save is a live toggle", async ({
+  test("Buy now and Add to cart are live buttons (test shop); Save is a live toggle", async ({
     page,
   }) => {
     await page.goto("/en/catalog/black-marble");
@@ -51,12 +51,15 @@ test.describe("product", () => {
       main.getByRole("button", { name: PRODUCT.save }),
     ).toHaveAttribute("aria-pressed", "false");
     for (const label of [PRODUCT.buyNow, PRODUCT.addToCart]) {
-      await expect(main.getByRole("button", { name: label })).toHaveAttribute(
-        "aria-disabled",
-        "true",
-      );
-      await expect(main.locator("a", { hasText: label })).toHaveCount(0);
+      const button = main.getByRole("button", { name: label });
+      await expect(button).toBeEnabled();
+      await expect(button).not.toHaveAttribute("aria-disabled", "true");
     }
+    // Without a database the cart still works: it is priced from the static catalog.
+    await productReady(page);
+    await main.getByRole("button", { name: PRODUCT.buyNow }).click();
+    await expect(page).toHaveURL(/\/en\/cart$/);
+    await expect(page.getByTestId("cart-total")).toHaveText("$528.00");
   });
 
   test("typing 2,5 in ru shows 660,00 $", async ({ page }) => {

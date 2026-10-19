@@ -200,11 +200,15 @@ export function FavoritesStrip({
   const t = useTranslations("account.overview.favorites");
   return (
     <section className={cn("flex flex-col gap-4", className)}>
-      <div className="flex items-center justify-between gap-4 pt-2">
+      <div className="flex items-center justify-between gap-4 pt-2 max-[390px]:flex-wrap">
         <h2 className="text-ink [font-family:var(--font-display)] text-[26px] leading-8 font-normal">
           {t("yours")}
         </h2>
-        <Button variant="outline" href="/account/favorites">
+        <Button
+          variant="outline"
+          href="/account/favorites"
+          className="shrink-0"
+        >
           {t("view")}
         </Button>
       </div>

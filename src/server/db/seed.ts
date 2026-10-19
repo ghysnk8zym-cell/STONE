@@ -39,6 +39,7 @@ export type SeedCounts = {
   orders: number;
   orderItems: number;
   favorites: number;
+  stoneRequests: number;
 };
 
 export async function seedCatalog(
@@ -213,6 +214,70 @@ export async function seedAccountData(
   };
 }
 
+/** Figma demo requests belong to the configured Client; reruns never overwrite edits/ownership. */
+export async function seedStoneRequests(
+  db: Db,
+  clientEmail: string,
+): Promise<number> {
+  const client = await findUser(db, normalizeSeedEmail(clientEmail));
+  if (!client) return 0;
+  const requests = [
+    {
+      number: "Q-1048",
+      nameEn: "Grey Marble",
+      nameRu: "Серый мрамор",
+      material: "marble",
+      color: "grey",
+      finish: "honed",
+      quantity: 12,
+      referenceImage: "images/catalog/grey-marble",
+      status: "new",
+      quoteUnitPriceCents: null,
+      createdAt: new Date("2026-10-10T12:00:00Z"),
+    },
+    {
+      number: "Q-1047",
+      nameEn: "Black Marble",
+      nameRu: "Чёрный мрамор",
+      material: "marble",
+      color: "black",
+      finish: "polished",
+      quantity: 8,
+      referenceImage: "images/catalog/black-marble",
+      status: "draft_quote",
+      quoteUnitPriceCents: 8500,
+      createdAt: new Date("2026-10-09T12:00:00Z"),
+    },
+    {
+      number: "Q-1046",
+      nameEn: "Grey Limestone",
+      nameRu: "Серый известняк",
+      material: "limestone",
+      color: "grey",
+      finish: "honed",
+      quantity: 6,
+      referenceImage: "images/catalog/grey-limestone",
+      status: "awaiting_payment",
+      quoteUnitPriceCents: 5500,
+      createdAt: new Date("2026-10-08T12:00:00Z"),
+    },
+  ];
+  await db
+    .insert(schema.stoneRequest)
+    .values(
+      requests.map((request) => ({
+        ...request,
+        userId: client.id,
+        lengthMm: 600,
+        widthMm: 400,
+        thicknessMm: 20,
+        updatedAt: request.createdAt,
+      })),
+    )
+    .onConflictDoNothing();
+  return requests.length;
+}
+
 export type SeedUser = {
   email: string;
   password: string;
@@ -306,12 +371,13 @@ export async function seed(db: Db, options: SeedOptions): Promise<SeedCounts> {
   );
 
   const account = await seedAccountData(db, clientEmail);
+  const stoneRequests = await seedStoneRequests(db, clientEmail);
   const [{ users }] = await db
     .select({ users: sql<number>`count(*)::int` })
     .from(schema.user)
     .where(inArray(schema.user.email, [adminEmail, clientEmail]));
 
-  return { ...catalog, users: users ?? 0, ...account };
+  return { ...catalog, users: users ?? 0, ...account, stoneRequests };
 }
 
 /** One line of counts for the seed script. Never includes emails, passwords or URLs. */

@@ -4,7 +4,6 @@ import { cache } from "react";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { Button } from "@/components/buttons/Button";
 import { IconButton } from "@/components/buttons/IconButton";
 import { FavoriteSaveButton } from "@/features/account/FavoriteControls";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
@@ -161,15 +160,11 @@ export default async function ProductPage({
                   },
                 ]}
               />
-              <Calculator unitCents={product.priceCents} isPlaceholder />
-              <div className="flex flex-col gap-4">
-                <Button variant="graphite-solid" inert className="w-full">
-                  {t("buyNow")}
-                </Button>
-                <Button variant="outline" inert className="w-full">
-                  {t("addToCart")}
-                </Button>
-              </div>
+              <Calculator
+                unitCents={product.priceCents}
+                isPlaceholder
+                slug={product.slug}
+              />
             </div>
           </div>
         </div>

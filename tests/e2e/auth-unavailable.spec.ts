@@ -15,6 +15,19 @@ const LOCALES = ["ru", "en"] as const;
 
 test.describe("auth pages show unavailable without a database", () => {
   for (const locale of LOCALES) {
+    test(`${locale}: request form is honest without persistence`, async ({
+      page,
+    }) => {
+      const t = MESSAGES[locale].stoneRequest;
+      await page.goto(`/${locale}/create-your-stone`);
+      await expect(
+        page.getByRole("status").filter({ hasText: t.unavailable }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: t.submit, exact: true }),
+      ).toBeDisabled();
+      await expect(page.locator('[name="contactName"]')).toBeDisabled();
+    });
     for (const page of ["sign-in", "sign-up"] as const) {
       test(`/${locale}/${page}: the unavailable state, no form`, async ({
         page: browserPage,
@@ -61,6 +74,25 @@ test.describe("auth pages show unavailable without a database", () => {
     expect(response?.status()).toBe(200);
     await expect(page.locator("h1")).toBeVisible();
   });
+
+  for (const locale of LOCALES) {
+    test(`${locale}: a failed sign-out remains retryable without a database`, async ({
+      page,
+    }) => {
+      const t = MESSAGES[locale].auth.signOutPage;
+      await page.goto(`/${locale}/sign-out?error=unavailable`);
+      await expect(
+        page.getByRole("alert").filter({ hasText: t.errors.unavailable }),
+      ).toBeVisible();
+      await page.getByRole("button", { name: t.confirm, exact: true }).click();
+      await expect(page).toHaveURL(
+        new RegExp(`/${locale}/sign-out\\?error=unavailable$`),
+      );
+      await expect(
+        page.getByRole("alert").filter({ hasText: t.errors.unavailable }),
+      ).toBeVisible();
+    });
+  }
 
   test("the unavailable screen has no serious axe violations and no horizontal overflow", async ({
     page,

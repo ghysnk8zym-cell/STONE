@@ -252,7 +252,7 @@ test.describe("signed in as the seeded Client (read only)", () => {
     });
   }
 
-  test("the Orders screen lists both demo orders with their status; View order is inert", async ({
+  test("the Orders screen lists both demo orders with their status; View order opens the order", async ({
     page,
   }) => {
     const t = ru.account.orders;
@@ -270,8 +270,11 @@ test.describe("signed in as the seeded Client (read only)", () => {
       await expect(
         card.getByText(status, { exact: true }).locator("visible=true"),
       ).toBeVisible();
-      const view = card.getByRole("button", { name: t.view });
-      await expect(view).toHaveAttribute("aria-disabled", "true");
+      const view = card.getByRole("link", { name: t.view });
+      await expect(view).toHaveAttribute(
+        "href",
+        `/ru/account/orders/${number}`,
+      );
     }
   });
 
@@ -476,6 +479,41 @@ test.describe("favourites of a new Client", () => {
 });
 
 test.describe("profile", () => {
+  for (const locale of LOCALES) {
+    test(`${locale}: keyboard focus survives profile edit, cancel and save`, async ({
+      page,
+      context,
+    }) => {
+      await signUpInContext(context, NEW_PASSWORD);
+      const t = MESSAGES[locale].account.profile;
+      await page.goto(`/${locale}/account/profile`, {
+        waitUntil: "networkidle",
+      });
+      const edit = page.getByRole("button", { name: t.edit, exact: true });
+      const field = page.getByLabel(t.name, { exact: true });
+      await edit.focus();
+      await edit.press("Enter");
+      await expect(field).toBeFocused();
+      await page
+        .getByRole("button", { name: t.cancel, exact: true })
+        .press("Enter");
+      await expect(edit).toBeFocused();
+      await edit.press("Enter");
+      await field.fill("");
+      await field.press("Enter");
+      await expect(
+        page.getByText(t.errors.nameInvalid, { exact: true }),
+      ).toBeVisible();
+      await expect(field).toBeFocused();
+      await field.fill("Keyboard client");
+      await page
+        .getByRole("button", { name: t.save, exact: true })
+        .press("Enter");
+      await expect(edit).toBeFocused();
+      await expect(page.getByText(t.saved, { exact: true })).toBeVisible();
+    });
+  }
+
   test("the name can be changed and persists", async ({
     page,
     context,

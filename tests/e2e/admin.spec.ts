@@ -141,20 +141,20 @@ test.describe("admin screens", () => {
     ).toHaveAttribute("href", "/en/sign-out");
   });
 
-  test("the not-yet-built sections say so, in both languages", async ({
+  test("the request section renders its working list in both languages", async ({
     page,
   }) => {
     for (const locale of ["en", "ru"] as const) {
       const t = { en, ru }[locale].admin;
-      for (const section of [
-        "create-your-stone",
-        "customers",
-        "promotions",
-        "site-content",
-      ]) {
+      for (const section of ["create-your-stone"]) {
         const response = await page.goto(`/${locale}/admin/${section}`);
         expect(response?.status()).toBe(200);
-        await expect(page.getByText(t.comingSoon.body)).toBeVisible();
+        await expect(
+          page.getByRole("heading", {
+            name: t.createYourStone.requests,
+            exact: true,
+          }),
+        ).toBeVisible();
       }
     }
   });
@@ -164,13 +164,17 @@ test.describe("admin screens", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: a.overview.title }),
     ).toBeVisible();
-    // the demo orders: $240 + $384 and the e2e Client's $480 (D-9001) = $1,104
-    await expect(
-      page.getByText("$1,104", { exact: true }).first(),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("region", { name: a.overview.kpi.sales, exact: true }),
-    ).toContainText(a.overview.kpi.orders);
+    // The demo orders: $240 + $384 and the e2e Client's $480 (D-9001) = $1,104. Test checkout orders placed by
+    // tests/e2e/shop.spec.ts on the same database (in parallel) can only add to it.
+    const sales = page.getByRole("region", {
+      name: a.overview.kpi.sales,
+      exact: true,
+    });
+    await expect(sales).toContainText(a.overview.kpi.orders);
+    const revenue = /\$([\d,]+)/.exec((await sales.textContent()) ?? "");
+    expect(Number(revenue?.[1]?.replaceAll(",", ""))).toBeGreaterThanOrEqual(
+      1104,
+    );
     await expect(
       page.getByRole("link", { name: a.overview.products.view }),
     ).toHaveAttribute("href", "/en/admin/products");
@@ -297,7 +301,7 @@ test.describe("admin screens", () => {
     );
   });
 
-  test("the static home page follows an admin: a renamed featured product shows its new name, an unpublished one disappears", async ({
+  test("the home page follows an admin: a renamed featured product shows its new name, an unpublished one disappears", async ({
     page,
     context,
   }) => {
@@ -335,7 +339,7 @@ test.describe("admin screens", () => {
     };
 
     try {
-      // warm the static page, so a stale copy would be served if nothing revalidated it
+      // Read before the mutation, then require each subsequent request to reflect it.
       expect(await card()).toContain(original);
 
       await edit(a.form.saveChanges, renamed);
@@ -449,32 +453,40 @@ test.describe("admin screens", () => {
       ).toBeVisible();
     }
     async function adminSets(label: string) {
-      // The form is a client component. A click before hydration is a native GET submit of the form
-      // (`?status=...`, which drops `order=D-9001` and the detail card with it) and the saved message never
-      // appears: seen on CI, where hydration is slower than the click. So the whole sequence is retried from a fresh
-      // page load until it lands (the same approach as the product edit above).
-      await expect(async () => {
-        await page.goto("/en/admin/orders", { waitUntil: "networkidle" });
-        await page.getByRole("link", { name: /D-9001/ }).click();
-        await page.waitForURL(/order=D-9001/, { timeout: 5_000 });
-        await page.waitForLoadState("networkidle");
-        const detail = page.getByRole("complementary", {
-          name: t.detail.title.replace("{number}", "D-9001"),
-        });
-        await expect(
-          detail.getByRole("button", { name: t.detail.update }),
-        ).toBeVisible();
-        await detail
-          .getByLabel(t.detail.fulfillment, { exact: true })
-          .selectOption({ label });
-        await detail.getByRole("button", { name: t.detail.update }).click();
-        await expect(detail.getByText(t.detail.saved)).toBeVisible({
-          timeout: 5_000,
-        });
-        await expect(
-          detail.getByText(label, { exact: true }).first(),
-        ).toBeVisible();
-      }).toPass({ timeout: 45_000 });
+      // A single mutation must retain feedback and focus after the server refresh,
+      // even when it removes the selected order from the current status filter.
+      const before = label === t.status.delivered ? "in_progress" : "delivered";
+      await page.goto(`/en/admin/orders?order=D-9001&status=${before}`, {
+        waitUntil: "networkidle",
+      });
+      const detail = page.getByRole("complementary", {
+        name: t.detail.title.replace("{number}", "D-9001"),
+      });
+      await expect(
+        detail.getByRole("button", { name: t.detail.update }),
+      ).toBeVisible();
+      await detail
+        .getByLabel(t.detail.fulfillment, { exact: true })
+        .selectOption({ label });
+      const update = detail.getByRole("button", { name: t.detail.update });
+      await update.focus();
+      const answered = page.waitForResponse(
+        (response) => response.request().method() === "POST",
+      );
+      await update.press("Enter");
+      await answered;
+      await page.waitForLoadState("networkidle");
+      await expect(detail.getByText(t.detail.saved)).toBeVisible({
+        timeout: 5_000,
+      });
+      await expect(
+        detail.getByText(label, { exact: true }).first(),
+      ).toBeVisible();
+      await expect(
+        page.getByText(t.selectionOutside, { exact: true }),
+      ).toBeVisible();
+      await expect(update).toBeFocused();
+      await expect(detail.getByText(t.detail.saved)).toBeVisible();
     }
 
     try {

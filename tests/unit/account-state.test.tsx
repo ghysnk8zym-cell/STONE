@@ -277,6 +277,33 @@ describe("account state provider", () => {
       await waitFor(() => expect(state()).toBe("guest"));
     });
 
+    it("clears the cart once the server confirms the sign-out (shared devices), not on Stay signed in", async () => {
+      const line = JSON.stringify([
+        { slug: "black-marble", areaHundredths: 220 },
+      ]);
+      localStorage.setItem("stone.cart.v1", line);
+      answerWith(SIGNED_IN);
+      mocks.pathname.current = "/en/sign-out";
+      const view = renderHearts();
+      await waitFor(() => expect(state()).toBe("signed-in"));
+      // Stay signed in: still signed in, the cart stays
+      mocks.pathname.current = "/en/account";
+      view.rerender(tree());
+      await waitFor(() => expect(calls()).toBe(2));
+      await waitFor(() => expect(state()).toBe("signed-in"));
+      expect(localStorage.getItem("stone.cart.v1")).toBe(line);
+      // Sign out confirmed
+      mocks.pathname.current = "/en/sign-out";
+      view.rerender(tree());
+      answerWith({ signedIn: false, name: null, favorites: [] });
+      mocks.pathname.current = "/en";
+      view.rerender(tree());
+      await waitFor(() => expect(state()).toBe("guest"));
+      expect(JSON.parse(localStorage.getItem("stone.cart.v1") ?? "[]")).toEqual(
+        [],
+      );
+    });
+
     it("again when the tab becomes visible", async () => {
       answerWith(SIGNED_IN);
       renderHearts();

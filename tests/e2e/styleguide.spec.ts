@@ -657,27 +657,55 @@ test.describe("styleguide", () => {
     }
   });
 
-  test("tab bar fits inside its box at 360 and 375 wide", async ({
+  test("tab bar and labels fit at 320 through 390 wide", async ({
     page,
   }, testInfo) => {
     test.skip(!isMobile(testInfo), "the tab bar is the phone navigation");
-    await openStyleguide(page, "ru");
-    for (const width of [360, 375, 390]) {
-      await page.setViewportSize({ width, height: 844 });
-      const nav = qa(page, "tab-bar-current-catalog").locator("nav");
-      const bar = (await nav.boundingBox())!;
-      const links = nav.getByRole("link");
-      await expect(links).toHaveCount(5);
-      for (let i = 0; i < 5; i++) {
-        const box = (await links.nth(i).boundingBox())!;
-        expect(box.x, `${width}: tab ${i} left`).toBeGreaterThanOrEqual(bar.x);
-        expect(
-          box.x + box.width,
-          `${width}: tab ${i} right`,
-        ).toBeLessThanOrEqual(bar.x + bar.width);
-      }
-      if (width === 390) {
-        expect((await links.nth(0).boundingBox())!.width).toBe(64);
+    for (const locale of LOCALES) {
+      await openStyleguide(page, locale);
+      await page.evaluate(() => document.fonts.ready);
+      for (const width of [320, 360, 375, 390]) {
+        await page.setViewportSize({ width, height: 844 });
+        const nav = qa(page, "tab-bar-current-catalog").locator("nav");
+        const bar = (await nav.boundingBox())!;
+        const links = nav.getByRole("link");
+        await expect(links).toHaveCount(5);
+        for (let i = 0; i < 5; i++) {
+          const box = (await links.nth(i).boundingBox())!;
+          expect(box.x, `${width}: tab ${i} left`).toBeGreaterThanOrEqual(
+            bar.x,
+          );
+          expect(
+            box.x + box.width,
+            `${width}: tab ${i} right`,
+          ).toBeLessThanOrEqual(bar.x + bar.width);
+          expect(
+            box.width,
+            `${locale} ${width}: touch target ${i}`,
+          ).toBeGreaterThanOrEqual(44);
+        }
+        const labels = await links.evaluateAll((items) =>
+          items.map((item) => {
+            const range = document.createRange();
+            const node = [...item.childNodes].find(
+              (child) =>
+                child.nodeType === Node.TEXT_NODE && child.textContent?.trim(),
+            );
+            if (!node) throw new Error("Tab label missing");
+            range.selectNode(node);
+            const rect = range.getBoundingClientRect();
+            return { left: rect.left, right: rect.right };
+          }),
+        );
+        for (let i = 1; i < labels.length; i++) {
+          expect(
+            labels[i].left - labels[i - 1].right,
+            `${locale} ${width}: labels ${i - 1}/${i} remain separate`,
+          ).toBeGreaterThanOrEqual(2);
+        }
+        if (width === 390) {
+          expect((await links.nth(0).boundingBox())!.width).toBe(64);
+        }
       }
     }
   });

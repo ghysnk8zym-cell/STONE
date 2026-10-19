@@ -17,10 +17,9 @@ import {
 } from "./parts";
 
 /*
- * Order blocks of the Account screens. All orders are demo rows of the seed (checkout does not exist), so the
- * Orders screen says "Demo order D-1048" like Figma. Nothing here links to a single order: Figma draws no
- * order screen, so "View order" is inert (the Phase 3 pattern for controls without a destination) and the
- * Overview rows lead to the Orders list.
+ * Order blocks of the Account screens. Seeded rows say "Demo order D-1048" like Figma; orders placed through the
+ * test shop checkout say "Test order T-2001". "View order" and the Overview rows open the order page
+ * (/account/orders/[number], owner-only; no Figma frame, see docs/superpowers/specs/2026-10-19-test-shop-cart-checkout-design.md).
  */
 
 /** "Black Marble · Polished · Quantity 1", with " · +2 more" when the order holds more items. */
@@ -33,7 +32,9 @@ function useItemLine() {
     const parts = [
       labels.name(first),
       labels.finish(first.finish),
-      labels.quantity(first.quantity),
+      first.areaHundredths != null
+        ? labels.area(first.areaHundredths)
+        : labels.quantity(first.quantity),
     ];
     if (order.items.length > 1) {
       parts.push(t("more", { count: order.items.length - 1 }));
@@ -54,13 +55,13 @@ function Money({ cents }: { cents: number }) {
 
 /** Account/Order row 819:538: thumb 96 x 64, order, meta, price, status chip, chevron (92 px high). */
 function OrderRow({ order }: { order: AccountOrder }) {
-  const t = useTranslations("account.orders");
+  const labels = useAccountLabels();
   const itemLine = useItemLine();
   const first = order.items[0];
   return (
     <li className="border-stone-catalog-line border-t first:border-t-0">
       <Link
-        href="/account/orders"
+        href={`/account/orders/${order.number}`}
         className="focusv:outline-2 focusv:-outline-offset-2 focusv:outline-accent-focus flex h-[92px] items-center gap-4 py-3.5 outline-0"
       >
         {first ? (
@@ -73,7 +74,7 @@ function OrderRow({ order }: { order: AccountOrder }) {
         ) : null}
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="type-catalog-field-value text-stone-catalog-ink truncate">
-            {t("demoOrder", { number: order.number })}
+            {labels.title(order)}
           </span>
           <span className="type-catalog-meta text-stone-catalog-secondary truncate">
             {itemLine(order)}
@@ -164,7 +165,7 @@ export function CurrentOrderCard({
       <div className="flex flex-col gap-0.5">
         <h2 className={CARD_TITLE}>{t("current")}</h2>
         <p className="type-catalog-meta text-stone-catalog-secondary">
-          {t("demoOrder", { number: order.number })}
+          {labels.title(order)}
         </p>
       </div>
       <div className="flex w-full items-center gap-4">
@@ -192,10 +193,14 @@ export function CurrentOrderCard({
           {orders(`status.${order.status}`)}
         </p>
         <p className="type-catalog-meta text-stone-catalog-secondary">
-          {t("demoData")}
+          {order.kind === "test_checkout" ? orders("testLabel") : t("demoData")}
         </p>
       </div>
-      <Button variant="graphite-solid" inert className="min-w-[120px]">
+      <Button
+        variant="graphite-solid"
+        href={`/account/orders/${order.number}`}
+        className="min-w-[120px]"
+      >
         {t("view")}
       </Button>
     </section>
@@ -252,7 +257,7 @@ export function OrderCard({ order }: { order: AccountOrder }) {
         ) : null}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <h2 className="text-stone-catalog-ink [font-family:var(--font-display)] text-[20px] leading-7 font-normal wrap-anywhere">
-            {t("demoOrder", { number: order.number })}
+            {labels.title(order)}
           </h2>
           {first ? (
             <>
@@ -277,7 +282,11 @@ export function OrderCard({ order }: { order: AccountOrder }) {
           {status}
         </p>
         <StatusChip status={order.status} className="hidden lg:inline-flex" />
-        <Button variant="graphite-solid" inert className="min-w-[120px]">
+        <Button
+          variant="graphite-solid"
+          href={`/account/orders/${order.number}`}
+          className="min-w-[120px]"
+        >
           {t("view")}
         </Button>
       </div>

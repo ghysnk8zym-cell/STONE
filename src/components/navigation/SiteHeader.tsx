@@ -42,6 +42,11 @@ export function SiteHeader({
             href="/create-your-stone"
             current={current === "create"}
             inert={inert.includes("create")}
+            // The 26% Current fill fails 4.5:1 over the light request page.
+            // Keep the current border/semantics with the darker shared default fill.
+            className={
+              current === "create" ? "bg-surface-nav-pill!" : undefined
+            }
           >
             {t("createYourStone")}
           </NavPill>

@@ -1,12 +1,13 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import type {
   OrderActionResult,
   ProductActionResult,
+  PromotionResult,
   PublishActionResult,
 } from "@/features/admin/results";
 import { routing } from "@/i18n/routing";
@@ -21,6 +22,9 @@ import {
   failedFields,
   ORDER_NUMBER,
   productInputSchema,
+  promotionInputSchema,
+  promotionSnapshotSchema,
+  revisionSchema,
   slugSchema,
   type ProductInput,
 } from "./product-input";
@@ -33,10 +37,9 @@ import {
  * the picture must be a manifest catalog image, texts are plain text. Results are codes only
  * (src/features/admin/results.ts).
  *
- * After a product changes, the pages that show it are revalidated. The product pages and the catalog list are
- * rendered per request (nothing to revalidate there), but the home page is static: `revalidatePath` with the
- * route pattern (`/[locale]`) does not reach it, only the concrete paths do, so the home and catalog path of every
- * locale is listed. Also the account area (names in orders and favourites) and the admin screens.
+ * After a product changes, invalidate the affected client navigation entries as well as server caches.
+ * Home, product pages and catalog read per request; concrete locale paths still refresh clients that visited them.
+ * Also refresh the account area (names in orders and favourites) and the admin screens.
  */
 
 function refreshCatalog() {
@@ -150,6 +153,7 @@ export async function createProduct(
 export async function updateProduct(
   slug: unknown,
   input: unknown,
+  expectedRevision?: unknown,
 ): Promise<ProductActionResult> {
   await requireRole("admin", await requestLocale());
   const parsedSlug = slugSchema.safeParse(slug);
@@ -161,21 +165,33 @@ export async function updateProduct(
   const db = await getDb();
   if (!db) return { ok: false, code: "unavailable" };
 
-  const [product] = await db
-    .select({ id: schema.product.id })
-    .from(schema.product)
-    .where(eq(schema.product.slug, parsedSlug.data))
-    .limit(1);
-  if (!product) return { ok: false, code: "not-found" };
-
-  // Product and translations change together or not at all.
-  await writeAtomically(db, (database) => [
-    database
-      .update(schema.product)
-      .set(productValues(parsed.data))
-      .where(eq(schema.product.id, product.id)),
-    ...translationStatements(database, product.id, parsed.data),
-  ]);
+  const revision = revisionSchema.safeParse(expectedRevision);
+  if (!revision.success) return { ok: false, code: "invalid" };
+  const p = parsed.data;
+  // One statement works on Neon HTTP as well as pg/PGlite. Only the winning UPDATE
+  // supplies IDs to the copy upsert; a conflict or failed translation writes nothing.
+  const result = await db.execute<{ slug: string; revision: number }>(sql`
+    with updated as (
+      update ${schema.product} set
+        material=${p.material}, color=${p.color}, color_group=${p.colorGroup}, finish=${p.finish},
+        format=array[${p.lengthMm},${p.widthMm},${p.thicknessMm}]::integer[],
+        price_cents=${p.priceCents}, old_price_cents=${p.oldPriceCents}, discount_percent=${p.discountPercent},
+        image=${p.image}, image_fit=${imageFitFor(p.image)}, published=${p.published},
+        revision=revision+1, updated_at=now()
+      where slug=${parsedSlug.data} and revision=${revision.data} and revision<2147483647
+      returning id, slug, revision
+    ), copied as (
+      insert into ${schema.productTranslation} (product_id, locale, name, description)
+      select updated.id, copy.locale, copy.name, copy.description from updated
+      cross join (values ('ru',${p.nameRu},${p.descriptionRu}),('en',${p.nameEn},${p.descriptionEn})) as copy(locale,name,description)
+      where true
+      on conflict (product_id,locale) do update set name=excluded.name, description=excluded.description
+      returning product_id
+    ) select slug, revision from updated
+  `);
+  // The three supported PostgreSQL adapters return a result envelope with rows.
+  if (!(result as { rows: { slug: string; revision: number }[] }).rows.length)
+    return productConflict(db, parsedSlug.data);
   refreshCatalog();
   return { ok: true, slug: parsedSlug.data };
 }
@@ -184,6 +200,7 @@ export async function updateProduct(
 export async function setProductPublished(
   slug: unknown,
   published: unknown,
+  expectedRevision?: unknown,
 ): Promise<PublishActionResult> {
   await requireRole("admin", await requestLocale());
   const parsedSlug = slugSchema.safeParse(slug);
@@ -192,18 +209,88 @@ export async function setProductPublished(
   }
   const db = await getDb();
   if (!db) return { ok: false, code: "unavailable" };
+  const revision = revisionSchema.safeParse(expectedRevision);
+  if (!revision.success) return { ok: false, code: "invalid" };
 
   const updated = await db
     .update(schema.product)
-    .set({ published })
-    .where(eq(schema.product.slug, parsedSlug.data))
+    .set({ published, revision: sql`${schema.product.revision} + 1` })
+    .where(
+      and(
+        eq(schema.product.slug, parsedSlug.data),
+        eq(schema.product.revision, revision.data),
+        lt(schema.product.revision, 2147483647),
+      ),
+    )
     .returning({ id: schema.product.id });
-  if (updated.length === 0) return { ok: false, code: "not-found" };
+  if (updated.length === 0) return productConflict(db, parsedSlug.data);
   refreshCatalog();
   return { ok: true, published };
 }
 
 const statusSchema = z.enum(schema.ORDER_STATUSES);
+
+async function productConflict(
+  db: Db,
+  slug: string,
+): Promise<{ ok: false; code: "conflict" | "not-found" }> {
+  const [existing] = await db
+    .select({ slug: schema.product.slug })
+    .from(schema.product)
+    .where(eq(schema.product.slug, slug))
+    .limit(1);
+  return { ok: false, code: existing ? "conflict" : "not-found" };
+}
+
+/** Updates only the product's price fields, refusing a stale Promotions form atomically. */
+export async function setProductPromotion(
+  slug: unknown,
+  input: unknown,
+  expected: unknown,
+): Promise<PromotionResult> {
+  await requireRole("admin", await requestLocale());
+  const parsedSlug = slugSchema.safeParse(slug);
+  const parsed = promotionInputSchema.safeParse(input);
+  const previous = promotionSnapshotSchema.safeParse(expected);
+  if (!parsedSlug.success || !parsed.success || !previous.success) {
+    return {
+      ok: false,
+      code: "invalid",
+      ...(!parsed.success ? { fields: failedFields(parsed.error) } : {}),
+    };
+  }
+  const db = await getDb();
+  if (!db) return { ok: false, code: "unavailable" };
+  const before = previous.data;
+  const [updated] = await db
+    .update(schema.product)
+    .set({ ...parsed.data, revision: sql`${schema.product.revision} + 1` })
+    .where(
+      and(
+        eq(schema.product.slug, parsedSlug.data),
+        eq(schema.product.revision, before.revision),
+        lt(schema.product.revision, 2147483647),
+        eq(schema.product.priceCents, before.priceCents),
+        before.oldPriceCents === null
+          ? isNull(schema.product.oldPriceCents)
+          : eq(schema.product.oldPriceCents, before.oldPriceCents),
+        before.discountPercent === null
+          ? isNull(schema.product.discountPercent)
+          : eq(schema.product.discountPercent, before.discountPercent),
+      ),
+    )
+    .returning({ revision: schema.product.revision });
+  if (!updated) {
+    const [existing] = await db
+      .select({ slug: schema.product.slug })
+      .from(schema.product)
+      .where(eq(schema.product.slug, parsedSlug.data))
+      .limit(1);
+    return { ok: false, code: existing ? "conflict" : "not-found" };
+  }
+  refreshCatalog();
+  return { ok: true, prices: { ...parsed.data, revision: updated.revision } };
+}
 
 /**
  * Changes the status of an order; the Client sees it in their Orders. The rule: an admin may move an order freely

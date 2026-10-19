@@ -56,6 +56,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm cf:build
       - run: pnpm cf:size
+      # The Linux-built OpenNext output, deployed by hand to the test shop Worker with
+      # `wrangler deploy --env test` (docs/DEPLOYMENT.md, "Test shop"). Contains no secrets:
+      # CI has none, and secrets are bound to the Worker at runtime.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: open-next-build
+          path: .open-next
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
       # Run the built Worker in workerd (the Cloudflare runtime) and smoke-test it, so runtime
       # errors that `next start` cannot show are caught before deployment.
       - run: pnpm exec playwright install --with-deps chromium
@@ -94,3 +104,67 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+  node-standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:node
+        env:
+          INDEXING: "off"
+      - name: Relocate the standalone runtime outside the checkout
+        run: node scripts/copy-node-runtime.mjs .next/standalone "$RUNNER_TEMP/stone-node-runtime"
+      - name: Smoke the relocated runtime without credentials
+        env:
+          APP_ENV: production
+          PLATFORM: node
+          HOSTNAME: 127.0.0.1
+          PORT: "3100"
+          DATABASE_URL: ""
+          BETTER_AUTH_SECRET: ""
+          NODE_PATH: ""
+        run: |
+          runtime_pid=""
+          cleanup() {
+            if [ -n "$runtime_pid" ]; then
+              kill "$runtime_pid" 2>/dev/null || true
+              wait "$runtime_pid" 2>/dev/null || true
+            fi
+            cat "$RUNNER_TEMP/stone-node-runtime.log" || true
+          }
+          trap cleanup EXIT
+          (cd "$RUNNER_TEMP/stone-node-runtime" && exec node server.js) > "$RUNNER_TEMP/stone-node-runtime.log" 2>&1 &
+          runtime_pid=$!
+          node scripts/smoke-packaged-app.mjs http://127.0.0.1:3100
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - name: Build the Docker recipe without credentials
+        run: docker build --progress=plain --build-arg INDEXING=off --tag stone:ci .
+      - name: Smoke the non-root container without credentials
+        run: |
+          container_id=""
+          cleanup() {
+            if [ -n "$container_id" ]; then
+              docker logs "$container_id" || true
+              docker rm --force "$container_id" || true
+            fi
+          }
+          trap cleanup EXIT
+          container_id=$(docker run --detach --publish 127.0.0.1:3101:3000 stone:ci)
+          test "$(docker exec "$container_id" id -u)" != "0"
+          docker exec "$container_id" node --input-type=module -e 'import {assertInternalLinks} from "./copy-node-runtime.mjs"; assertInternalLinks(process.cwd());'
+          node scripts/smoke-packaged-app.mjs http://127.0.0.1:3101

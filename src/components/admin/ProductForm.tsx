@@ -48,6 +48,7 @@ type Props = {
   initial: ProductFormValues;
   /** The product's current state when editing. */
   published?: boolean;
+  revision?: number;
   options: {
     material: EnumOption[];
     color: EnumOption[];
@@ -63,12 +64,20 @@ const FIELD_OF: Record<string, string> = {
   oldPriceCents: "oldPrice",
 };
 
-export function ProductForm({ mode, initial, published, options }: Props) {
+export function ProductForm({
+  mode,
+  initial,
+  published,
+  revision,
+  options,
+}: Props) {
   const t = useTranslations("admin.form");
   const locale = useLocale();
   const router = useRouter();
   const money = useAdminMoney();
   const [values, setValues] = useState(initial);
+  // Keep the token paired with the original inputs, even if a refresh brings newer props.
+  const [expectedRevision] = useState(revision);
   // Until the admin types a slug, it follows the English name.
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -122,7 +131,7 @@ export function ProductForm({ mode, initial, published, options }: Props) {
         result =
           mode === "create"
             ? await createProduct({ ...input, slug: values.slug })
-            : await updateProduct(initial.slug, input);
+            : await updateProduct(initial.slug, input, expectedRevision);
       } catch {
         // The action threw (the database timed out, a 5xx): a rejected promise inside a transition would go to the
         // error boundary and the admin would lose the form. Show the message and keep what was typed.
@@ -139,7 +148,11 @@ export function ProductForm({ mode, initial, published, options }: Props) {
     setFormError(null);
     startTransition(async () => {
       try {
-        const result = await setProductPublished(initial.slug, false);
+        const result = await setProductPublished(
+          initial.slug,
+          false,
+          expectedRevision,
+        );
         if (!result.ok) {
           setFormError(t(`errors.${result.code}`));
           return;

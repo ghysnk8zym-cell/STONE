@@ -5,6 +5,7 @@ import { useEffect, useId, useState } from "react";
 
 import { cn } from "@/components/cn";
 import { TextField } from "@/components/forms/TextField";
+import { CartButtons } from "@/features/cart/CartButtons";
 import {
   calculate,
   LIMITS,
@@ -44,9 +45,12 @@ type Values = { area: string; length: string; height: string };
 export function Calculator({
   unitCents,
   isPlaceholder,
+  slug,
 }: {
   unitCents: number;
   isPlaceholder: true;
+  /** When given, "Buy now" / "Add to cart" are drawn under the card and add the order area of this product. */
+  slug?: string;
 }) {
   const t = useTranslations("pages.product.calculator");
   const price = useTranslations("components.price");
@@ -156,100 +160,108 @@ export function Calculator({
   ];
 
   return (
-    <section
-      aria-labelledby={titleId}
-      className="bg-stone-catalog-card border-stone-catalog-line @container flex w-full flex-col gap-5 rounded-[20px] border p-(--layout-panel-pad)"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-x-4">
-        <h2
-          id={titleId}
-          className="text-stone-catalog-ink type-catalog-product-name-lg"
-        >
-          {t("title")}
-        </h2>
-        <p className="type-catalog-meta text-stone-catalog-secondary">
-          {t("pricingNote")}
-        </p>
-      </div>
-
-      <div
-        role="group"
-        aria-label={t("modesLabel")}
-        className="border-stone-catalog-line flex w-full gap-1 rounded-full border p-1"
+    <>
+      <section
+        aria-labelledby={titleId}
+        className="bg-stone-catalog-card border-stone-catalog-line @container flex w-full flex-col gap-5 rounded-[20px] border p-(--layout-panel-pad)"
       >
-        {(["area", "wall"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            aria-pressed={mode === m}
-            onClick={() => setMode(m)}
-            className={cn(SEGMENT, mode === m ? SEGMENT_ON : SEGMENT_OFF)}
+        <div className="flex flex-wrap items-center justify-between gap-x-4">
+          <h2
+            id={titleId}
+            className="text-stone-catalog-ink type-catalog-product-name-lg"
           >
-            <span className="truncate">{t(`modes.${m}`)}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="flex w-full items-start gap-4 [&>*]:min-w-0 [&>*]:flex-1">
-        {mode === "area" ? (
-          field("area")
-        ) : (
-          <>
-            {field("length")}
-            {field("height")}
-          </>
-        )}
-      </div>
-
-      <div className="bg-stone-catalog-line h-px w-full" />
-
-      <div
-        data-testid="calculator-result"
-        aria-live="polite"
-        className="flex w-full flex-col gap-5"
-      >
-        <dl className="type-catalog-meta-lg m-0 flex flex-col gap-2">
-          {rows.map((row) => (
-            <div
-              key={row.key}
-              className="flex items-center justify-between gap-4"
-            >
-              <dt className="text-stone-catalog-secondary">{row.label}</dt>
-              <dd className="text-stone-catalog-ink m-0 text-right whitespace-nowrap">
-                {row.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-
-        <p className="type-catalog-meta text-stone-catalog-secondary">
-          {t("note")}
-        </p>
-
-        {/*
-         * Below 390 (no Figma frame) the label may wrap above the total and the total scales with the
-         * card (12.4cqi = 40 px at the 390 card width), so «2 640 000,00 $» never leaves the card.
-         * At 390 and wider both rules resolve to the Figma 40/48 layout.
-         */}
-        <div className="flex items-center justify-between gap-4 max-[389px]:flex-wrap max-[389px]:gap-y-1">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <p className="type-catalog-section text-stone-catalog-ink">
-              {t("estimatedTotal")}
-            </p>
-            {isPlaceholder ? (
-              <p className="type-catalog-meta text-stone-catalog-secondary">
-                {t("illustrative")}
-              </p>
-            ) : null}
-          </div>
-          <p
-            data-testid="calculator-total"
-            className="type-catalog-product-title text-stone-catalog-ink ml-auto text-right whitespace-nowrap max-[389px]:text-[length:min(40px,12.4cqi)]"
-          >
-            {result.ok ? money(result.totalCents) : DASH}
+            {t("title")}
+          </h2>
+          <p className="type-catalog-meta text-stone-catalog-secondary">
+            {t("pricingNote")}
           </p>
         </div>
-      </div>
-    </section>
+
+        <div
+          role="group"
+          aria-label={t("modesLabel")}
+          className="border-stone-catalog-line flex w-full gap-1 rounded-full border p-1"
+        >
+          {(["area", "wall"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={mode === m}
+              onClick={() => setMode(m)}
+              className={cn(SEGMENT, mode === m ? SEGMENT_ON : SEGMENT_OFF)}
+            >
+              <span className="truncate">{t(`modes.${m}`)}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex w-full items-start gap-4 [&>*]:min-w-0 [&>*]:flex-1">
+          {mode === "area" ? (
+            field("area")
+          ) : (
+            <>
+              {field("length")}
+              {field("height")}
+            </>
+          )}
+        </div>
+
+        <div className="bg-stone-catalog-line h-px w-full" />
+
+        <div
+          data-testid="calculator-result"
+          aria-live="polite"
+          className="flex w-full flex-col gap-5"
+        >
+          <dl className="type-catalog-meta-lg m-0 flex flex-col gap-2">
+            {rows.map((row) => (
+              <div
+                key={row.key}
+                className="flex items-center justify-between gap-4"
+              >
+                <dt className="text-stone-catalog-secondary">{row.label}</dt>
+                <dd className="text-stone-catalog-ink m-0 text-right whitespace-nowrap">
+                  {row.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <p className="type-catalog-meta text-stone-catalog-secondary">
+            {t("note")}
+          </p>
+
+          {/*
+           * Below 390 (no Figma frame) the label may wrap above the total and the total scales with the
+           * card (12.4cqi = 40 px at the 390 card width), so «2 640 000,00 $» never leaves the card.
+           * At 390 and wider both rules resolve to the Figma 40/48 layout.
+           */}
+          <div className="flex items-center justify-between gap-4 max-[389px]:flex-wrap max-[389px]:gap-y-1">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <p className="type-catalog-section text-stone-catalog-ink">
+                {t("estimatedTotal")}
+              </p>
+              {isPlaceholder ? (
+                <p className="type-catalog-meta text-stone-catalog-secondary">
+                  {t("illustrative")}
+                </p>
+              ) : null}
+            </div>
+            <p
+              data-testid="calculator-total"
+              className="type-catalog-product-title text-stone-catalog-ink ml-auto text-right whitespace-nowrap max-[389px]:text-[length:min(40px,12.4cqi)]"
+            >
+              {result.ok ? money(result.totalCents) : DASH}
+            </p>
+          </div>
+        </div>
+      </section>
+      {slug ? (
+        <CartButtons
+          slug={slug}
+          areaHundredths={result.ok ? Math.round(result.orderM2 * 100) : null}
+        />
+      ) : null}
+    </>
   );
 }

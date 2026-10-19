@@ -1,0 +1,11 @@
+# Phase 4b: seeded Create Your Stone requests
+
+Approved scope: Phase 4 design spec sections 2–5; Figma read-only nodes 1077:52818 (1440), 1077:55928 (1024), Overview 1077:51932. Public submission, uploads, email, payments and customer-account request screens are excluded by the spec. This work implements the admin seed flow only; no services or credentials are provisioned.
+
+1. Preserve the verified previous milestone; add one request table and additive migration. Requests retain immutable material/title, dimensions, finish, quantity and a manifest reference image independent of catalog edits. Customer FK restricts deletion; seed uses the existing configured client and never overwrites existing request numbers.
+2. Admin-guarded bounded search/status/pagination/detail and latest-three Overview queries expose explicit DTOs. Quotes are USD per piece, calculated from bounded integer cents and quantity. Requests never contribute to order revenue.
+3. Guarded strict actions save a quote as Draft quote or explicitly track one of New / Draft quote / Awaiting payment. A non-New status requires a quote. Both actions conditionally increment the same revision; stale editors fail closed. Saving a quote changes status to Draft quote; status tracking never sends a proposal or charges anyone. Editing retains the initial revision across refreshes; only a confirmed save advances it.
+4. Match existing Figma desktop layouts and below-1024 notice. Reuse existing customer screen via a link. Contact and Send remain visibly inert with accurate unavailable copy. Reference images come only from the checked-in catalog manifest; no upload endpoint or arbitrary URL is added.
+5. Use synthetic PGlite/Better Auth integration tests for access, invalid values, concurrency, seed preservation, querying and Overview. Add client-editor and browser/a11y regressions, independent read-only review, full lint/type/unit/build/e2e and ru/en visual checks. Preserve reports and source snapshots without remote writes.
+
+Release gates remain: real Neon migration/seed and auth validation with approved credentials, Linux/CI Worker build and compressed size/CPU validation, preview verification, owner visual acceptance, Phase 5 and PR/CI release work. No claim that local Node success proves Workers operation.

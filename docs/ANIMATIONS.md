@@ -14,6 +14,26 @@ Status for every row: **default timings, Figma has no motion data, owner to appr
 | Mobile menu             | `src/components/navigation/HeaderMenuButton.tsx`                                                                          | Menu button click                                                                                                           | none                                                                                                         | Not animated: the panel opens and closes instantly                                                  | n/a                                                                                 | n/a                      |
 | Carousel scroll         | `src/components/carousel/Carousel.tsx` (Home v2 Catalog, Promo products, Our works)                                       | Prev / Next arrow click (one card plus the gap); touch swipe and keyboard focus use native scrolling with CSS `scroll-snap` | `scrollLeft` of the track (browser scroll, compositor-driven; no layout property animated), snap-x mandatory | `scrollBy({ behavior: "smooth" })`, browser-default duration and easing; not tokenised. No autoplay | `behavior: "auto"` (instant jump) when `prefers-reduced-motion: reduce`             | Phase 3 Task 5 PR        |
 
+## Phase 4 reconciliation (2026-10-18)
+
+Auth, account and admin reuse the existing small hover/focus transitions and
+Button pending spinner. No route transition, layout animation, autoplay, new
+library or new timing was added in Phase 4. Account sections open/close instantly;
+its chevron toggles rotation immediately (`motion-hover` transitions colors and
+opacity, not transform). Profile editing, password visibility, admin filtering,
+selection, saving, pending text and result messages switch immediately. The Select
+component retains the separate chevron transition and reduced-motion override.
+
+The existing global reduced-motion media query disables ripple/hover transitions;
+the spinner and Select have explicit motion-reduce utilities. Carousel arrows
+check the preference and use native instant scroll. Reduced motion must leave
+`aria-busy`, labels, error/status messages and keyboard interactions intact.
+
+Verification must cover computed styles and actual interactions, not just the
+presence of CSS classes. The Phase 5 QA record reports what ran in normal/reduced
+mode. Figma's historical lack of motion data and owner timing approval remain
+separate from that functional check; no owner acceptance is implied here.
+
 ## Notes for the owner
 
 - The spinner and the chevron use Tailwind defaults instead of tokens. If the owner approves different timings,

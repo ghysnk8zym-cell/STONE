@@ -26,6 +26,11 @@ const nodeOnlyDrivers = [
 // cacheComponents/partialPrefetching are intentionally off: OpenNext on Cloudflare Workers
 // has open bugs with Cache Components (see docs/adr/ADR-001 and the Phase 1 ledger).
 const nextConfig: NextConfig = {
+  // Opt-in portable artifact. The ordinary and OpenNext build paths stay unchanged.
+  output:
+    process.env.STONE_BUILD_TARGET === "node-standalone"
+      ? "standalone"
+      : undefined,
   env: { INDEXING: indexing },
   // No `X-Powered-By: Next.js` (audit F11).
   poweredByHeader: false,

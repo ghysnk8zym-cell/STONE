@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { cart } from "@/features/cart/cart-store";
 import { toggleFavorite as toggleFavoriteAction } from "@/server/account/actions";
 
 import {
@@ -22,8 +23,7 @@ import { GUEST_STATE, type AccountState } from "./results";
 
 /*
  * The signed-in state of the visitor for the PUBLIC pages (catalog, product, home, the header and the
- * tab bar). The shell (and the static home page) cannot read the session at render time without
- * making every public page dynamic, which would give up the static generation Phase 3 built. So the state lives here, in
+ * tab bar). Public content and session state stay separate. Session state lives here, in
  * a client island: it is fetched from `GET /api/me` (never cached) and drives the hearts, the Save button
  * and the account entries. The server stays the authority: every change goes through the guarded
  * `toggleFavorite` action, and the page shows the server's answer once it arrives.
@@ -103,6 +103,8 @@ export function AccountStateProvider({ children }: { children: ReactNode }) {
   const queued = useRef(new Map<string, boolean>());
   const inflight = useRef<AbortController | null>(null);
   const previousPath = useRef(pathname);
+  // The sign-out confirmation was just left: if the server now says Guest, the sign-out happened.
+  const leftSignOut = useRef(false);
 
   const favorites = useMemo(() => new Set(state?.favorites), [state]);
   const status: AccountStatus =
@@ -149,6 +151,10 @@ export function AccountStateProvider({ children }: { children: ReactNode }) {
     (loaded: AccountState | null) => {
       const wanted = new Map(queued.current);
       queued.current.clear();
+      const signedOut = leftSignOut.current && loaded?.signedIn === false;
+      leftSignOut.current = false;
+      // A shared device: the next visitor must not find the previous customer's cart.
+      if (signedOut) cart.clear();
       if (!loaded) {
         // An unreadable answer is treated as "not signed in" the first time, and ignored afterwards.
         setState((previous) => previous ?? GUEST_STATE);
@@ -214,7 +220,10 @@ export function AccountStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const previous = previousPath.current;
     previousPath.current = pathname;
-    if (previous !== pathname && SIGN_OUT_PATH.test(previous)) load();
+    if (previous !== pathname && SIGN_OUT_PATH.test(previous)) {
+      leftSignOut.current = true;
+      load();
+    }
   }, [pathname, load]);
 
   // Coming back to the tab: the session may have changed or expired meanwhile.

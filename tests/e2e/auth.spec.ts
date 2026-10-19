@@ -299,6 +299,67 @@ test.describe("sign-out", () => {
   });
 });
 
+for (const javaScriptEnabled of [true, false]) {
+  test.describe(`failed sign-out (JavaScript ${javaScriptEnabled})`, () => {
+    test.use({ javaScriptEnabled });
+
+    test("throttled logout preserves the session, explains the failure and permits a retry", async ({
+      page,
+      context,
+      playwright,
+      baseURL,
+      clientIp,
+    }) => {
+      const locale = javaScriptEnabled ? "en" : "ru";
+      const t = MESSAGES[locale].auth.signOutPage;
+      await signInInContext(context, SEEDED.client);
+      // Obtain the real production-build action from its HTML, as a no-JS form does.
+      const html = await (await page.request.get(`/${locale}/sign-out`)).text();
+      const action = /name="(\$ACTION_ID_[^"]+)"/.exec(html)?.[1];
+      if (!action)
+        throw new Error("sign-out action missing from server-rendered form");
+      const anonymous = await playwright.request.newContext({
+        baseURL,
+        extraHTTPHeaders: { origin: baseURL!, "x-forwarded-for": clientIp },
+      });
+      try {
+        // Exhaust this test's logout bucket without sending or revoking its session.
+        for (let attempt = 0; attempt < 100; attempt++) {
+          const response = await anonymous.post(`/${locale}/sign-out`, {
+            multipart: { [action]: "", locale },
+            maxRedirects: 0,
+          });
+          expect(response.status()).toBe(303);
+        }
+        await page.goto(`/${locale}/sign-out`);
+        await page
+          .getByRole("button", { name: t.confirm, exact: true })
+          .click();
+        await expect(page).toHaveURL(
+          new RegExp(`/${locale}/sign-out\\?error=tooManyAttempts$`),
+        );
+        await expect(
+          page.getByRole("alert").filter({ hasText: t.errors.tooManyAttempts }),
+        ).toBeVisible();
+        expect(await hasSessionCookie(context)).toBe(true);
+        expect(await currentUserEmail(page)).toBe(SEEDED.client.email);
+        // A new test IP permits retry without sleeping for the production rate-limit window.
+        await context.setExtraHTTPHeaders({
+          "x-forwarded-for": `192.${clientIp.split(".").slice(1).join(".")}`,
+        });
+        await page
+          .getByRole("button", { name: t.confirm, exact: true })
+          .click();
+        await expect(page).toHaveURL(new RegExp(`/${locale}$`));
+        expect(await hasSessionCookie(context)).toBe(false);
+        expect(await currentUserEmail(page)).toBeNull();
+      } finally {
+        await anonymous.dispose();
+      }
+    });
+  });
+}
+
 test.describe("sign-in and sign-up work without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 

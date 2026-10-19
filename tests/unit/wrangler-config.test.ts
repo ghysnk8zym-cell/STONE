@@ -43,4 +43,47 @@ describe("wrangler.jsonc", () => {
   it("keeps the Worker name expected by the dashboard", () => {
     expect(config.name).toBe("stone");
   });
+
+  // The customer-review test shop is a separate Worker, deployed by hand from a CI-built artifact
+  // (`wrangler deploy --env test`), so it never touches the Git-connected `stone` Worker.
+  describe("env.test (customer-review test shop)", () => {
+    const test = (config as WranglerConfig & { env?: Record<string, TestEnv> })
+      .env?.test;
+
+    it("is its own Worker on workers.dev without preview URLs", () => {
+      expect(test?.name).toBe("stone-test");
+      expect(test?.workers_dev).toBe(true);
+      expect(test?.preview_urls).toBe(false);
+    });
+
+    it("keeps the site noindex and names its exact public origin", () => {
+      expect(test?.vars).toMatchObject({
+        PLATFORM: "cloudflare",
+        APP_ENV: "preview",
+        INDEXING: "off",
+        BETTER_AUTH_URL: "https://stone-test.gb8cj746n2.workers.dev",
+        SITE_URL: "https://stone-test.gb8cj746n2.workers.dev",
+      });
+    });
+
+    it("never carries a secret in the file", () => {
+      const keys = Object.keys(test?.vars ?? {});
+      expect(keys).not.toContain("DATABASE_URL");
+      expect(keys).not.toContain("BETTER_AUTH_SECRET");
+    });
+
+    it("references itself, not the production Worker", () => {
+      expect(test?.services).toEqual([
+        { binding: "WORKER_SELF_REFERENCE", service: "stone-test" },
+      ]);
+    });
+  });
 });
+
+type TestEnv = {
+  name: string;
+  workers_dev?: boolean;
+  preview_urls?: boolean;
+  vars?: Record<string, string>;
+  services?: { binding: string; service: string }[];
+};
