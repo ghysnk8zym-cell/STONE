@@ -30,6 +30,8 @@ const PUBLIC_ACTIONS: Record<string, string> = {
     "Sign-in is how a Guest becomes a user; Better Auth applies the rate limit and the origin check, errors are uniform.",
   "src/app/[locale]/(auth)/actions.ts#signOutAction":
     "Ends only the caller's own session (a Guest has none); it takes no id and touches no other user's data.",
+  "src/server/shop/actions.ts#quoteCart":
+    "Read-only cart pricing a Guest needs too: takes only slugs and areas (never a user id), reads published catalog data only and writes nothing.",
 };
 
 /** Route handlers that are public by design (a guard would defeat their purpose). */
@@ -69,6 +71,11 @@ describe("every exported server action is guarded", () => {
       "src/app/[locale]/(auth)/actions.ts",
       "src/server/account/actions.ts",
       "src/server/admin/actions.ts",
+      "src/server/admin/content-actions.ts",
+      "src/server/admin/customer-actions.ts",
+      "src/server/admin/stone-request-actions.ts",
+      "src/server/shop/actions.ts",
+      "src/server/stone-requests/actions.ts",
     ]);
   });
 
@@ -116,6 +123,7 @@ describe("every route handler is guarded or public by design", () => {
     expect(routes.map(posix).sort()).toEqual([
       "src/app/api/health/db/route.ts",
       "src/app/api/me/route.ts",
+      "src/app/api/stone-requests/[id]/photo/route.ts",
     ]);
   });
 

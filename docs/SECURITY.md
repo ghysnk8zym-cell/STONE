@@ -49,9 +49,16 @@ This is a **test environment with fake data and no real personal data** (ADR-002
 
 ## Cookies and sessions
 
+- Sign-out redirects home only after the handler succeeds. A rejected or unavailable request retains the cookie and shows a localized retry message, also without JavaScript. A failed session lookup on the confirmation page is treated as unknown, not as a Guest.
+- Better Auth 1.7.7's sign-out endpoint catches revocation errors; its `deleteWithHooks` can also swallow a preliminary read failure. Our before-hook therefore confirms a parameterized Drizzle DELETE of the caller's signed session token before the endpoint can clear the cookie. Rate limiting and origin validation still run first. This applies to the current database-only, credentials-only configuration; revisit it before adding secondary session storage, provider logout or session deletion hooks.
+
 - The session cookie is `stone.session_token` (`__Secure-stone.session_token` over https): `httpOnly`, `SameSite=Lax`, `Path=/`, `Secure`. The only exception is a base URL of plain-http `localhost`.
 - If neither `BETTER_AUTH_URL` nor `SITE_URL` is set, cookies are Secure unless `APP_ENV=development`, the default. **A Node host must therefore set `APP_ENV=production` (or an https `BETTER_AUTH_URL`).** Otherwise its cookies are not Secure.
 - Sessions live 7 days and are refreshed at most once a day. They are database rows: signing out deletes the row and clears the cookie; changing the password ends every other session of the user and **rotates this one** (a new token and cookie, so a token that leaked before the change is dead, F6). A changed role or a revoked session applies on the next request, because nothing is cached.
+
+### Auth error diagnostics
+
+`src/server/auth/diagnostics.ts` emits fixed event categories and allowlisted error names / driver codes only. It discards messages, stacks, SQL parameters, arbitrary names/codes and other arguments, including nested driver payloads. The Better Auth custom logger and API-error callback both use it. The callback converts non-API errors into a generic APIError so Better Call's fallback cannot print the original error. `callAuthEndpoint` also catches failures outside that router boundary. Unknown categories remain observable as `auth_error` / `unknown`; no raw payload is required for diagnosis.
 
 ## Rate limiting
 
@@ -119,7 +126,7 @@ Every response carries (`src/server/security-headers.ts`, applied by `next.confi
 | `Permissions-Policy`      | `camera=(), microphone=(), geolocation=()`                                       |
 | `X-Robots-Tag`            | `noindex, nofollow` unless `INDEXING=on`                                         |
 
-**No `script-src` yet, on purpose.** Next's own inline bootstrap scripts need a per-request nonce, which means a middleware nonce and dynamic rendering of every page; that would give up the static home page and is a larger change than a baseline. A Report-Only script policy is also deferred: it would only produce noise until the nonce exists. HSTS is left to the host (Cloudflare and Vercel send it on their own domains; set it on the custom domain at launch).
+**No `script-src` yet, on purpose.** Next's own inline bootstrap scripts need a per-request nonce, which means a middleware nonce and dynamic rendering of every page. Home now renders per request for content freshness, but that does not implement nonce infrastructure or a script policy. A Report-Only script policy is also deferred: it would only produce noise until the nonce exists. HSTS is left to the host (Cloudflare and Vercel send it on their own domains; set it on the custom domain at launch).
 
 ## Accepted for the test deployment
 
@@ -154,3 +161,88 @@ In this order of importance:
 6. **Headers:** a nonce-based `script-src` (and `style-src`), first as Report-Only, then enforced; HSTS on the real domain.
 7. **Launch switches:** `INDEXING=on` and the removal of the noindex rule in `public/_headers`; `APP_ENV=production`; a real domain in `BETTER_AUTH_URL`.
 8. **Compliance:** data residency and a privacy notice (for example 152-FZ), and a second security review of 4b.
+
+## Local Phase 4b content and concurrency follow-up
+
+Product updates, publish changes and Promotions now require the revision loaded with their form. A conditional write increments it; a stale form receives a conflict and retains its input. Full product fields and both translations commit in one SQL statement, so a failed translation cannot leave a partial product update. Revision overflow is refused. Initial seeding and repair scripts remain maintenance operations; they must not run concurrently with editors.
+
+Site content actions authorize before parsing input, allow only the 18 existing home text keys and `ru`/`en`, and compare the stored text before replacing or restoring an override. Independent fields do not conflict; a text value changed away and back is intentionally treated as the same baseline. Overrides render as escaped text, without HTML or ICU evaluation. Missing overrides and an unconfigured database use message defaults; failures of a configured database are surfaced. The editor's text preview does not require changing the existing frame or CSP policies.
+
+These changes are locally reviewed and tested with PGlite. They do not establish production readiness, apply migrations to Neon, or validate the deployed Cloudflare runtime. The production requirements above still apply.
+
+## Local Phase 4b request follow-up
+
+Create Your Stone uses admin-guarded explicit DTOs and strict quote/status action
+inputs. Both writes use one conditional revision update; stale/overflowing inputs
+fail closed. Database constraints bound cents, quantities, dimensions, statuses
+and the required quote for non-New status. The customer FK restricts deletion.
+Customer identifiers, specifications and image references are not mutable through
+these actions. Seeded reference images are checked against the existing catalog
+manifest. The separately approved public request/photo flow is documented below;
+it does not allow arbitrary URLs or change existing request specifications.
+
+Status labels are manual demo tracking only. Sending, messaging and payment are
+disabled. Independent source review found a draft-loss path after status changes
+under an active list filter; selection is now pinned independently of that filter,
+with browser regression coverage. The editor retains its original revision across
+new props and advances it only after confirmed saves. Real Neon and Worker behavior
+remain separate release gates.
+
+## Test shop checkout
+
+`/{locale}/cart` is public; the cart lives in the browser (`localStorage`, `stone.cart.v1`) and is never
+trusted. `quoteCart` is a public, read-only action (allow-listed in the guard scan): strict zod input of at
+most 20 `{ slug, areaHundredths }` lines, published products only, no user id, no writes. `placeTestOrder`
+guards first (`requireUser`), checks the configured origin like the request form, validates strictly,
+re-prices on the server and refuses a total that differs from the one the customer confirmed
+(`prices_changed` with the fresh quote). One SQL statement inserts the order and its items only when every
+product is still published, the total still matches and the user has fewer than 50 test orders; a unique
+`(user_id, idempotency_key)` index makes a retry return the same order (same key + other content =
+`conflict`). No payment data is collected and no payment provider exists. The order page filters by the
+session user, so another customer's number reads as a 404. A cart whose total would not fit the Postgres
+`integer` cents column (2 147 483 647) is refused before the insert (`too_large`). The quote is one database
+query whatever the cart size, and an order attempt about six (Workers allow 50 subrequests per request). The
+browser cart is cleared once a sign-out is confirmed (shared devices).
+
+Residual (accepted for the demo): the 50-order cap is a **soft demo limit**. It is counted inside the insert
+statement but not serialised (each statement sees the order count at its start), so concurrent distinct
+submissions by the same user near the limit can each pass and end above 50; there is no fixed bound on the
+overshoot. It only limits demo data volume and is not a security or business quota. A strict quota would need a
+serialised counter (e.g. a per-user row updated in the same statement, as the stone-request budget does).
+
+Client retry key: `placeTestOrder` gets one idempotency key per submission, kept in memory for the page and
+mirrored to sessionStorage (`src/features/cart/attempt-key.ts`). Retries in the same page view reuse it even when
+storage is blocked or full; the key rotates after a success, a `conflict` or a changed cart. Limitation: with
+storage unavailable, reloading the page after a lost response starts a new submission (any order saved by the
+lost attempt is listed in the account's Orders).
+
+## Public request/photo demo
+
+`/ru/create-your-stone` and `/en/create-your-stone` require an existing session to
+submit. The action guards first, explicitly checks the configured origin, parses
+strict fields, derives ownership/status/number, and rate-limits attempts before
+decoding. Preview/production requires an exact `BETTER_AUTH_URL` or `SITE_URL`;
+the form is unavailable without it. Next's default 1 MiB action body limit remains.
+
+The browser accepts JPEG/PNG/WebP up to 5 MiB and produces a PNG at most 512 px and
+512 KiB. The server independently bounds signature, chunks, dimensions, bit depth,
+color type, interlace, CRC and decoded scanlines; rejects animation/metadata/active
+formats; and reencodes pixels only. Its public zlib preflight has a fixed 2 MiB
+inflated-output cap and requires the exact scanline length. Other input and pixel
+buffers also contribute to memory use. Streaming pngjs decode
+avoids the private Node internals used by `PNG.sync.read`. No filename becomes a
+path, and the original file is not retained. See the adversarial PNG tests and
+local workerd probe in the public-request milestone report. Deployed CPU is unmeasured.
+
+One SQL statement commits the private base64 PNG and request with atomic lifetime
+demo limits: 50 new public requests total, 10 per owner. A database rate bucket
+allows 10 attempts per minute per owner. Owner-scoped UUID plus canonical digest
+deduplicates retries; even a concurrent repeat taking the last quota slot returns
+the saved record. Browser recovery stores only that UUID, not contact details.
+
+The photo route checks owner/admin before fetching bytes and returns `image/png`,
+`private, no-store`, `nosniff`, same-origin resource policy and sandbox CSP. List
+DTOs carry only a photo-present flag; image elements bypass the public optimizer.
+Confirmation reads are also owner/admin-only. These are synthetic demo limits,
+not a general file-storage service or a production moderation/retention policy.
+The design follows the [OWASP upload guidance](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html).

@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { cn } from "../cn";
 
 export type IconName =
+  | "upload"
   | "search"
   | "menu"
   | "close"
@@ -29,7 +30,7 @@ export type IconName =
   | "tag"
   | "plus";
 
-export type IconSize = 12 | 16 | 24;
+export type IconSize = 12 | 16 | 24 | 32;
 
 type IconProps = {
   name: IconName;

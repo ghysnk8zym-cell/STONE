@@ -109,6 +109,9 @@ function OrderRow({
             {order.number}
           </span>
           <span className="type-footer-small text-stone-catalog-secondary">
+            {t(`kind.${order.kind}`)}
+          </span>
+          <span className="type-footer-small text-stone-catalog-secondary">
             {format.dateTime(order.createdAt, {
               dateStyle: "medium",
               timeZone: "UTC",
@@ -173,7 +176,7 @@ function OrderDetail({ order }: { order: AdminOrder }) {
           {t("detail.title", { number: order.number })}
         </h2>
         <p className="type-catalog-field-value text-stone-catalog-secondary">
-          {date}
+          {[date, t(`kind.${order.kind}`)].join(" · ")}
         </p>
       </div>
       <Divider />
@@ -199,15 +202,25 @@ function OrderDetail({ order }: { order: AdminOrder }) {
                 {item.name}
               </p>
               <p className="type-catalog-field-value text-stone-catalog-secondary">
-                {t("detail.line", {
-                  quantity: item.quantity,
-                  price: money(item.priceCents),
-                })}
+                {item.areaHundredths != null
+                  ? t("detail.areaLine", {
+                      area: format.number(item.areaHundredths / 100, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }),
+                      price: money(item.priceCents),
+                    })
+                  : t("detail.line", {
+                      quantity: item.quantity,
+                      price: money(item.priceCents),
+                    })}
               </p>
               <div className="flex items-baseline justify-between gap-2">
                 <p className={ADMIN_MUTED}>{t("detail.itemTotal")}</p>
                 <p className="type-catalog-field-value text-stone-catalog-ink">
-                  {money(item.priceCents * item.quantity)}
+                  {money(
+                    item.lineTotalCents ?? item.priceCents * item.quantity,
+                  )}
                 </p>
               </div>
             </div>
@@ -242,7 +255,7 @@ function OrderDetail({ order }: { order: AdminOrder }) {
       </div>
       <Divider />
       <OrderStatusForm
-        key={`${order.number}-${order.status}`}
+        key={order.number}
         number={order.number}
         status={order.status}
       />
@@ -304,7 +317,14 @@ export function OrdersView({
         </p>
       </section>
       {selected ? (
-        <OrderDetail order={selected} />
+        <div className="flex flex-col gap-3 min-[90rem]:w-[360px] min-[90rem]:shrink-0">
+          {!orders.some((order) => order.number === selected.number) && (
+            <p role="status" className={ADMIN_MUTED}>
+              {t("selectionOutside")}
+            </p>
+          )}
+          <OrderDetail order={selected} />
+        </div>
       ) : (
         <aside className={cn(ADMIN_CARD, "min-[90rem]:w-[360px]")}>
           <h2 className={ADMIN_CARD_TITLE}>{t("detail.none")}</h2>

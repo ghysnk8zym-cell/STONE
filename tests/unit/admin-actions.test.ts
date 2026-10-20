@@ -228,7 +228,7 @@ describe("admin server actions (PGlite + real Better Auth)", () => {
         expect.arrayContaining([
           "/[locale]/catalog/[slug]#page",
           "/[locale]/catalog#page",
-          // the home page is static: only the concrete paths reach it (the pattern does not)
+          // Concrete locale paths also refresh clients that previously visited Home.
           "/ru",
           "/en",
           "/ru/catalog",
@@ -360,6 +360,7 @@ describe("admin server actions (PGlite + real Better Auth)", () => {
           priceCents: 11100,
           finish: "polished",
         }),
+        0,
       );
       expect(result).toEqual({ ok: true, slug: "fresh-stone" });
       const product = await repository.getBySlug("fresh-stone");
@@ -381,7 +382,7 @@ describe("admin server actions (PGlite + real Better Auth)", () => {
 
     it("refuses an unknown product, a bad slug and bad input without changing anything", async () => {
       await asAdmin();
-      expect(await actions.updateProduct("no-such-stone", input())).toEqual({
+      expect(await actions.updateProduct("no-such-stone", input(), 0)).toEqual({
         ok: false,
         code: "not-found",
       });
@@ -399,7 +400,9 @@ describe("admin server actions (PGlite + real Better Auth)", () => {
 
     it("unpublish removes the product from the catalog; publish brings it back", async () => {
       await asAdmin();
-      expect(await actions.setProductPublished("fresh-stone", false)).toEqual({
+      expect(
+        await actions.setProductPublished("fresh-stone", false, 1),
+      ).toEqual({
         ok: true,
         published: false,
       });
@@ -414,16 +417,18 @@ describe("admin server actions (PGlite + real Better Auth)", () => {
       ).not.toContain("fresh-stone");
       expect(request.revalidated).toContain("/[locale]/catalog/[slug]#page");
 
-      expect(await actions.setProductPublished("fresh-stone", true)).toEqual({
-        ok: true,
-        published: true,
-      });
+      expect(await actions.setProductPublished("fresh-stone", true, 2)).toEqual(
+        {
+          ok: true,
+          published: true,
+        },
+      );
       expect(await repository.getBySlug("fresh-stone")).not.toBeNull();
     });
 
     it("refuses an unknown slug and a non-boolean flag", async () => {
       await asAdmin();
-      expect(await actions.setProductPublished("no-such", true)).toEqual({
+      expect(await actions.setProductPublished("no-such", true, 0)).toEqual({
         ok: false,
         code: "not-found",
       });

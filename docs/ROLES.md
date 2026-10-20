@@ -1,12 +1,12 @@
 # Roles and permissions
 
-Three roles, one rule: **the server decides, on every request.** The UI hides what a role cannot use, but nothing relies on that. Verified against the code on 2026-10-18 (Phase 4a); the tests that keep it true are listed at the end.
+Three roles, one rule: **the server decides, on every request.** The UI hides what a role cannot use, but nothing relies on that. Updated on 2026-10-18 for Phase 4a and Phase 4b Customers, Promotions, Site content and Create Your Stone; the tests that keep it true are listed at the end.
 
-| Role       | How you become one                                                                           | In the database                                                                   |
-| ---------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| **Guest**  | No (valid) session cookie                                                                    | nothing                                                                           |
-| **Client** | Sign up. Sign-up always creates a `client`; the role cannot be sent from any form or API     | `user.role = 'client'` (default)                                                  |
-| **Admin**  | Only through `pnpm db:seed` (`SEED_ADMIN_EMAIL`). There is no screen or endpoint to make one | `user.role = 'admin'`; Phase 4b: Customers screen changes a role, never one's own |
+| Role       | How you become one                                                                                  | In the database                                                   |
+| ---------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Guest**  | No (valid) session cookie                                                                           | nothing                                                           |
+| **Client** | Sign up. Sign-up always creates a `client`; the role cannot be sent from any form or API            | `user.role = 'client'` (default)                                  |
+| **Admin**  | Initial admin through `pnpm db:seed`; an existing admin can change another user's role in Customers | `user.role = 'admin'`; the server rejects changing one's own role |
 
 An Admin is also a user: the account area works for them too (they just have no demo orders or favourites unless they create them).
 
@@ -22,15 +22,21 @@ An Admin is also a user: the account area works for them too (they just have no 
 
 Locales `ru` and `en`; every route below exists in both. "404" is the site's own localised not-found page.
 
-| Route                                                                                                                                 | Guest                                           | Client                 | Admin                  |
-| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------- | ---------------------- |
-| `/{locale}`, `/catalog`, `/catalog/[slug]` (unknown or unpublished slug: 307 to `/{locale}/404`)                                      | 200                                             | 200                    | 200                    |
-| `/{locale}/sign-in`, `/sign-up`                                                                                                       | 200 (form, or "unavailable" without a database) | redirect to `/account` | redirect to `/account` |
-| `/{locale}/sign-out`                                                                                                                  | redirect to the home page                       | 200 (confirmation)     | 200 (confirmation)     |
-| `/{locale}/_styleguide`                                                                                                               | 200, `noindex`; 404 when `APP_ENV=production`   | same                   | same                   |
-| `/{locale}/account`, `/account/orders`, `/account/favorites`, `/account/profile`                                                      | 307 to `sign-in?next=<path>`                    | 200                    | 200                    |
-| `/{locale}/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[slug]`, `/admin/orders`                                | 307 to `sign-in?next=<path>`                    | **404**                | 200                    |
-| `/{locale}/admin/create-your-stone`, `/customers`, `/promotions`, `/site-content` (Phase 4b; today a header and a "next update" card) | 307 to `sign-in?next=<path>`                    | **404**                | 200                    |
+| Route                                                                                                  | Guest                                           | Client                 | Admin                  |
+| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ---------------------- | ---------------------- |
+| `/{locale}`, `/catalog`, `/catalog/[slug]` (unknown or unpublished slug: 307 to `/{locale}/404`)       | 200                                             | 200                    | 200                    |
+| `/{locale}/sign-in`, `/sign-up`                                                                        | 200 (form, or "unavailable" without a database) | redirect to `/account` | redirect to `/account` |
+| `/{locale}/sign-out`                                                                                   | redirect to the home page                       | 200 (confirmation)     | 200 (confirmation)     |
+| `/{locale}/_styleguide`                                                                                | 200, `noindex`; 404 when `APP_ENV=production`   | same                   | same                   |
+| `/{locale}/account`, `/account/orders`, `/account/favorites`, `/account/profile`                       | 307 to `sign-in?next=<path>`                    | 200                    | 200                    |
+| `/{locale}/account/orders/[number]` (one order; another user's or an unknown number: 307 to `/404`)    | 307 to `sign-in?next=<path>`                    | 200 (own orders only)  | 200 (own orders only)  |
+| `/{locale}/cart` (lines in the browser, prices from the server)                                        | 200                                             | 200                    | 200                    |
+| `/{locale}/checkout` (test checkout)                                                                   | 307 to `sign-in?next=/{locale}/cart`            | 200                    | 200                    |
+| `/{locale}/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[slug]`, `/admin/orders` | 307 to `sign-in?next=<path>`                    | **404**                | 200                    |
+| `/{locale}/admin/customers` (user list, orders and role changes)                                       | 307 to `sign-in?next=<path>`                    | **404**                | 200                    |
+| `/{locale}/admin/promotions` (product discount editing)                                                | 307 to `sign-in?next=<path>`                    | **404**                | 200                    |
+| `/{locale}/admin/site-content` (fixed Home text fields, ru/en)                                         | 307 to `sign-in?next=<path>`                    | **404**                | 200                    |
+| `/{locale}/admin/create-your-stone` (seeded requests, quote drafts and status tracking)                | 307 to `sign-in?next=<path>`                    | **404**                | 200                    |
 
 Below 1024 px the admin layout shows a localised message instead of the shell (owner decision); the status is still 200.
 
@@ -56,8 +62,50 @@ A server action is a public `POST` endpoint whatever the page shows, so each one
 | `createProduct`, `updateProduct(slug, input)` | `src/server/admin/actions.ts`        | **admin** (`requireRole`) | any product and its ru / en copy; the slug never changes                                                                                                                 |
 | `setProductPublished(slug, published)`        | same                                 | **admin**                 | publish / unpublish any product                                                                                                                                          |
 | `setOrderStatus(number, status)`              | same                                 | **admin**                 | the status of any order                                                                                                                                                  |
+| `quoteCart(items, locale)`                    | `src/server/shop/actions.ts`         | anyone (public by design) | read-only: prices slugs + areas from published catalog data; takes no user id, writes nothing                                                                            |
+| `placeTestOrder({ items, key, expected })`    | same                                 | signed in (`requireUser`) | inserts one test order (`kind = test_checkout`) for the session user; same-origin check, server prices, idempotent per key, at most 50 per user                          |
 
 None of the account actions takes a user id (or anything that names another user) from the caller: they act on the session's user. A Client calling an admin action directly is answered with the 404 of the guard, a Guest with the sign-in redirect.
+
+`src/server/admin/customer-actions.ts#setCustomerRole(id, role)` is admin-only.
+Its first statement calls the guard, then Zod validates the unknown arguments.
+It writes only `user.role`, rejects either role for the caller's own ID, and
+refreshes the admin/account layouts. Existing sessions see the new role on their
+next request; no sign-out is required. Concurrent changes are last-write-wins;
+an already authorized request may finish after demotion, and two admins can
+mutually demote. The approved spec does not define a last-admin invariant.
+
+`src/server/admin/actions.ts#setProductPromotion(slug, input, expected)` is
+admin-only, with its guard before validation or database access. It updates only
+the three product price/discount fields (and the schema-managed `updatedAt`).
+One conditional update compares the expected prices and shared product revision;
+a stale editor gets a conflict without overwriting the intervening change. Product,
+Promotions and publication actions all compare and advance this revision. A full
+Product save updates product data and ru/en translations in one SQL statement;
+conflicts and translation failures write nothing. It does not publish drafts,
+modify orders or change the curated home-page promotion list. This is optimistic
+concurrency, not revision history. The int32 revision is never reset or wrapped;
+an exhausted revision requires maintenance, not a reload. Seeding/repair is offline
+initialization or maintenance, never concurrent with admin editing.
+
+`src/server/admin/content-actions.ts#saveHomeText(locale, key, text, expected)`
+is admin-only and guards before validation. It accepts only ru/en and the 18
+existing Home keys in `src/features/content/home-fields.ts`; each call saves one
+plain-text field or removes that override to restore messages. The unique key and
+locale plus an expected-text condition prevent stale inserts/edits/resets from
+overwriting changed text. Different fields are independent. This is value-based
+comparison, so a value changed and returned to its baseline is accepted. No HTML,
+ICU evaluation, arbitrary keys, uploads, links or new pages are supported.
+
+`src/server/admin/stone-request-actions.ts#saveStoneRequestQuote` and
+`#setStoneRequestStatus` authorize an admin before parsing strict unknown input.
+Both compare and increment the loaded request revision. Customer ownership and
+request details cannot be changed through these actions. A quote is USD cents per
+piece, not catalog price per square metre. Saving a draft sets `draft_quote`;
+non-New tracking statuses require a quote. No action sends messages or payments.
+List/detail/Overview queries are also admin-guarded and expose only the fields
+needed by these screens. Public submission, upload and customer-account request
+access are deliberately absent from the approved Phase 4 scope.
 
 ## Why a Client gets a 404 on admin pages, not 403
 
@@ -78,4 +126,9 @@ Orders have two statuses, the values of `ORDER_STATUSES` in `src/server/db/schem
 
 - `tests/unit/server-actions-guarded.test.ts` reads the source (TypeScript AST) and fails when an exported server action or route handler does not start with `requireUser` / `requireRole` (or a same-file helper that does), unless it is on a written allow-list with a reason. It also fails on an allow-list entry that no longer matches anything, on an inline `"use server"` it cannot see, and on exports it cannot verify (re-exports, non-functions).
 - `tests/unit/auth-guards.test.ts`, `account-actions.test.ts`, `admin-actions.test.ts`: the guards and the actions against a real Better Auth on PGlite (no session, Client, Admin, expired, another user's data, a Client calling an admin action).
-- `tests/e2e/access.spec.ts`: Guest / Client / Admin against every account and admin route in both languages (66 checks per viewport), plus a made-up session cookie that passes the middleware shortcut but not the guard, and `/api/auth/*` answering 404 (GET and POST, signed in or not).
+- `tests/e2e/access.spec.ts`: Guest / Client / Admin against every account and admin route in both languages (78 checks per viewport, including product creation/editing), plus a made-up session cookie that passes the middleware shortcut but not the guard, and `/api/auth/*` answering 404 (GET and POST, signed in or not).
+- `tests/unit/admin-customers.test.ts` and `tests/e2e/customers.spec.ts`: direct-call boundaries, own-role rejection, existing-session promotion/demotion, safe DTOs, selected-user orders, search, pagination and both locales.
+- `tests/unit/admin-promotions.test.ts`, `promotion-editor.test.tsx` and `tests/e2e/promotions.spec.ts`: direct-call boundaries, field validation, nullable/value conflicts, concurrent writes, unchanged unrelated data, preserved inputs, storefront sale filtering, both locales and responsive accessibility.
+- `tests/unit/product-editor-conflict.test.tsx` and the expanded Promotions tests: both cross-editor orders, translation rollback, stale publication, price round trips, coherent tokens and preserved input.
+- `tests/unit/site-content.test.ts`, `home-content-editor.test.tsx` and `tests/e2e/site-content.spec.ts`: direct-call guards, locale/key bounds, plain text, absence/no-database fallback, stale edits/resets, successful subsequent saves, language switching and public Home rendering.
+- `tests/unit/admin-stone-requests.test.ts`, `stone-request-editor.test.tsx` and `tests/e2e/stone-requests.spec.ts`: guarded reads/writes, quote/status constraints, shared revision conflicts, immutable ownership/specifications, seed preservation, bounded search, live Overview, both locales, draft retention across filtered refreshes and responsive accessibility.

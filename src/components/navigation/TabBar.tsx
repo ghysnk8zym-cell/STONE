@@ -79,13 +79,16 @@ export function TabBar({
     <nav
       aria-label={t("label")}
       className={cn(
-        "glass-blur border-glass fixed inset-x-4 bottom-[max(16px,env(safe-area-inset-bottom))] z-30 mx-auto max-w-[358px] rounded-[20px] border px-[11px] py-[7px] md:hidden",
+        "glass-blur border-glass fixed inset-x-4 bottom-[max(16px,env(safe-area-inset-bottom))] z-30 mx-auto max-w-[358px] rounded-[20px] border px-[11px] py-[7px] max-[360px]:px-[3px] md:hidden",
         fill === "footer" ? "bg-surface-footer" : "bg-surface-header",
       )}
     >
       <ul className="flex h-[52px] items-center justify-between">
         {TABS.map(({ key, href, icon }) => (
-          <li key={key} className="max-w-16 min-w-0 flex-1">
+          <li
+            key={key}
+            className="max-w-16 min-w-0 flex-1 max-[360px]:min-w-11 max-[360px]:flex-auto"
+          >
             {inert.includes(key) ? (
               <span
                 role="link"

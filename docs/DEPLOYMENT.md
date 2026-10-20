@@ -2,6 +2,26 @@
 
 The current deployment is a **test environment** on Cloudflare Workers (ADR-001). It is always `noindex`. Dashboard labels change over time: where a step says _verify in the current dashboard_, look for the closest equivalent.
 
+The owner confirmed the objective on 2026-10-18: customer approval of a test version,
+then source-file handover for another team's development and server migration.
+This guide describes possible operator actions, not permission to execute them.
+Use the exact target and preflight in [`NEON_STONE_TEST_PLAN.md`](NEON_STONE_TEST_PLAN.md).
+Real payments/email and production operations are not required for this demo.
+
+## 0. Test shop (`stone-test`) — the customer-review deployment
+
+The hosted test shop is a **separate Worker, `stone-test`** (`https://stone-test.gb8cj746n2.workers.dev`), defined by `env.test` in `wrangler.jsonc`. It does not use Workers Builds and never touches the Git-connected `stone` Worker of section 1. Data: Neon project `delicate-sound-31481072`, branch `stone-test` (`br-wandering-salad-b5wlyfp1`), database `neondb`, synthetic data only.
+
+1. **Build on Linux (GitHub Actions).** Push the branch; the CI `cloudflare` job runs `pnpm cf:build` + `pnpm cf:size` (3 MiB gate) and uploads the OpenNext output as the artifact `open-next-build`. Nothing is installed locally (no WSL/Docker); Windows cannot run the OpenNext build (symlink EPERM).
+2. **Deploy only a green run.** All CI jobs of the exact commit must pass. Then, from the repository root:
+   ```sh
+   gh run download <run-id> -n open-next-build -D .open-next
+   pnpm exec wrangler deploy --env test
+   ```
+   `wrangler.jsonc`'s build command skips the build because `.open-next/worker.js` exists. Rollback: redeploy the artifact of the previous green run the same way.
+3. **Database and secrets, once, by the owner:** `node scripts/ops/stone-test-provision.mjs` in a local terminal. It asks (hidden input) for the `neondb_owner` connection string of branch `stone-test` (Neon console → Connect → branch `stone-test`, database `neondb`, role `neondb_owner`, pooling off), checks it is exactly that target, shows a read-only preflight and waits for `yes`, records a point-in-time checkpoint in `~/Documents/STONE-backups/stone-test-checkpoints.log`, runs `pnpm db:migrate`, creates the least-privilege runtime role `stone_app` (SELECT/INSERT/UPDATE/DELETE on `public` tables, USAGE/SELECT/UPDATE on `public` sequences; nothing in `neon_auth`), seeds synthetic data and two synthetic accounts (`stone-admin@example.com`, `stone-client@example.com`, random passwords), and stores `DATABASE_URL` (as `stone_app`) and a random `BETTER_AUTH_SECRET` as Worker secrets (`wrangler secret put --env test`, value on stdin). The account list is written to `~/Documents/STONE-backups/stone-test-accounts.local.txt` — outside the repository; never paste it into chat or git. Non-secret settings (`APP_ENV=preview`, `INDEXING=off`, `BETTER_AUTH_URL`, `SITE_URL`) live in `env.test.vars`.
+4. **Recovery.** The checkpoint log has the server time and WAL LSN taken before migrating: restore with Neon console → branch `stone-test` → Restore to that time (within the plan's history window). Migrations are additive; nothing drops data.
+
 ## 1. Cloudflare Workers Builds (owner, one time)
 
 Prerequisite: a Cloudflare account with a `workers.dev` subdomain (Workers & Pages → overview shows it). No paid plan is needed (Workers Free).
@@ -18,7 +38,13 @@ Prerequisite: a Cloudflare account with a `workers.dev` subdomain (Workers & Pag
    | Deploy command        | `pnpm run cf:deploy` (replace the default `npx wrangler deploy`)           |
    | Root directory        | `/`                                                                        |
 
-   Non-production branches (PRs) use Cloudflare **Worker Previews**: Workers Builds runs only `npx wrangler preview` (the dashboard build command is skipped for previews). Wrangler then runs `build.command` from `wrangler.jsonc` (`scripts/ensure-opennext-build.mjs`), which builds the OpenNext worker if `.open-next/worker.js` is missing, and reads the `previews` block for vars. No separate preview command is needed; if your dashboard shows a "Preview command" field, leave its default.
+   When Preview Builds are enabled, Workers Builds runs the **build command followed
+   by the Preview command** on enabled non-production branches. The current default
+   is `npx wrangler preview`; inspect the actual Worker configuration before changing
+   it. Wrangler's `build.command` (`scripts/ensure-opennext-build.mjs`) builds only
+   when `.open-next/worker.js` is missing. A branch push can deploy a preview even
+   for a draft PR. An older Worker may use a different preview system; do not switch
+   systems or infer isolation from a dashboard label alone.
 
    Existing project (as of 2026-10): **Workers & Pages → stone → Settings → Builds → Build configuration**: click a field to edit, then save; afterwards **Deployments → Retry build** on the PR branch (_verify in the current dashboard_).
 
@@ -33,11 +59,20 @@ Prerequisite: a Cloudflare account with a `workers.dev` subdomain (Workers & Pag
 - Open `<preview-url>/ru` and `<preview-url>/en`: both must load; response header `x-robots-tag: noindex, nofollow`.
 - GitHub → **Actions** → **Preview smoke** → **Run workflow** → paste the preview URL. The Playwright `@smoke` suite runs against it.
 
+`workflow_dispatch` requires the workflow file on the default branch. At the last
+read-only inspection, `main` was still the initial commit without workflows; this
+manual button is not assumed available. Run only after the reviewed file is
+published through the approved PR sequence. A historical CI rerun does not test
+uncommitted files. Record source head, base and tested merge SHA for PR checks.
+
 ## 2. GitHub branch protection (owner, one time)
 
 1. GitHub → repository → **Settings** → **Rules** → **Rulesets** → **New branch ruleset**.
 2. Name `main`, enforcement **Active**, target branch `main` (Include default branch).
-3. Enable **Require a pull request before merging**, **Require status checks to pass** with checks `quality`, `build`, `cloudflare`, `e2e`, and **Block force pushes**.
+3. Enable **Require a pull request before merging** and **Block force pushes**. After
+   the reviewed workflow is published and the exact checks have run, configure
+   required checks `quality`, `build`, `cloudflare`, `e2e`, `node-standalone`, `docker`.
+   This document does not change branch protection or claim these settings exist.
 4. Save.
 
 ## 3. Database and sign-in: Neon + Cloudflare (owner, one time)
@@ -46,16 +81,20 @@ Until you do this the preview still works: the catalog comes from the built-in s
 
 **Rules for this section.** Connection strings, passwords and the auth secret are secrets. Paste them only into the Cloudflare _Secret_ field, a password manager and your own terminal. **Never** paste them into a chat (including with Claude), an issue, a pull request, a commit or a screenshot. Nobody else (no agent) runs the commands below with real values; if something fails, send the _error text_, not the values.
 
-### 3.1 Create the Neon project (EU)
+### 3.1 Confirm the existing isolated Neon target
 
-1. Open <https://neon.com> → **Sign up** (or **Log in**). The Free plan needs no card. _Verify in the current dashboard_: labels change.
-2. **Create project**. Name: `stone`. Postgres version: the default. **Region: an EU region** (for example _AWS Europe (Frankfurt)_). The Free plan is single-region; choose one near your visitors.
-3. Optional but recommended: keep one project and one branch (`main`) for now. If you later want the preview to use different data from production, create a second Neon _branch_ (**Branches → Create branch**, name `preview`) and use that branch's connection string for the preview.
-4. On the project dashboard click **Connect**. You see a connection string that looks like `postgresql://<user>:<password>@<host>/<database>?sslmode=require`.
-   - The **Connection pooling** switch gives a host containing `-pooler`. Use the **pooled** string for the website (`DATABASE_URL` secret in 3.3).
-   - For the migration in 3.4 the **direct** string (switch off) is the safer choice; the pooled one normally works too.
-   - If a tool complains about `channel_binding=require`, delete that part of the string.
-5. Keep the strings in your password manager. Free plan limits to know: the database suspends after a few minutes without queries and the next request is slower while it wakes up; there are 100 compute hours and 0.5 GB per project. **Compute hours are the limit to watch:** the database sleeps only when nobody queries it for a few minutes. A public page view costs 2 to 6 queries (home 4, catalog 6, product 2, plus 2 or 3 for a signed-in visitor), so steady traffic keeps it awake around the clock: 0.25 compute units for 730 hours is about 182 compute hours a month, above the free 100. With real traffic expect to hit the cap (then the database stops answering until the month ends or you upgrade). A test environment with a few visitors a day stays under it.
+Use `stone-test/neondb` and the exact project/branch/endpoint IDs in the linked plan,
+never the default parent branch. The original ADR selected EU. The owner approved
+the existing `aws-us-east-2` region on 2026-10-18 **only for synthetic test data**.
+Do not create another account/project, move data or infer permission for credentials,
+roles or persistent access from that region approval.
+
+Use an approved direct TLS connection for migrations. Pooling is not established:
+metadata reported `pooler_enabled: false` despite a pooled hostname. Verify the
+actual supported runtime connection before use; do not change pooling or remove
+connection security parameters to suppress an error. Keep credentials in a secure
+secret store and check the actual plan limits before any cost decision. Public
+database requests can wake an idle endpoint; no uptime polling is required here.
 
 ### 3.2 Generate the auth secret locally
 
@@ -67,22 +106,49 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 
 (or `openssl rand -base64 32`). Changing it later signs everybody out.
 
-### 3.3 Add the values in Cloudflare
+### 3.3 Scope values to the approved Preview
 
-1. Cloudflare dashboard → **Workers & Pages** → **stone** → **Settings** → **Variables and Secrets** → **Add** (_verify in the current dashboard_).
-2. Add each of these. Choose type **Secret** unless the table says otherwise, paste the value, **Save**/**Deploy**:
+First identify the exact Worker, individual Preview name/URL, source revision and
+database role. Inspect current preview mode and scoping without changing settings.
+For the current Worker Previews system, **individual Preview secrets** are distinct
+from **Preview Base** secrets (copied to new previews; later base edits do not update
+existing ones) and Production secrets. Do not fill both environments or use Preview
+Base for a single isolated test. If isolation cannot be established, stop that change.
 
-   | Name                                                                                   | Value                                        | Type   |
-   | -------------------------------------------------------------------------------------- | -------------------------------------------- | ------ |
-   | `DATABASE_URL`                                                                         | the Neon connection string from 3.1 (pooled) | Secret |
-   | `BETTER_AUTH_SECRET`                                                                   | the secret from 3.2                          | Secret |
-   | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_CLIENT_EMAIL`, `SEED_CLIENT_PASSWORD` | the test users you want (see below)          | Secret |
-   - **`DATABASE_URL` must be a Neon URL on Cloudflare** (host `*.neon.tech`): the Worker build contains only the Neon HTTP driver. Any other host (or `pglite://`) fails at the first database call with the message "DATABASE_URL must be a Neon URL ... when PLATFORM=cloudflare" in the Worker log (the URL is never printed), and the catalog pages answer 500 until it is fixed.
-   - **`BETTER_AUTH_URL`: leave it unset on previews.** Every pull-request branch has its own address, and a fixed value would make the sign-in origin check refuse all the others. Unset, the address is taken from the request (always https except on `localhost`), and `APP_ENV=preview` (set by `wrangler.jsonc`) already makes the session cookies `Secure`. On production it is **optional**: set it to the exact production address (`https://stone.<your-subdomain>.workers.dev`, no trailing slash, no path) or leave it unset; if the dashboard shows one list of variables for production and previews, leave it unset.
-   - **Preview vs production for the secrets.** If the dashboard separates _Production_ and _Preview_ values, fill `DATABASE_URL` and `BETTER_AUTH_SECRET` in both; if you see one list, one entry serves both. Afterwards confirm with 3.5 on a preview address.
-   - **`SEED_*`**: only the command in 3.4 reads them; the running site never does. Putting them in Cloudflare is optional (it keeps the values in one place). Choose **strong, unique passwords**: the preview is reachable by anyone with the address, and the Admin account can edit the catalog. Use real-looking emails you control or `@example.test` addresses; do not reuse a password from anywhere.
+Only after specific approval, the operator can enter values at the private prompts
+for the exact individual Preview (names below are placeholders, not commands run):
 
-3. Redeploy so the new values are picked up: **Deployments → Retry build** on the branch (or push any commit).
+**Each `wrangler preview secret put` immediately creates a new deployment for that
+Preview.** Treat each invocation as a deployment change with its own result and
+rollback version, not merely a saved configuration value. Verify the final Preview
+after both approved secrets are set; an intermediate deployment may lack one value.
+
+```sh
+pnpm exec wrangler preview secret put DATABASE_URL --name <approved-preview-name>
+pnpm exec wrangler preview secret put BETTER_AUTH_SECRET --name <approved-preview-name>
+```
+
+- `DATABASE_URL`: the verified `stone-test` runtime connection. Cloudflare requires
+  the existing Neon HTTP driver and a `*.neon.tech` host; PGlite is local-only.
+- `BETTER_AUTH_SECRET`: a unique secret for this isolated test environment. No
+  values go in Wrangler config, build variables, Git, screenshots or command args.
+- `BETTER_AUTH_URL` or `SITE_URL`: set the exact approved Preview origin for the
+  public request/photo demo. If both exist, the request action uses `BETTER_AUTH_URL`.
+  Unset dynamic origins may still support earlier auth behavior, but request submission
+  stays unavailable. Verify secure cookies and trusted origins on the selected URL.
+  Set `APP_ENV=preview`, `PLATFORM=cloudflare`; build with `INDEXING=off`.
+- `SEED_*` and `SEED_ALLOW_REMOTE`: process-only input to the approved seed command,
+  never persistent Worker secrets. Use synthetic addresses and unique passwords.
+
+Separate migration DDL credentials from persistent application credentials. The
+existing `neondb_owner` role is broad, not a least-privilege runtime role. Review
+only the necessary `public` schema usage, table SELECT/INSERT/UPDATE/DELETE and
+required sequence permissions. Runtime needs no role administration, DDL or access
+to `neon_auth`. The exact role/grants and credential creation remain pending;
+none is performed by this guide or the local CI jobs.
+
+Verify the approved Preview/version after the approved secret/deployment change.
+Do not use a push or retry on an unspecified branch as a configuration shortcut.
 
 ### 3.4 Create the tables and the test users (from your own computer)
 
@@ -117,12 +183,17 @@ unset DATABASE_URL BETTER_AUTH_SECRET SEED_ADMIN_EMAIL SEED_ADMIN_PASSWORD SEED_
 
 - Variables set in the terminal win over `.env.local`, so a local database URL in that file cannot be hit by mistake. Without `SEED_ALLOW_REMOTE=1` the seed stops with a message instead of writing to Neon (a safety net), and on a remote database it also refuses an admin password shorter than **16 characters** (the message names `SEED_ADMIN_PASSWORD`, never the value).
 - `pnpm db:migrate` creates the tables; it should end with a "migrations applied" message. `pnpm db:seed` ends with `db:seed done.` and counts such as `products: 12, translations: 24, users: 2, orders: 2 ...`. It prints no emails or passwords.
-- Both commands are safe to repeat: the seed only adds what is missing and never overwrites what an admin edited. If it stops with a message that an account with `SEED_ADMIN_EMAIL` already exists and its password is not `SEED_ADMIN_PASSWORD`, someone registered that address first (or it was seeded with another password): pick another `SEED_ADMIN_EMAIL` (or delete that user in the Neon SQL editor) and run it again.
+- On any failure, inspect migration/seed state before retrying. Seed retains existing
+  records and refuses to promote an account whose password is not verified. For an
+  address collision, select a fresh synthetic address under the approved seed scope;
+  do not delete an existing user to make the command pass.
 - Clear your terminal history afterwards if it recorded the values (PowerShell: `Clear-History`, and delete `%APPDATA%\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt` lines that contain them).
 
 ### 3.5 Check the preview
 
-Open the preview address (the Cloudflare pull-request comment, or `stone.<subdomain>.workers.dev` for `main`). Replace `<url>` below.
+Open the exact approved individual Preview URL and verify its deployed source
+revision first. Do not substitute the main/Production Worker address. Replace
+`<url>` below.
 
 1. `<url>/api/health/db` shows `{"ok":true}`.
    - `{"ok":false,"reason":"database-not-configured"}` (503): this deployment does not see `DATABASE_URL`. Check the name and that it is a Secret on the right scope (3.3), then redeploy.
@@ -133,7 +204,11 @@ Open the preview address (the Cloudflare pull-request comment, or `stone.<subdom
 5. **Workers CPU / password hashing check (important).** Signing in and signing up hash the password with scrypt, which may need more than the 10 ms of CPU that Workers Free allows (`docs/SECURITY.md`, "Passwords"). Steps 3 and 4 _are_ this check: if both sign-ins work, it passes. Also look at Cloudflare → stone → **Metrics**: _CPU time_ for the sign-in requests and _Errors_ by status.
 6. Optional: GitHub → **Actions** → **Preview smoke** → **Run workflow** → the preview URL.
 
-**If sign-in fails with a server error or a CPU-limit message** (the form shows its generic error; the Worker log or Metrics shows _Worker exceeded CPU time limit_ / error 1102 on `POST /ru/sign-in`, the sign-in server action): the database is fine and the code is correct, the limit is the cause. **Do not** raise anything or switch plans on your own, and do not weaken passwords. Tell the lead: the choice is between replacing the hash with PBKDF2 (a code change; the seed users are recreated afterwards), a paid Workers plan, or hosting the test environment on Node. Decision record: `docs/SECURITY.md`.
+**If sign-in fails**, retain sanitized logs and measure CPU for the actual request.
+A CPU-limit event identifies a resource failure; it does not prove the database or
+application code correct. **Do not** weaken hashing, change plans, recreate users or
+switch hosts automatically. Compare the observed failure with the reviewed options
+in `docs/SECURITY.md` before proposing a concrete correction.
 
 **If sign-in says "invalid email or password"** for a seeded user: the seed ran against a different database than the one the website uses (compare which Neon project/branch each string points to), or the user was not created (re-run 3.4).
 
@@ -142,21 +217,40 @@ Open the preview address (the Cloudflare pull-request comment, or `stone.<subdom
 - Rotate a secret: change it in Cloudflare and redeploy (`BETTER_AUTH_SECRET` signs everyone out). To change a database password use Neon → **Roles** → reset password, then update `DATABASE_URL`.
 - Do not point a short-interval uptime monitor at `/api/health/db`: each hit wakes the free database.
 
+The local Phase 4b follow-up adds migrations 0002 (product revision), 0003 (home
+content), 0004 (stone requests) and 0005 (private public-request submissions/photos,
+sequence and demo budget). Apply the complete migration history to an
+explicitly approved isolated target before running this branch. Do not run these
+against a shared or production database without a reviewed backup/rollback plan.
+Local PGlite success does not verify Neon HTTP statements, real origin/cookie
+behavior, Worker bundle size or password hashing within Worker CPU limits. The
+request seed only adds synthetic records to the configured Client; do not seed
+real customer data. A real payment provider is not required for the demo. Public
+photo submission now uses bounded private PNGs in the existing database; see
+`PUBLIC_REQUEST_DEMO.md`. The remote role needs sequence USAGE and budget-table
+SELECT/UPDATE, and backups contain private images/contact snapshots.
+
+Current scoping/build guidance was checked 2026-10-18 against
+[Cloudflare Preview secrets](https://developers.cloudflare.com/workers/previews/configuration/#secrets),
+[Preview build branches](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/),
+[GitHub PR workflow events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)
+and [manual workflow prerequisites](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
+
 ## 4. Environment variables
 
 All variables are listed in `.env.example` and validated by `src/server/env.ts`. A wrong value makes the site fail with the _names_ of the offending variables, never the values.
 
-| Variable                                                                               | Where                                 | Default       | Notes                                                                                                               |
-| -------------------------------------------------------------------------------------- | ------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `APP_ENV`                                                                              | runtime                               | `development` | `preview` on Cloudflare                                                                                             |
-| `INDEXING`                                                                             | **build** (robots, headers)           | `off`         | anything but `on` keeps noindex                                                                                     |
-| `SITE_URL`                                                                             | runtime                               | unset         | public base URL; also a trusted origin for sign-in                                                                  |
-| `PLATFORM`                                                                             | runtime                               | `node`        | `cloudflare` selects the adapter (client IP from `cf-connecting-ip`)                                                |
-| `DATABASE_URL`                                                                         | runtime, **Secret**                   | unset         | `postgres://` / `postgresql://` (Neon host → the Neon HTTP driver) or `pglite://` (local). Unset = no-database mode |
-| `BETTER_AUTH_SECRET`                                                                   | runtime, **Secret**                   | unset         | at least 32 characters; required when `DATABASE_URL` is set                                                         |
-| `BETTER_AUTH_URL`                                                                      | runtime                               | unset         | public base URL; trusted origin; decides the cookie `Secure` flag. Unset on previews, optional on production (3.3)  |
-| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_CLIENT_EMAIL`, `SEED_CLIENT_PASSWORD` | the terminal that runs `pnpm db:seed` | unset         | read only by the seed; the site never reads them                                                                    |
-| `SEED_ALLOW_REMOTE`                                                                    | the terminal, for one command         | unset         | `1` lets the seed write to a remote database                                                                        |
+| Variable                                                                               | Where                                 | Default       | Notes                                                                                                                        |
+| -------------------------------------------------------------------------------------- | ------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `APP_ENV`                                                                              | runtime                               | `development` | `preview` on Cloudflare                                                                                                      |
+| `INDEXING`                                                                             | **build** (robots, headers)           | `off`         | anything but `on` keeps noindex                                                                                              |
+| `SITE_URL`                                                                             | runtime                               | unset         | public base URL; trusted origin; exact Preview URL required for requests if BETTER_AUTH_URL is unset                         |
+| `PLATFORM`                                                                             | runtime                               | `node`        | `cloudflare` selects the adapter (client IP from `cf-connecting-ip`)                                                         |
+| `DATABASE_URL`                                                                         | runtime, **Secret**                   | unset         | `postgres://` / `postgresql://` (Neon host → the Neon HTTP driver) or `pglite://` (local). Unset = no-database mode          |
+| `BETTER_AUTH_SECRET`                                                                   | runtime, **Secret**                   | unset         | at least 32 characters; required when `DATABASE_URL` is set                                                                  |
+| `BETTER_AUTH_URL`                                                                      | runtime                               | unset         | public base URL; trusted origin; decides cookie Secure. Set this or SITE_URL to the approved exact request-demo origin (3.3) |
+| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_CLIENT_EMAIL`, `SEED_CLIENT_PASSWORD` | the terminal that runs `pnpm db:seed` | unset         | read only by the seed; the site never reads them                                                                             |
+| `SEED_ALLOW_REMOTE`                                                                    | the terminal, for one command         | unset         | `1` lets the seed write to a remote database                                                                                 |
 
 > **Production:** set `APP_ENV=production` on any real production deploy. The `/_styleguide` page returns 404 only when `APP_ENV=production`; if the variable is unset the guard fails open and the styleguide is reachable (it stays `noindex`). On a Node host it also makes session cookies `Secure` (`docs/SECURITY.md`).
 
@@ -168,7 +262,7 @@ All variables are listed in `.env.example` and validated by `src/server/env.ts`.
 > - Set `APP_ENV=production` (or an https `BETTER_AUTH_URL`). Without it, and with no URL configured, session cookies are not `Secure`.
 > - Behind Cloudflare: the origin must accept connections only from Cloudflare's IP ranges. With `Cloudflare -> nginx -> Node`, restore the visitor address on nginx (`real_ip` module), or every visitor behind one Cloudflare edge shares a rate-limit bucket. A proxy that sends `ip:port` hops must strip the port. Details and the reasons: `docs/SECURITY.md`, "Rate limiting".
 > - Database: any `postgres://` URL works (`pg` driver); a `*.neon.tech` host uses the Neon HTTP driver (on Cloudflare only a Neon URL works, see 3.3). Run `pnpm db:migrate` and `pnpm db:seed` as in section 3.4.
-> - **Set `DATABASE_URL` at build time too** (`pnpm build`), not only at run time. The home page is prerendered during the build from the catalog the build could see; built without a database it contains the static seed. The home page re-renders at most every five minutes (`revalidate = 300`) and after every admin product change, so a missing build-time URL is corrected within minutes, but the first requests after a deploy can show the seed products. Cloudflare renders per request and is not affected.
+> - **Configure `DATABASE_URL` at run time.** Home now uses `connection()` and reads text overrides and catalog per request on Node as well as Cloudflare. A build without a database no longer freezes the seed content into Home. This removes the prior five-minute ISR policy and increases rendering/database work per visit; validate latency and capacity for the chosen production host. Admin actions retain path invalidation for client navigation.
 
 The application code does not depend on Cloudflare. Cloudflare-only files: `wrangler.jsonc`, `open-next.config.ts`, `scripts/*worker-size*`, `public/_headers`, and the `cf:*` scripts.
 
@@ -188,4 +282,8 @@ The application code does not depend on Cloudflare. Cloudflare-only files: `wran
 ### Node.js / Docker
 
 - Node: `pnpm build && pnpm start` behind any reverse proxy; set variables from `.env.example`.
-- Docker: a `Dockerfile` using Next.js `output: "standalone"` is added and dry-run tested in Phase 5.
+- Portable artifact: `pnpm build:node` opts into Next.js `output: "standalone"`.
+  `Dockerfile` and `.dockerignore` package the same artifact. Build/run instructions,
+  runtime requirements and the distinction between Node and Docker verification are
+  in [NODE_DEPLOYMENT.md](NODE_DEPLOYMENT.md). Do not infer a Docker dry run from a
+  passing Node build; consult the Phase 5 evidence.

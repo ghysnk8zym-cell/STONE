@@ -7,7 +7,7 @@ import { Button } from "@/components/buttons/Button";
  * (Blur/Glass background 24), fill surface/footer, border/glass, r20. Desktop: row, p 36 / 32, title in
  * Catalog/Product title 40 (48 high). Mobile: column, gap 20, p 20 / 24, title 26/32 (Catalog/Product name).
  * Label = Section/Label 12/16 uppercase text/label; body = Catalog/Field value in text/secondary.
- * The button is Button/Pill; Create Your Stone has no page yet, so it is inert (owner decision A).
+ * The Button/Pill opens the public stone request form.
  */
 export function CustomOrderBanner() {
   const t = useTranslations("pages.catalog.customOrder");
@@ -28,7 +28,12 @@ export function CustomOrderBanner() {
         </h2>
         <p className="type-catalog-field-value text-secondary">{t("body")}</p>
       </div>
-      <Button variant="pill" inert iconRight="arrow" className="shrink-0">
+      <Button
+        variant="pill"
+        href="/create-your-stone"
+        iconRight="arrow"
+        className="shrink-0"
+      >
         {t("cta")}
       </Button>
     </section>

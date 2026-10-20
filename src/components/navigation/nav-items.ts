@@ -20,14 +20,14 @@ export const NAV_ITEMS = [
 
 /**
  * Controls that stay inert (non-link, `aria-disabled`) because their pages are not built yet (owner decision
- * A, docs/superpowers/specs/2026-10-14-phase-3-pages-design.md): Cart and Create Your Stone have no Figma
- * screens. Favorites and the account entries went live in Phase 4a. Remove an entry when its page ships.
+ * A, docs/superpowers/specs/2026-10-14-phase-3-pages-design.md). Empty since the test shop shipped the Cart page
+ * (docs/superpowers/specs/2026-10-19-test-shop-cart-checkout-design.md); the mechanism stays for future pages.
  * `tabBar` feeds `TabBar`, `nav` feeds `SiteHeader` and the mobile menu.
  */
-export const INERT = {
-  tabBar: ["cart"],
-  nav: ["create", "cart"],
-} as const satisfies {
+export const INERT: {
   tabBar: readonly TabBarCurrent[];
   nav: readonly NavCurrent[];
+} = {
+  tabBar: [],
+  nav: [],
 };

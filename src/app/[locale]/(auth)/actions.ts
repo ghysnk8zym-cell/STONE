@@ -58,7 +58,16 @@ export async function signInAction(
 /** Ends the session on the server (row deleted, cookie cleared), then goes to the home page. */
 export async function signOutAction(data: FormData): Promise<void> {
   const locale = localeFromForm(data);
-  // A Guest has nothing to end; a missing database has no sessions. Either way: home.
-  await callAuthEndpoint("/sign-out", {});
+  const result = await callAuthEndpoint("/sign-out", {});
+  if (!result.ok) {
+    const error =
+      result.status === 429
+        ? "tooManyAttempts"
+        : result.status >= 500
+          ? "unavailable"
+          : "generic";
+    // A real form redirect works without JavaScript, and carries only a fixed error code.
+    redirect(`/${locale}/sign-out?error=${error}`);
+  }
   redirect(`/${locale}`);
 }

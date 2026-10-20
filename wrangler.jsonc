@@ -37,4 +37,28 @@
       "APP_ENV": "preview",
     },
   },
+  // Customer-review TEST shop: a separate Worker (`stone-test`), deployed by hand from the CI-built
+  // OpenNext artifact with `wrangler deploy --env test` (docs/DEPLOYMENT.md, "Test shop"). It never
+  // touches the Git-connected `stone` Worker. Secrets (DATABASE_URL, BETTER_AUTH_SECRET) are set with
+  // `wrangler secret put --env test`, never here. Environments do not inherit vars or bindings.
+  "env": {
+    "test": {
+      "name": "stone-test",
+      "workers_dev": true,
+      "preview_urls": false,
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "stone-test",
+        },
+      ],
+      "vars": {
+        "PLATFORM": "cloudflare",
+        "APP_ENV": "preview",
+        "INDEXING": "off",
+        "BETTER_AUTH_URL": "https://stone-test.gb8cj746n2.workers.dev",
+        "SITE_URL": "https://stone-test.gb8cj746n2.workers.dev",
+      },
+    },
+  },
 }

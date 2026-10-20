@@ -713,12 +713,12 @@ describe("inert navigation (Phase 3)", () => {
     for (const item of items) expectInert(item, item.textContent ?? "icon");
   });
 
-  it("INERT lists only what has no page: cart (tab bar) and create, cart (header)", () => {
-    expect([...INERT.tabBar]).toEqual(["cart"]);
-    expect([...INERT.nav]).toEqual(["create", "cart"]);
+  it("INERT is empty: the Cart page exists since the test shop", () => {
+    expect([...INERT.tabBar]).toEqual([]);
+    expect([...INERT.nav]).toEqual([]);
   });
 
-  it("TabBar renders inert tabs without href and aria-disabled", () => {
+  it("TabBar renders every tab as a link with the shipped INERT list", () => {
     renderWithIntl(<TabBar current="home" inert={INERT.tabBar} />);
     const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
     // live tabs stay real links: favourites and the account tab are live since Phase 4a
@@ -733,17 +733,24 @@ describe("inert navigation (Phase 3)", () => {
         name,
       ).toBe(href);
     }
-    expectInert(within(nav).getByText("Cart").closest("[role=link]"), "Cart");
-    expect(nav.querySelectorAll("a[href]")).toHaveLength(4);
+    expect(
+      within(nav).getByRole("link", { name: "Cart" }).getAttribute("href"),
+    ).toBe("/cart");
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(5);
   });
 
-  it("SiteHeader renders inert pills; the account button is a live link", () => {
+  it("SiteHeader renders the Cart pill as a live link; the account button is a live link", () => {
     renderWithIntl(<SiteHeader inert={INERT.nav} />);
     const banner = screen.getByRole("banner");
     const nav = within(banner).getByRole("navigation", { name: "Main" });
-    for (const name of ["Create Your Stone", "Cart"]) {
-      expectInert(within(nav).getByRole("link", { name }), name);
-    }
+    expect(
+      within(nav).getByRole("link", { name: "Cart" }).getAttribute("href"),
+    ).toBe("/cart");
+    expect(
+      within(nav)
+        .getByRole("link", { name: "Create Your Stone" })
+        .getAttribute("href"),
+    ).toBe("/create-your-stone");
     expect(
       within(nav).getByRole("link", { name: "Account" }).getAttribute("href"),
     ).toBe("/account");
@@ -767,14 +774,19 @@ describe("inert navigation (Phase 3)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
     const dialog = screen.getByRole("dialog", { name: "Menu" });
     const nav = within(dialog).getByRole("navigation", { name: "Main" });
-    for (const name of ["Create Your Stone", "Cart"]) {
-      expectInert(within(nav).getByText(name).closest("[role=link]"), name);
-    }
+    expect(
+      within(nav).getByRole("link", { name: "Cart" }).getAttribute("href"),
+    ).toBe("/cart");
+    expect(
+      within(nav)
+        .getByRole("link", { name: "Create Your Stone" })
+        .getAttribute("href"),
+    ).toBe("/create-your-stone");
     // the account entry is a live link
     expect(
       within(nav).getByRole("link", { name: "Account" }).getAttribute("href"),
     ).toBe("/account");
-    expect(nav.querySelectorAll("a[href]")).toHaveLength(1);
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(3);
     expect(
       within(dialog).getByRole("button", { name: /^RU \/ EN/ }),
     ).toBeTruthy();
@@ -901,10 +913,10 @@ describe("ShellTabBar", () => {
     expect(current()).toEqual(expected);
   });
 
-  it("keeps only the Cart tab inert", () => {
+  it("keeps no tab inert: Cart is a live link", () => {
     renderWithIntl(<ShellTabBar />);
     const nav = screen.getByRole("navigation", { name: "Mobile navigation" });
-    expect(nav.querySelectorAll("a[href]")).toHaveLength(4);
-    expect(nav.querySelectorAll("[aria-disabled=true]")).toHaveLength(1);
+    expect(nav.querySelectorAll("a[href]")).toHaveLength(5);
+    expect(nav.querySelectorAll("[aria-disabled=true]")).toHaveLength(0);
   });
 });

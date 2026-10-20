@@ -29,11 +29,55 @@ export function useAccountLabels() {
     quantity(count: number): string {
       return t("quantity", { count });
     },
-    /** "Polished · Quantity 1". */
-    detail(item: { finish: string; quantity: number }): string {
-      return [this.finish(item.finish), this.quantity(item.quantity)].join(
-        " · ",
-      );
+    /** Test checkout area ("2.20 m²"), from integer hundredths. */
+    area(hundredths: number): string {
+      return t("area", {
+        area: format.number(hundredths / 100, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      });
+    },
+    /** "Polished · Quantity 1" (demo rows) or "Polished · 2.20 m²" (test checkout lines). */
+    detail(item: {
+      finish: string;
+      quantity: number;
+      areaHundredths?: number | null;
+    }): string {
+      const amount =
+        item.areaHundredths != null
+          ? this.area(item.areaHundredths)
+          : this.quantity(item.quantity);
+      return [this.finish(item.finish), amount].join(" · ");
+    },
+    /** "2.20 m² × $240.00 / m²" (test checkout lines) or "Quantity 2" (demo rows). */
+    line(item: {
+      quantity: number;
+      priceCents: number;
+      areaHundredths?: number | null;
+    }): string {
+      if (item.areaHundredths == null) return this.quantity(item.quantity);
+      return t("areaLine", {
+        area: format.number(item.areaHundredths / 100, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+        price: this.money(item.priceCents),
+      });
+    },
+    /** Stored line total of a test checkout line; price x quantity for demo rows. */
+    lineTotal(item: {
+      quantity: number;
+      priceCents: number;
+      lineTotalCents?: number | null;
+    }): number {
+      return item.lineTotalCents ?? item.priceCents * item.quantity;
+    },
+    /** "Test order T-2001" or "Demo order D-1048". */
+    title(order: { number: string; kind: "demo" | "test_checkout" }): string {
+      return t(order.kind === "test_checkout" ? "testOrder" : "demoOrder", {
+        number: order.number,
+      });
     },
     /** Integer cents as a currency amount ("$240.00" / "240,00 $"). */
     money(cents: number): string {

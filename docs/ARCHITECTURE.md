@@ -41,7 +41,7 @@ Decision (Phase 3 final review, I1 and I2): `src/middleware.ts` runs `gateRoute(
 
 - The gate no longer knows which products exist. Since Phase 4a the catalog is in the database and the middleware cannot await a database on every host (Edge runtime, Workers), so it only normalises and checks shape. A product slug (`catalog/<slug>`, `admin/products/<slug>`) that is lowercase and shaped like a slug (`SLUG_SHAPE`: letters, digits, single dashes) passes. The same slug in another case or encoding (`/ru/catalog/Black-Marble`) gets a 308 to the lowercase form. A segment that is not a slug (dots, spaces, double dashes, bad escapes) and any other path under a locale that is not in `PUBLIC_ROUTES` is rewritten to `/{locale}/404` with status 404. The browser keeps the requested URL.
 - Why not `dynamicParams = false` on `catalog/[slug]`: that is the standard fix, but it is the same switch that broke `/ru` and `/en` on Workers at the locale level (OpenNext has no incremental cache here, the prerender lookup fails, `NoFallbackError`), and it would make a product created in the admin a 404 until the next build.
-- Why the product page is rendered per request (`export const dynamic = "force-dynamic"`, Phase 4a Task 5): an unknown slug of the right shape reaches the route, which would call `notFound()`. On an SSG route with on-demand ISR Next stores that 404 in the route cache like any page. Measured with `next start`: the first request to `/ru/catalog/nope` answered 404 and the next one `x-nextjs-cache: HIT` with `Cache-Control: s-maxage=31536000`: one cache entry (and one CDN entry) per requested slug, without bound, and a stale 404 for a slug that is created later unless every creation revalidates it. There is no per-slug opt-out: calling a dynamic API (`connection()`) in the not-found branch makes the on-demand render answer 500. Per-request rendering answers "200" or "404, `no-store`", shows an admin's edit, unpublish or new product at once, and does not depend on `revalidatePath` (Cloudflare has no incremental cache and renders per request anyway). The admin actions still call `revalidatePath` for the pages that stay static: the home page, with the concrete paths `/ru` and `/en` (derived from `routing.locales`; the route pattern `/[locale]` does not reach the SSG home page, measured), the catalog paths, the account area and the admin screens. Cost: two small queries per product page view. `tests/e2e/not-found.spec.ts` and `tests/e2e/admin.spec.ts` hold the behaviour: `Black-Marble` and `nope` requested, then `black-marble` is still 200, and a product created under the slug that was a 404 is 200 at once.
+- Why the product page is rendered per request (`export const dynamic = "force-dynamic"`, Phase 4a Task 5): an unknown slug of the right shape reaches the route, which would call `notFound()`. On an SSG route with on-demand ISR Next stores that 404 in the route cache like any page. Measured with `next start`: the first request to `/ru/catalog/nope` answered 404 and the next one `x-nextjs-cache: HIT` with `Cache-Control: s-maxage=31536000`: one cache entry (and one CDN entry) per requested slug, without bound, and a stale 404 for a slug that is created later unless every creation revalidates it. There is no per-slug opt-out: calling a dynamic API (`connection()`) in the not-found branch makes the on-demand render answer 500. Per-request rendering answers "200" or "404, `no-store`", shows an admin's edit, unpublish or new product at once, and does not depend on `revalidatePath` (Cloudflare has no incremental cache and renders per request anyway). Historically, Home stayed static and needed concrete `/ru` and `/en` invalidation; Phase 4b Site content now renders Home per request too. Admin actions retain concrete Home/catalog paths and account/admin invalidation for client navigation. Cost: two small queries per product page view. `tests/e2e/not-found.spec.ts` and `tests/e2e/admin.spec.ts` hold the behaviour: `Black-Marble` and `nope` requested, then `black-marble` is still 200, and a product created under the slug that was a 404 is 200 at once.
 - Why a page and not `notFound()`: `notFound()` thrown during render escapes the HTML shell (React's server renderer has no error boundaries). Next then sends the empty `<html id="__next_error__">` recovery shell with status 404, and the not-found UI appears only after client-side rendering. Without JavaScript the page was blank, and this predates Phase 3. `(site)/404/page.tsx` is a normal, dynamic render, so the h1, body and catalog link are in the server HTML. Next takes the metadata of any 404-status response from the nearest `not-found.tsx`, so the localised `<title>` (`meta.notFound`) is exported there.
 - Maintenance: a new page under `src/app/[locale]` must be added to `PUBLIC_ROUTES`, or it will be served as a 404. `tests/unit/route-gate.test.ts` scans the app directory and fails when a page is missing.
 - Unknown or unpublished product slug (Phase 4a Task 5, fix round 1): `catalog/[slug]` does `redirect(`/${locale}/404`)` (307, `no-store`), and the gate's server-rendered 404 page answers 404 with `lang`, the localised h1, title and `noindex`. Why not `notFound()`: in Next 16.3.8 the not-found boundary is a client component and React's server renderer never runs error boundaries, so `notFound()` thrown during render ends in the empty `__next_error__` shell (measured at 39084a0: 404, no `lang`, no h1, content only after client rendering). The redirect keeps the content in the server HTML, nothing is cached (the route is `force-dynamic`), and a product that exists costs nothing extra. Cost, for the owner checklist: the address bar shows `/ru/404` for an unknown product, and the answer is 307 then 404 instead of one 404. A Suspense wrapper was rejected (a streamed 200 soft 404), and so was a database check in the middleware (Edge runtime: `pg` and PGlite cannot load there). `tests/e2e/not-found.spec.ts` covers 307 then 404, the localised page with JavaScript disabled, and that nothing is cached. Admin pages (`admin/products/[slug]`) still use `notFound()`: the admin area needs JavaScript anyway.
@@ -95,8 +95,8 @@ Decision (Phase 3 final review, I1 and I2): `src/middleware.ts` runs `gateRoute(
 
 ## Admin area (Phase 4a Task 5)
 
-- Routes under `src/app/[locale]/admin/` (outside the `(site)` shell: no site header, footer or tab bar): `/admin` (Overview), `/admin/products`, `/admin/products/new`, `/admin/products/[slug]`, `/admin/orders`, and the four Phase 4b sections `/admin/create-your-stone`, `/admin/customers`, `/admin/promotions`, `/admin/site-content`. The sidebar links all eight; until 4b the last four render the Figma header and a localised "This section arrives in the next update" card (`AdminComingSoon`), so nothing is a dead link. Admin layouts exist from 1024 px (Figma has no smaller ones): below that `admin/layout.tsx` shows a localised message and the shell is `display: none`.
-- Guards: the layout and every page call `requireRole("admin", locale)` (Guest to sign-in with `next`, Client gets a 404); the four server actions in `src/server/admin/actions.ts` (`createProduct`, `updateProduct`, `setProductPublished`, `setOrderStatus`) call it first, before validation. Arguments are `unknown` and validated with zod (`src/server/admin/product-input.ts`): money is integer cents, the picture must be a catalog key of `assets/figma-manifest.json` (`src/server/admin/images.ts`; there is no upload yet), names and descriptions are plain text without control characters, the slug is a URL slug that never changes after creation. After a change the actions call `revalidatePath` for the home page, the account area and the admin screens (the product pages and the catalog are rendered per request, see "Route gate").
+- Routes under `src/app/[locale]/admin/` (outside the `(site)` shell: no site header, footer or tab bar): `/admin` (Overview), `/admin/products`, `/admin/products/new`, `/admin/products/[slug]`, `/admin/orders`, and the Phase 4b sections `/admin/create-your-stone`, `/admin/customers`, `/admin/promotions`, `/admin/site-content`. Customers reads real users/orders and changes roles; Promotions edits product discounts; Site content edits existing Home texts. Create Your Stone lists seeded examples and private public-form submissions, with quote/status editing and owner-protected reference photos. Admin layouts exist from 1024 px: below that the layout shows a localised message and hides the shell.
+- Guards: the layout and every page call `requireRole("admin", locale)` (Guest to sign-in with `next`, Client gets a 404); the five server actions in `src/server/admin/actions.ts` (`createProduct`, `updateProduct`, `setProductPublished`, `setProductPromotion`, `setOrderStatus`) call it first, before validation. Arguments are `unknown` and validated with zod (`src/server/admin/product-input.ts`): money is integer cents, the picture must be a catalog key of `assets/figma-manifest.json` (`src/server/admin/images.ts`; product images stay manifest-only; private request photos use the separate bounded adapter), names and descriptions are plain text without control characters, the slug is a URL slug that never changes after creation. After a change the actions call `revalidatePath` for the home page, catalog, product pages, account area and admin screens.
 - Copy of products: the public pages (home, catalog, product page, metadata) show the name and description from `product_translation` for the page locale, then the `messages` the seed was made from, then the slug (`src/lib/product-copy.ts`). The database repository carries the stored copy on `Product.copy`; the catalog page asks it to search and sort by the stored name (`Localizer.preferStoredNames`).
 - Data the Figma admin draws and the model does not have: stock per product, payment status of an order, the Create Your Stone requests (4b). They are not drawn and not invented: Overview shows revenue and order count from the orders, the 7 days up to the newest order as the chart, and the first three published products with their price; Orders has one status, `in_progress` or `delivered` (drawn with the Figma chips Processing and Fulfilled).
 - Writes and rules: a product and its ru / en copy are written as one atomic unit (`src/server/db/atomic.ts`: an interactive transaction on `pg` and PGlite; on the Neon HTTP driver, which has no interactive transactions, `db.batch`, one request in one transaction), so a failed save leaves nothing half-written. The slug `new` is reserved (`/admin/products/new` is the Add page). Order status: an admin moves an order freely between In progress and Delivered, in either direction (a mistaken "delivered" must be undoable); there is no other state and no history yet.
@@ -136,11 +136,101 @@ Decisions: `docs/adr/ADR-002-auth-database.md` and the Phase 4 spec. Who may do 
 
 ### Favourites island
 
-Public pages (home) are static and cannot read the session, so a client island decides who is looking: `AccountStateProvider` (mounted in the `(site)` layout) fetches `GET /api/me` once per layout mount, when the sign-out confirmation is left and on `visibilitychange`. Hearts and the account entries read it; the toggle is the guarded `toggleFavorite` server action (optimistic, sends the wanted state so a stale client cannot flip the wrong way; a click before the state is known is queued). A Guest is sent to `/sign-in?next=<page and query>` and the product is added once they are back. `html[data-account-state]` (loading, guest, signed-in) is the readiness signal for tests. Trade-off for the owner: a signed-in visitor sees an unsaved heart briefly on a full page load.
+Public content and session state remain separate even though Home now renders per request. A client island decides who is looking: `AccountStateProvider` (mounted in the `(site)` layout) fetches `GET /api/me` once per layout mount, when the sign-out confirmation is left and on `visibilitychange`. Hearts and the account entries read it; the toggle is the guarded `toggleFavorite` server action (optimistic, sends the wanted state so a stale client cannot flip the wrong way; a click before the state is known is queued). A Guest is sent to `/sign-in?next=<page and query>` and the product is added once they are back. `html[data-account-state]` (loading, guest, signed-in) is the readiness signal for tests. Trade-off for the owner: a signed-in visitor sees an unsaved heart briefly on a full page load.
 
 ### Admin and product copy
 
 Described in "Admin area" above. Names and descriptions of products come from `product_translation` (`src/lib/product-copy.ts`), then from `messages`, then the slug. The admin has no language switch (the URL locale is the language) and shows a message below 1024 px.
+
+Customers uses `src/server/admin/customer-queries.ts`: a separate guard before
+personal data access, explicit user DTOs, literal name/email search, deterministic
+50-user pagination and thumbnails from each user's newest order containing an
+item. The selected user's orders are filtered in SQL before the existing
+500-order limit. Selection/search/page live in the URL. No password, account,
+session or token fields are selected. Users without orders get the existing
+initials avatar and an empty state. Payment and custom request data are not
+invented. Role changes use `customer-actions.ts`; see `docs/ROLES.md` for the
+self-change restriction and concurrency limits. No migration is needed.
+
+Promotions uses `promotion-queries.ts` for an admin-only, explicit product DTO,
+including drafts. Search and selected product live in the URL. Its list, editor
+and preview reuse the Figma layout at 1440/1024 px and existing product imagery,
+tokens, prices and badges. The approved Phase 4 spec scopes promotions to existing
+product discount fields, so campaign scheduling from the Figma illustration is
+not implemented. `priceCents` is integer cents; optional `oldPriceCents` must be
+higher; the optional integer `discountPercent` (0–100) is stored verbatim, as in
+the Product form, rather than derived. Clearing the optional fields leaves the
+current price unchanged. The catalog sale filter uses old-price presence, while
+the home carousel still uses the curated `PROMO` list. Saving preserves publication
+state and unrelated data, and revalidates both locales. The editor retains inputs
+on errors and uses confirmed saved prices for its next conditional update; see
+`docs/ROLES.md` for conflict-detection limits. No schema migration is needed.
+
+The subsequent cross-editor fix adds `product.revision` (migration 0002). Product,
+Promotions and publication writes compare and increment it. Product reads its
+translations and token in one statement and writes all editable fields/copy through
+one conditional UPDATE / upsert CTE. This avoids interactive transactions on Neon
+HTTP while preventing partial translations or stale full-form overwrites. The
+editor retains the original token beside unsaved values, even on a props refresh.
+Normal seeding preserves existing tokens; missing-translation seed repair is
+restricted to offline initialization/maintenance.
+
+Site content adds the approved `site_content(key, locale, text)` table (migration
+0003). Its fixed 18-key allow-list covers the existing Home hero lines/search labels,
+section/action labels and work-card copy. It does not edit URLs, images, metadata,
+price disclaimers, footer, other pages or arbitrary message keys. The admin editor
+keeps unsaved fields across section/language switches and saves one field at a time.
+Conditional writes detect conflicting values; resetting removes only that override.
+`src/server/content/home.ts` resolves ru/en messages for absent rows or no configured
+database, then overlays stored text. Configured database errors propagate; they are
+not silently reported as successful reads/saves. Home/Hero render direct React
+strings, without HTML or ICU evaluation. Concrete locale Home paths are revalidated.
+The admin preview is explicitly a text preview with existing artwork; the actual
+Home link is for full-layout checking. No framing/security-header changes were made.
+
+Home now awaits Next's `connection()` before querying text and products. Local
+concurrent editing exposed a successful restore in the database while the next
+Home response still displayed the prior text under the old 300-second ISR policy.
+Request-time rendering removes that route-cache dependency and also avoids
+build-time seed content persisting on Node. It adds rendering and database work
+per visit; production latency/capacity remain to be measured. Path invalidations
+remain for previously visited client routes. The precise internal timing of the
+observed ISR race is not claimed as proven.
+
+### Create Your Stone requests (Phase 4b)
+
+`stone_request` (migrations 0004/0005) stores seeded examples and private public-form requests linked to the configured
+client. Material/title snapshots, dimensions, finish, quantity and a checked-in
+catalog reference remain independent of later product edits. No public creation
+or upload endpoint exists. Only manifest images render; arbitrary reference URLs
+are discarded by the DTO mapper.
+
+Admin list, detail and Overview queries guard independently. Search is literal,
+bounded and paginated at 50; Overview queries the latest three plus a live count.
+An explicit selected request remains open even when a saved status leaves its
+filter, preserving unsaved quote inputs. The page pins the initial selection in
+the URL; changing filters submits a new GET selection. Quotes are integer USD
+cents per piece; totals are calculated from quantity and never enter order revenue.
+
+Both quote and status writes compare and increment one revision. Save draft sets
+`draft_quote`; status tracking allows `new`, `draft_quote`, `awaiting_payment`,
+with a quote required for either non-New status. This does not send a proposal,
+charge a customer, or confirm payment. Client messaging and Send proposal remain
+disabled with explanatory copy, as required by the approved scope. There is no
+customer-account request route. Seed inserts by request number and never changes
+existing ownership, quote, status or revision.
+
+### Test shop: cart and test checkout
+
+Spec: `docs/superpowers/specs/2026-10-19-test-shop-cart-checkout-design.md`. A cart line is a slug and an area in
+m² hundredths (`src/features/cart/input.ts`, shared by browser and server; the calculator's parse, limits and
+rounding). The browser store is `src/features/cart/cart-store.ts` (`useSyncExternalStore` over localStorage).
+Prices always come from `quoteCart` (`src/server/shop/quote.ts`: one query for all slugs and their translations,
+the static catalog without a database); `placeTestOrder` writes through one CTE statement (`src/server/shop/store.ts`, works on pg, PGlite
+and Neon HTTP). Migration 0006 is additive: `order.kind` / `idempotency_key` / `submission_digest`,
+`order_item.area_hundredths` / `line_total_cents` / `position` (lines are listed in cart order), the `order_number_seq` sequence (`T-2001`...). The route gate
+lets `cart`, `checkout` and `account/orders/<A-123>` through; the order page answers unknown or foreign numbers
+with the gate's 404. A non-dismissible `TestBanner` sits above the site and admin shells.
 
 ### Slug handling
 

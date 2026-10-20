@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import type { OrderStatus } from "@/features/admin/results";
 
@@ -40,6 +41,7 @@ export type AdminProduct = {
 /** A product with everything the edit form needs. */
 export type AdminProductDetail = {
   slug: string;
+  revision: number;
   published: boolean;
   material: string;
   color: string;
@@ -126,20 +128,29 @@ export async function getAdminProduct(
   slug: string,
 ): Promise<AdminProductDetail | null> {
   const db = await requireDb();
-  const [row] = await db
-    .select()
+  const ruCopy = alias(schema.productTranslation, "ru_copy");
+  const enCopy = alias(schema.productTranslation, "en_copy");
+  // Read values, translations and revision from one PostgreSQL snapshot.
+  const [found] = await db
+    .select({ product: schema.product, ru: ruCopy, en: enCopy })
     .from(schema.product)
+    .leftJoin(
+      ruCopy,
+      and(eq(ruCopy.productId, schema.product.id), eq(ruCopy.locale, "ru")),
+    )
+    .leftJoin(
+      enCopy,
+      and(eq(enCopy.productId, schema.product.id), eq(enCopy.locale, "en")),
+    )
     .where(eq(schema.product.slug, slug))
     .limit(1);
-  if (!row) return null;
-  const translations = await db
-    .select()
-    .from(schema.productTranslation)
-    .where(eq(schema.productTranslation.productId, row.id));
-  const of = (locale: Locale) => translations.find((t) => t.locale === locale);
+  if (!found) return null;
+  const row = found.product;
+  const of = (locale: Locale) => found[locale];
   const [length, width, thickness] = row.format;
   return {
     slug: row.slug,
+    revision: row.revision,
     published: row.published,
     material: row.material,
     color: row.color,
@@ -167,10 +178,14 @@ export type AdminOrderItem = {
   finish: string;
   quantity: number;
   priceCents: number;
+  /** Test checkout lines: area in m2 hundredths and the stored line total; null on the seeded demo rows. */
+  areaHundredths: number | null;
+  lineTotalCents: number | null;
 };
 
 export type AdminOrder = {
   number: string;
+  kind: "demo" | "test_checkout";
   status: OrderStatus;
   totalCents: number;
   createdAt: Date;
@@ -182,8 +197,11 @@ function toStatus(status: string): OrderStatus {
   return status === "delivered" ? "delivered" : "in_progress";
 }
 
-/** All orders, newest first, with their customer and items. */
-export async function listAdminOrders(locale: string): Promise<AdminOrder[]> {
+/** Orders, newest first, optionally scoped to one customer before applying the limit. */
+export async function listAdminOrders(
+  locale: string,
+  userId?: string,
+): Promise<AdminOrder[]> {
   const db = await requireDb();
   const lang = asLocale(locale);
   const orders = await db
@@ -193,11 +211,13 @@ export async function listAdminOrders(locale: string): Promise<AdminOrder[]> {
       status: schema.order.status,
       totalCents: schema.order.totalCents,
       createdAt: schema.order.createdAt,
+      kind: schema.order.kind,
       customerName: schema.user.name,
       customerEmail: schema.user.email,
     })
     .from(schema.order)
     .innerJoin(schema.user, eq(schema.order.userId, schema.user.id))
+    .where(userId === undefined ? undefined : eq(schema.order.userId, userId))
     .orderBy(desc(schema.order.createdAt), desc(schema.order.number))
     .limit(500);
   if (orders.length === 0) return [];
@@ -208,6 +228,8 @@ export async function listAdminOrders(locale: string): Promise<AdminOrder[]> {
       finish: schema.orderItem.finish,
       quantity: schema.orderItem.quantity,
       priceCents: schema.orderItem.priceCents,
+      areaHundredths: schema.orderItem.areaHundredths,
+      lineTotalCents: schema.orderItem.lineTotalCents,
       slug: schema.product.slug,
       image: schema.product.image,
       imageFit: schema.product.imageFit,
@@ -231,10 +253,12 @@ export async function listAdminOrders(locale: string): Promise<AdminOrder[]> {
         orders.map((order) => order.id),
       ),
     )
-    .orderBy(asc(schema.orderItem.id));
+    // Test checkout lines in cart order (position); demo rows have none and keep their id order.
+    .orderBy(asc(schema.orderItem.position), asc(schema.orderItem.id));
 
   return orders.map((order) => ({
     number: order.number,
+    kind: order.kind === "test_checkout" ? "test_checkout" : "demo",
     status: toStatus(order.status),
     totalCents: order.totalCents,
     createdAt: order.createdAt,
@@ -249,6 +273,8 @@ export async function listAdminOrders(locale: string): Promise<AdminOrder[]> {
         finish: item.finish,
         quantity: item.quantity,
         priceCents: item.priceCents,
+        areaHundredths: item.areaHundredths,
+        lineTotalCents: item.lineTotalCents,
       })),
   }));
 }

@@ -2,8 +2,7 @@ import type { IconName } from "../icons/Icon";
 
 /**
  * The eight sections of the admin area, in sidebar order (Figma Admin/Sidebar 1060:52244). `href` is
- * locale-free (the Link adds the locale). The last four are filled in Phase 4b; until then their pages
- * show the Figma header and a "next update" card.
+ * locale-free (the Link adds the locale). The Phase 4b request, customer, promotion and content screens are active.
  */
 export const ADMIN_SECTIONS = [
   { key: "overview", href: "/admin", icon: "home" },

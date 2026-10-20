@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { Icon } from "@/components/icons/Icon";
 import type { Locale } from "@/i18n/routing";
+import type { HomeText } from "@/features/content/home-fields";
 
 /*
  * Hero scene art direction: one flattened image per Figma layout (Hero/Scene 296:531), applied as a CSS
@@ -104,7 +105,13 @@ function HeroScene() {
  * must not stay in the tab order or the accessibility tree (WCAG 2.4.11 Focus Not Obscured). The h1
  * stays: it is text, not a control.
  */
-export function Hero({ locale }: { locale: Locale }) {
+export function Hero({
+  locale,
+  text,
+}: {
+  locale: Locale;
+  text?: HomeText["values"];
+}) {
   const t = useTranslations("pages.home.hero");
   const field = useTranslations("components.search");
 
@@ -115,10 +122,10 @@ export function Hero({ locale }: { locale: Locale }) {
       </div>
       <div className="flex w-full shrink-0 flex-col items-end gap-4 md:max-lg:h-[46px] lg:relative lg:mx-auto lg:max-w-[1440px] lg:items-start lg:gap-3 lg:pt-[87px] lg:pr-6 lg:pl-[43px] min-[90rem]:gap-4 min-[90rem]:pt-[122px] min-[90rem]:pl-[131px]">
         <h1 className="type-hero-headline text-primary lg:text-ink w-full uppercase">
-          <span className="lg:block">{t("line1")}</span>{" "}
-          <span className="lg:block">{t("line2")}</span>{" "}
-          <span className="lg:block">{t("line3")}</span>{" "}
-          <span className="lg:block">{t("line4")}</span>
+          <span className="lg:block">{text?.["hero.line1"] ?? t("line1")}</span>{" "}
+          <span className="lg:block">{text?.["hero.line2"] ?? t("line2")}</span>{" "}
+          <span className="lg:block">{text?.["hero.line3"] ?? t("line3")}</span>{" "}
+          <span className="lg:block">{text?.["hero.line4"] ?? t("line4")}</span>
         </h1>
         <form
           role="search"
@@ -129,12 +136,14 @@ export function Hero({ locale }: { locale: Locale }) {
           <details className="group">
             <summary className="focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus hov:border-glass-strong motion-hover flex h-[46px] w-[168px] cursor-pointer list-none items-center justify-center gap-4 rounded-full border border-[rgba(255,255,255,0.1)] bg-linear-to-b from-[rgba(76,80,83,0.2)] to-[rgba(65,68,72,0.2)] text-[16px] leading-5 font-medium text-white outline-0 drop-shadow-[0_8px_10px_rgba(20,23,26,0.35)] select-none group-open:from-[rgba(88,92,96,0.2)]! group-open:to-[rgba(74,77,81,0.2)]! md:from-[#4c5053] md:to-[#414448] [&::-webkit-details-marker]:hidden">
               <Icon name="search" className="size-5!" />
-              <span>{t("searchPlaceholder")}</span>
+              <span>
+                {text?.["hero.searchPlaceholder"] ?? t("searchPlaceholder")}
+              </span>
             </summary>
             <input
               type="search"
               name="q"
-              aria-label={t("searchLabel")}
+              aria-label={text?.["hero.searchLabel"] ?? t("searchLabel")}
               placeholder={field("placeholder")}
               className="type-catalog-field-value text-stone-catalog-ink placeholder:text-stone-catalog-secondary border-stone-catalog-line bg-stone-catalog-card focusv:border-ink-primary focusv:outline-1 focusv:-outline-offset-1 focusv:outline-ink-primary absolute top-full left-0 mt-2 block h-[52px] w-[168px] appearance-none rounded-[12px] border px-4 shadow-[0_8px_24px_rgba(0,0,0,0.18)] outline-0 [&::-webkit-search-cancel-button]:hidden"
             />

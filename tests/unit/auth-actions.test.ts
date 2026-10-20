@@ -325,8 +325,8 @@ describe("auth server actions without a database", () => {
         form({ email: "a@example.test", password: "whatever-123" }),
       ),
     ).toEqual({ error: "unavailable", email: "a@example.test" });
-    // Sign-out has nothing to end: home.
+    // No database cannot confirm that a previously issued session was revoked.
     const error = await thrown(() => actions.signOutAction(form({})));
-    expect(redirectTarget(error)).toBe("/ru");
+    expect(redirectTarget(error)).toBe("/ru/sign-out?error=unavailable");
   });
 });

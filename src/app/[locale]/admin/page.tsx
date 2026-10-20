@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Overview } from "@/components/admin/Overview";
+import { StoneRequestsSummary } from "@/components/admin/StoneRequestsSummary";
+import { getAdminStoneRequestsSummary } from "@/server/admin/stone-request-queries";
 import {
   AdminFootnote,
   AdminLinkButton,
@@ -32,7 +34,10 @@ export default async function AdminOverviewPage({
   setRequestLocale(locale as Locale);
   await requireRole("admin", locale);
   const t = await getTranslations("admin.overview");
-  const overview = await getAdminOverview(locale);
+  const [overview, requests] = await Promise.all([
+    getAdminOverview(locale),
+    getAdminStoneRequestsSummary(locale),
+  ]);
 
   return (
     <>
@@ -46,6 +51,7 @@ export default async function AdminOverviewPage({
         }
       />
       <Overview overview={overview} />
+      <StoneRequestsSummary summary={requests} />
       <AdminFootnote>{t("footnote")}</AdminFootnote>
     </>
   );

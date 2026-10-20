@@ -66,13 +66,13 @@ test.describe("site shell", () => {
     );
     expect(Math.abs(docHeight - footerBottom)).toBeLessThanOrEqual(1);
 
-    // Only Cart is inert (not a link); Home, Catalog, Favorites and the account tab are links (Phase 4a).
+    // Every tab is a link since the test shop shipped the Cart page (Home, Catalog, Cart, Favorites, account).
     await expect(tabBar.getByRole("link", { name: "Главная" })).toHaveAttribute(
       "href",
       "/ru",
     );
-    await expect(tabBar.locator("a[href]")).toHaveCount(4);
-    await expect(tabBar.locator("[aria-disabled=true]")).toHaveCount(1);
+    await expect(tabBar.locator("a[href]")).toHaveCount(5);
+    await expect(tabBar.locator("[aria-disabled=true]")).toHaveCount(0);
   });
 
   for (const locale of LOCALES) {
@@ -497,7 +497,7 @@ test.describe("catalog", () => {
     await expect(page.getByText(CAT.placeholderPrices)).toBeVisible();
   });
 
-  test("cards link to products, hearts are live buttons and the custom order CTA is inert", async ({
+  test("cards link to products, hearts and the custom request CTA are live", async ({
     page,
   }) => {
     await page.goto("/ru/catalog");
@@ -513,7 +513,7 @@ test.describe("catalog", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("main").locator("a", { hasText: CAT.customOrder.cta }),
-    ).toHaveCount(0);
+    ).toHaveAttribute("href", "/ru/create-your-stone");
   });
 
   test("back button goes home", async ({ page }) => {

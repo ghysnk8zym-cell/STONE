@@ -18,32 +18,37 @@ Earlier phases: [`phase-2-components.md`](phase-2-components.md), [`phase-3-page
 
 ## Results
 
+Historical Phase 4a implementation pass. **Reviewed** below means the implementer
+inspected that earlier build; it does not record owner acceptance. All owner boxes
+remain pending. Fresh takeover evidence and independent review are recorded in
+[Phase 5 local QA](phase-5-local.md); historical numbers and images are preserved.
+
 Classes: **data** = the seeded demo data differs from the Figma sample data; **height** = shift caused by missing or extra blocks; **font** = text antialiasing; **photo/glass** = backdrop approximation; **deviation** = owner item below; **defect** = see the list.
 
 | Screen (route)                               | Width | Mismatch % | Height delta | Classification                                                                                                                                           | Status   |
 | -------------------------------------------- | ----- | ---------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| sign-up (`/en/sign-up`)                      | 1440  | 1.26       | 0            | font                                                                                                                                                     | Accepted |
-| sign-up                                      | 390   | 2.60       | 0            | font; layout matches (form bottom 656 px as Figma; D1 fixed)                                                                                             | Accepted |
-| sign-in (`/en/sign-in`)                      | 1440  | 1.31       | 0            | font; title and link copy differ (Create account layout, owner item)                                                                                     | Accepted |
-| sign-in                                      | 390   | 3.23       | 0            | font; copy (Create account layout, owner item); D1 fixed                                                                                                 | Accepted |
-| sign-out (`/en/sign-out`)                    | 1440  | 15.82      | +154         | height: footer under the first screen and language switch in the header (Figma has neither; owner item); art matches (rim pixels are scaling AA)         | Accepted |
-| sign-out                                     | 390   | 39.81      | +470         | height: footer below the art, Figma draws no footer and the tab bar over the art (tab bar reference, owner item)                                         | Accepted |
-| account (`/en/account`)                      | 1440  | 5.21       | -4           | data (offer thumbnails and names), font; layout matches                                                                                                  | Accepted |
-| account                                      | 390   | 5.99       | 0            | data (offer names, order rows), font; banner is 194 px with no thumbnails as Figma draws it (D2 fixed); tab bar reference                                | Accepted |
-| account-orders                               | 1440  | 0.71       | 0            | font; the sidebar keeps Figma's shell height of 860 px (D3 fixed)                                                                                        | Accepted |
-| account-orders                               | 390   | 50.69      | -404         | height: same "Saved" block under the cards                                                                                                               | Accepted |
-| account-favorites                            | 1440  | 0.88       | 0            | font; sidebar 826 px as Figma (D3 fixed); Figma's second row of tiles is placeholders (not drawn), the heart is added (owner item)                       | Accepted |
-| account-favorites                            | 390   | 36.16      | -258         | same as 1440                                                                                                                                             | Accepted |
-| account-profile                              | 1440  | 36.55      | +283         | height: password card added (not in Figma), no Phone row; footer moves down                                                                              | Accepted |
-| account-profile                              | 390   | 36.86      | +259         | same as 1440                                                                                                                                             | Accepted |
-| admin-overview (`/en/admin`)                 | 1440  | 28.86      | -289         | height: no date range, no stock, no payment (no data), no Create Your Stone table (Phase 4b); figures and chart are the seeded orders                    | Accepted |
-| admin-overview                               | 1024  | 34.56      | -501         | same as 1440; at 1024 the Figma cards stack and so do ours                                                                                               | Accepted |
-| admin-products                               | 1440  | 8.04       | -178         | data, no stock line and no "Draft to finish" block in the seed; grid, cards and buttons match                                                            | Accepted |
-| admin-products                               | 1024  | 16.74      | -186         | same as 1440                                                                                                                                             | Accepted |
-| admin-add-product (`/en/admin/products/new`) | 1440  | 37.50      | +569         | height: ru and en name and description fields, slug, colour group, old price, discount (spec); photo area uses a picture select; no thumbnails, no stock | Accepted |
-| admin-add-product                            | 1024  | 38.92      | +889         | same as 1440                                                                                                                                             | Accepted |
-| admin-orders (`/en/admin/orders`)            | 1440  | 10.25      | -77          | data (three orders in the e2e seed, Figma seven), no payment chip or filter, no date range; list, detail card and status form match                      | Accepted |
-| admin-orders                                 | 1024  | 21.39      | -296         | same as 1440                                                                                                                                             | Accepted |
+| sign-up (`/en/sign-up`)                      | 1440  | 1.26       | 0            | font                                                                                                                                                     | Reviewed |
+| sign-up                                      | 390   | 2.60       | 0            | font; layout matches (form bottom 656 px as Figma; D1 fixed)                                                                                             | Reviewed |
+| sign-in (`/en/sign-in`)                      | 1440  | 1.31       | 0            | font; title and link copy differ (Create account layout, owner item)                                                                                     | Reviewed |
+| sign-in                                      | 390   | 3.23       | 0            | font; copy (Create account layout, owner item); D1 fixed                                                                                                 | Reviewed |
+| sign-out (`/en/sign-out`)                    | 1440  | 15.82      | +154         | height: footer under the first screen and language switch in the header (Figma has neither; owner item); art matches (rim pixels are scaling AA)         | Reviewed |
+| sign-out                                     | 390   | 39.81      | +470         | height: footer below the art, Figma draws no footer and the tab bar over the art (tab bar reference, owner item)                                         | Reviewed |
+| account (`/en/account`)                      | 1440  | 5.21       | -4           | data (offer thumbnails and names), font; layout matches                                                                                                  | Reviewed |
+| account                                      | 390   | 5.99       | 0            | data (offer names, order rows), font; banner is 194 px with no thumbnails as Figma draws it (D2 fixed); tab bar reference                                | Reviewed |
+| account-orders                               | 1440  | 0.71       | 0            | font; the sidebar keeps Figma's shell height of 860 px (D3 fixed)                                                                                        | Reviewed |
+| account-orders                               | 390   | 50.69      | -404         | height: same "Saved" block under the cards                                                                                                               | Reviewed |
+| account-favorites                            | 1440  | 0.88       | 0            | font; sidebar 826 px as Figma (D3 fixed); Figma's second row of tiles is placeholders (not drawn), the heart is added (owner item)                       | Reviewed |
+| account-favorites                            | 390   | 36.16      | -258         | same as 1440                                                                                                                                             | Reviewed |
+| account-profile                              | 1440  | 36.55      | +283         | height: password card added (not in Figma), no Phone row; footer moves down                                                                              | Reviewed |
+| account-profile                              | 390   | 36.86      | +259         | same as 1440                                                                                                                                             | Reviewed |
+| admin-overview (`/en/admin`)                 | 1440  | 28.86      | -289         | height: no date range, no stock, no payment (no data), no Create Your Stone table (Phase 4b); figures and chart are the seeded orders                    | Reviewed |
+| admin-overview                               | 1024  | 34.56      | -501         | same as 1440; at 1024 the Figma cards stack and so do ours                                                                                               | Reviewed |
+| admin-products                               | 1440  | 8.04       | -178         | data, no stock line and no "Draft to finish" block in the seed; grid, cards and buttons match                                                            | Reviewed |
+| admin-products                               | 1024  | 16.74      | -186         | same as 1440                                                                                                                                             | Reviewed |
+| admin-add-product (`/en/admin/products/new`) | 1440  | 37.50      | +569         | height: ru and en name and description fields, slug, colour group, old price, discount (spec); photo area uses a picture select; no thumbnails, no stock | Reviewed |
+| admin-add-product                            | 1024  | 38.92      | +889         | same as 1440                                                                                                                                             | Reviewed |
+| admin-orders (`/en/admin/orders`)            | 1440  | 10.25      | -77          | data (three orders in the e2e seed, Figma seven), no payment chip or filter, no date range; list, detail card and status form match                      | Reviewed |
+| admin-orders                                 | 1024  | 21.39      | -296         | same as 1440                                                                                                                                             | Reviewed |
 
 Every row above 5 % is explained above. The auth screens at 1440, the account Overview at 1440 and the Orders and Products lists reproduce the Figma layout: positions of the sidebar, headers, cards, chips, buttons and tiles agree within a few pixels in the triplets. The seeded data in these shots is the e2e database (user "STONE Client", orders D-1048 and D-1032, one extra order D-9001).
 
@@ -59,7 +64,7 @@ No functional defect was found by this pass; the three visual ones are fixed (ta
 
 ## Not in Figma: states to approve from screenshots
 
-These have no frame, so only the owner can approve them (the Task 3 to 5 screenshots are in the git-ignored `.superpowers` folder of the working copy; the shots are reproducible with the commands above): the sign-in screen (Create account layout, "No account? Create one"), the error states (red `#f0a8a0` on the dark photo, one uniform message for unknown email and wrong password), the "Sign-in is unavailable on this environment" state, the admin message below 1024 px ("The admin panel is available on screens from 1024 px"), the "next update" card on the four Phase 4b admin sections, the empty states ("No orders yet" ...), and the Russian copy (all ru strings are drafts).
+These have no frame, so only the owner can approve them (the Task 3 to 5 screenshots are in the git-ignored `.superpowers` folder of the working copy; the shots are reproducible with the commands above): the sign-in screen (Create account layout, "No account? Create one"), the error states (red `#f0a8a0` on the dark photo, one uniform message for unknown email and wrong password), the "Sign-in is unavailable on this environment" state, the admin message below 1024 px ("The admin panel is available on screens from 1024 px"), the historical "next update" cards (superseded by the implemented Phase 4b sections), the empty states ("No orders yet" ...), and the Russian copy (all ru strings are drafts).
 
 ## Owner approval checklist (Phase 4a)
 
@@ -69,7 +74,7 @@ Auth screens
 
 - [ ] **Sign-in screen**: same layout as Create account (`431:3193`) with sign-in copy; it exists only as a decision, not as a Figma frame.
 - [ ] **Error and unavailable states** on the auth screens (colours, copy, uniform message); the unavailable state when no database is configured.
-- [ ] **Russian title wrap**: "Создать аккаунт" is one line at 64 px from 1440 and wraps to two lines below 1440 (Figma English is nowrap at every width; the Cyrillic fallback font is wider).
+- [ ] **Russian title layout**: the current 390 px capture displays the sign-up title on one line. Review the current RU wording and layout at both captured widths; the earlier two-line observation is superseded by the Phase 5 screenshots.
 - [ ] **Sign-out page shell**: the confirmation sits inside the site shell, so a footer appears under the first screen and the 1440 header shows the language switch. Figma draws neither.
 - [ ] "Show password" eye has one visual state (as drawn); the pressed state is `aria-pressed` and shows the text.
 
@@ -89,7 +94,7 @@ Account
 Admin
 
 - [ ] **No date range, no stock, no payment column or chip** (no data behind them; adding stock or payment is a data model change that needs approval). Overview shows "Published products" instead of stock; Orders has one status (In progress / Delivered) that an Admin can move either way.
-- [ ] **Overview "Create Your Stone" table** is Phase 4b; Customers, Promotions, Site content and Create Your Stone show a "next update" card.
+- [ ] **Phase 4b sections and Overview requests**: the historical placeholders have since been replaced locally; review the current Customers, Promotions, Site content and Create Your Stone screenshots and their explicit demo limitations.
 - [ ] **Add product** uses separate ru and en name and description fields (spec), the slug, a picture select from the existing catalog images (no upload yet) and a text storefront preview; Figma has one name, a photo area with thumbnails and "Add photo".
 - [ ] **No admin language switch** (the URL locale is the language); **below 1024 px** a message replaces the admin (the Figma admin exists from 1024 only).
 - [ ] **Unknown product URL**: `/{locale}/catalog/<unknown>` answers with a redirect to `/{locale}/404`, so the address bar changes (a Next 16.3.8 limit: `notFound()` cannot render a server-side 404 there).

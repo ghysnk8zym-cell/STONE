@@ -13,7 +13,7 @@ import { useAdminMoney } from "./money";
  * the KPI row (Revenue and Orders in one card with a hairline between, a second card for the catalogue), the
  * Sales revenue chart with the Products card beside it from 1440 (stacked at 1024), and the footnote.
  * Figures come from the database. Figma also draws "Stock on hand", per-product stock and the Create Your Stone
- * requests table: the data model has no stock yet and the requests arrive in Phase 4b, so those are not drawn.
+ * requests table: stock has no model; the page composes the Phase 4b requests summary below this component.
  */
 
 const CHART_HEIGHT = 200;

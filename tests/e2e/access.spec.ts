@@ -26,6 +26,8 @@ const ACCOUNT_PATHS = [
 const ADMIN_PATHS = [
   "admin",
   "admin/products",
+  "admin/products/new",
+  "admin/products/black-marble",
   "admin/orders",
   "admin/customers",
   "admin/promotions",

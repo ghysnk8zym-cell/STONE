@@ -22,6 +22,8 @@ export const DESCRIPTION_MAX = 1000;
 /** USD 100 000 per m2 is far above any real price and keeps the integer column safe. */
 export const PRICE_MAX_CENTS = 10_000_000;
 export const DIMENSION_MAX_MM = 10_000;
+/** Reserve the last int32 value: reaching it requires maintenance, never wrap or reset it. */
+export const revisionSchema = z.number().int().min(0).max(2_147_483_646);
 
 // A name is one line of plain text; a description may also have line feeds. Control characters AND invisible
 // formatting characters (bidi overrides, zero-width, BOM) are refused in both (src/lib/plain-text.ts).
@@ -86,6 +88,20 @@ const oldPriceIssue = {
 
 /** Fields of a product (everything but the slug, which names the product and never changes). */
 export const productInputSchema = productFields.refine(
+  oldPriceAbovePrice,
+  oldPriceIssue,
+);
+
+/** Existing product price fields, shared by the dedicated Promotions editor. */
+const promotionFields = productFields.pick({
+  priceCents: true,
+  oldPriceCents: true,
+  discountPercent: true,
+});
+export const promotionSnapshotSchema = promotionFields.extend({
+  revision: revisionSchema,
+});
+export const promotionInputSchema = promotionFields.refine(
   oldPriceAbovePrice,
   oldPriceIssue,
 );

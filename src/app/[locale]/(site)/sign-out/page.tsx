@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Button } from "@/components/buttons/Button";
 import type { Locale } from "@/i18n/routing";
+import { logAuthFailure } from "@/server/auth/diagnostics";
 import { getSession } from "@/server/auth/session";
 
 import { signOutAction } from "../../(auth)/actions";
@@ -72,6 +73,7 @@ function Art() {
  */
 export default async function SignOutPage({
   params,
+  searchParams,
 }: PageProps<"/[locale]/sign-out">) {
   const { locale } = await params;
   setRequestLocale(locale as Locale);
@@ -80,15 +82,22 @@ export default async function SignOutPage({
     namespace: "auth.signOutPage",
   });
 
+  const { error: requestedError } = await searchParams;
+  let error: "tooManyAttempts" | "unavailable" | "generic" | null =
+    requestedError === "tooManyAttempts" ||
+    requestedError === "unavailable" ||
+    requestedError === "generic"
+      ? requestedError
+      : null;
   let signedIn = false;
   try {
     signedIn = (await getSession()) !== null;
-  } catch (error) {
-    console.error(
-      `[auth] sign-out page: session lookup failed (${error instanceof Error ? error.name : "error"})`,
-    );
+  } catch (cause) {
+    logAuthFailure("session_read_failed", cause);
+    // An unavailable lookup is not evidence that the caller has signed out.
+    error = "unavailable";
   }
-  if (!signedIn) redirect(`/${locale}`);
+  if (!signedIn && !error) redirect(`/${locale}`);
 
   return (
     <section
@@ -99,6 +108,11 @@ export default async function SignOutPage({
       <div className="relative flex w-full lg:mx-auto lg:max-w-[1286px] lg:justify-end">
         <div className="flex w-full flex-col items-start gap-6 md:w-[456px] md:gap-8 lg:w-[360px] min-[90rem]:w-[400px] min-[90rem]:gap-10 min-[120rem]:w-[416px]">
           <h1 className="type-sign-out-title text-ink">{t("title")}</h1>
+          {error ? (
+            <p role="alert" className="type-catalog-field-value text-ink">
+              {t(`errors.${error}`)}
+            </p>
+          ) : null}
           <div className="flex w-full flex-col gap-4">
             <form action={signOutAction} className="w-full">
               <input type="hidden" name="locale" value={locale} />

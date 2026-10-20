@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ShowcaseCard } from "@/components/cards/ShowcaseCard";
@@ -6,6 +7,7 @@ import type { Price } from "@/components/cards/Price";
 import type { Locale } from "@/i18n/routing";
 import { productName } from "@/lib/product-copy";
 import { discountPercent, getCatalog, type Product } from "@/server/catalog";
+import { getHomeText } from "@/server/content/home";
 
 import { Backdrop } from "./_home/Backdrop";
 import { Hero } from "./_home/Hero";
@@ -64,20 +66,15 @@ function price(cents: number): Price {
   return { amount: cents / 100, currency: "USD", isPlaceholder: true };
 }
 
-/*
- * The home page is static (prerendered per locale) and shows products from the catalog. Admin edits revalidate it
- * (`revalidatePath` in src/server/admin/actions.ts), but a `next build` that ran WITHOUT `DATABASE_URL` (Docker, CI)
- * prerendered the static seed and would keep serving it after a redeploy until the next admin edit, bringing back
- * renamed names and unpublished cards. Re-rendering at most every five minutes bounds that on Node hosts. Set
- * DATABASE_URL at build time as well (docs/DEPLOYMENT.md). Cloudflare renders per request and is not affected.
- */
-export const revalidate = 300;
-
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
+  // Read editable text and products for this request. An overlapping ISR render
+  // can otherwise serve an old value after a confirmed content save or restore.
+  await connection();
   const { locale } = await params;
   setRequestLocale(locale as Locale);
 
   const t = await getTranslations("pages.home");
+  const { values: text } = await getHomeText(locale as Locale);
   const c = await getTranslations("catalog");
   const cc = await getTranslations("components");
   const catalog = await getCatalog();
@@ -103,12 +100,12 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   return (
     <div className="relative isolate overflow-clip md:-mt-[72px]">
       <Backdrop />
-      <Hero locale={locale as Locale} />
+      <Hero locale={locale as Locale} text={text} />
       <div className="relative z-10 flex flex-col items-center gap-(--layout-section-gap) px-(--layout-margin) pt-(--layout-main-top) pb-(--layout-section-gap) max-md:pt-0 max-md:pb-6">
         <ShowcaseSection
           id="home-catalog"
-          label={t("sections.catalog")}
-          action={{ label: t("actions.openCatalog"), href: "/catalog" }}
+          label={text["sections.catalog"]}
+          action={{ label: text["actions.openCatalog"], href: "/catalog" }}
           carouselClassName={CATALOG_ITEM}
         >
           {featured.map((p) => (
@@ -129,9 +126,9 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
         </ShowcaseSection>
         <ShowcaseSection
           id="home-promo"
-          label={t("sections.promo")}
+          label={text["sections.promo"]}
           note={t("placeholderPrices")}
-          action={{ label: t("actions.offers"), href: "/catalog?sale=1" }}
+          action={{ label: text["actions.offers"], href: "/catalog?sale=1" }}
           carouselClassName={PROMO_ITEM}
         >
           {promo.map((p) => (
@@ -159,8 +156,8 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
         </ShowcaseSection>
         <ShowcaseSection
           id="home-works"
-          label={t("sections.works")}
-          action={{ label: t("actions.projects") }}
+          label={text["sections.works"]}
+          action={{ label: text["actions.projects"] }}
           carouselClassName={WORK_ITEM}
         >
           {WORKS.map((work) => (
@@ -168,8 +165,8 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               key={work.key}
               type="work"
               layout="responsive"
-              title={t(`works.${work.key}.title`)}
-              subtitle={t(`works.${work.key}.subtitle`)}
+              title={text[`works.${work.key}.title`]}
+              subtitle={text[`works.${work.key}.subtitle`]}
               image={{
                 src: work.src,
                 alt: "",

@@ -6,12 +6,14 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 // and the Worker must stay under 3 MiB (ADR-001).
 import { betterAuth } from "better-auth/minimal";
 import { nextCookies } from "better-auth/next-js";
+import { eq } from "drizzle-orm";
 
 import { getDb, type Db } from "../db";
 import { account, rateLimit, session, user, verification } from "../db/schema";
 import type { SeedUser } from "../db/seed";
 import { getServerEnv, type ServerEnv } from "../env";
 import { AUTH_COOKIE_PREFIX, CLIENT_IP_HEADER } from "./constants";
+import { logAuthFailure, logBetterAuthError } from "./diagnostics";
 import { userFieldsProblem } from "./user-input";
 
 /*
@@ -107,6 +109,27 @@ export function createAuth(db: Db, config: AuthConfig) {
     hooks: {
       // Plain-text names, no image, whoever calls (see user-input.ts).
       before: createAuthMiddleware(async (ctx) => {
+        // Better Auth 1.7.7 swallows revocation errors (including deleteWithHooks' lookup).
+        // Confirm a parameterized DELETE before the endpoint may clear the cookie. The
+        // handler's rate/origin checks ran first. This relies on our database-only sessions;
+        // revisit before adding secondary storage or provider logout / session delete hooks.
+        if (ctx.path === "/sign-out") {
+          const token = await ctx.getSignedCookie(
+            ctx.context.authCookies.sessionToken.name,
+            ctx.context.secret,
+          );
+          if (token) {
+            try {
+              await db.delete(session).where(eq(session.token, token));
+            } catch (error) {
+              logAuthFailure("session_revoke_failed", error);
+              throw new APIError("SERVICE_UNAVAILABLE", {
+                message: "Session revocation unavailable",
+                code: "AUTH_UNAVAILABLE",
+              });
+            }
+          }
+        }
         const problem = userFieldsProblem(ctx.path, ctx.body);
         if (problem) {
           throw new APIError("BAD_REQUEST", {
@@ -147,8 +170,21 @@ export function createAuth(db: Db, config: AuthConfig) {
       disableCSRFCheck: false,
       ipAddress: { ipAddressHeaders: [...config.ipAddressHeaders] },
     },
-    // Lower levels log emails (e.g. a duplicate sign-up); errors only.
-    logger: { level: "error" },
+    // Error payloads can include SQL parameters (including session tokens).
+    logger: { level: "error", log: logBetterAuthError },
+    // The router's default APIError handler also uses a global logger, bypassing `logger.log`.
+    onAPIError: {
+      onError: (error) => {
+        logAuthFailure("api_failed", error);
+        // Better Call otherwise logs plain errors again after this callback returns.
+        if (!(error instanceof APIError)) {
+          throw new APIError("INTERNAL_SERVER_ERROR", {
+            message: "Authentication request failed",
+            code: "AUTH_INTERNAL_ERROR",
+          });
+        }
+      },
+    },
     telemetry: { enabled: false },
     // Must stay last: forwards Set-Cookie from auth.api calls in server actions to Next.
     plugins: [nextCookies()],

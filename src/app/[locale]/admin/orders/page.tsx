@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AdminFootnote, AdminPageHeader } from "@/components/admin/parts";
 import { OrdersView, type OrdersQuery } from "@/components/admin/OrdersView";
 import type { Locale } from "@/i18n/routing";
+import { redirect } from "@/i18n/navigation";
 import { listAdminOrders, type AdminOrder } from "@/server/admin/queries";
 import { requireRole } from "@/server/auth/guards";
 
@@ -37,7 +38,7 @@ function matches(order: AdminOrder, q: string): boolean {
 
 /*
  * Orders (Figma 1440 1077:52201, 1920 1062:50528, 1024 1077:55311). State is the URL: `q`, `status` (fulfillment filter)
- * and `order` (the selected order; the newest shown one when it is missing or not in the filtered list).
+ * and `order` (explicit selection survives a saved status leaving the filtered list).
  */
 export default async function AdminOrdersPage({
   params,
@@ -61,7 +62,20 @@ export default async function AdminOrdersPage({
     (order) =>
       (status === "all" || order.status === status) && matches(order, q),
   );
-  const selected = orders.find((o) => o.number === wanted) ?? orders[0] ?? null;
+  const selected = all.find((o) => o.number === wanted) ?? orders[0] ?? null;
+  if (selected && selected.number !== wanted) {
+    redirect({
+      locale: locale as Locale,
+      href: {
+        pathname: "/admin/orders",
+        query: {
+          order: selected.number,
+          ...(q ? { q } : {}),
+          ...(status !== "all" ? { status } : {}),
+        },
+      },
+    });
+  }
 
   return (
     <>

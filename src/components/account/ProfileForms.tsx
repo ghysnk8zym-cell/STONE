@@ -1,7 +1,13 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState, useTransition, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type FormEvent,
+} from "react";
 
 import { Button } from "@/components/buttons/Button";
 import { TextField } from "@/components/forms/TextField";
@@ -45,6 +51,18 @@ export function ProfileDetails({
   const [error, setError] = useState<string | undefined>();
   const [notice, setNotice] = useState(false);
   const [pending, startTransition] = useTransition();
+  const section = useRef<HTMLElement>(null);
+  const restoreFocus = useRef(false);
+
+  useEffect(() => {
+    const lostInputFocus =
+      !pending && editing && document.activeElement === document.body;
+    if (!restoreFocus.current && !lostInputFocus) return;
+    section.current
+      ?.querySelector<HTMLElement>(editing ? 'input[name="name"]' : "button")
+      ?.focus();
+    restoreFocus.current = false;
+  }, [editing, pending]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,6 +73,7 @@ export function ProfileDetails({
         const result = await updateProfileName(value);
         if (result.ok) {
           setSaved(result.name);
+          restoreFocus.current = true;
           setEditing(false);
           setNotice(true);
         } else {
@@ -72,6 +91,7 @@ export function ProfileDetails({
 
   return (
     <section
+      ref={section}
       aria-label={t("details")}
       className={`${CARD} flex flex-col gap-4 p-(--layout-panel-pad)`}
     >
@@ -91,6 +111,7 @@ export function ProfileDetails({
             defaultValue={saved}
             autoComplete="name"
             error={error}
+            disabled={pending}
             required
           />
           <div className="flex flex-wrap gap-3">
@@ -99,7 +120,9 @@ export function ProfileDetails({
             </Button>
             <Button
               variant="outline"
+              disabled={pending}
               onClick={() => {
+                restoreFocus.current = true;
                 setEditing(false);
                 setError(undefined);
               }}
@@ -129,6 +152,7 @@ export function ProfileDetails({
           <Button
             variant="outline"
             onClick={() => {
+              restoreFocus.current = true;
               setNotice(false);
               setEditing(true);
             }}

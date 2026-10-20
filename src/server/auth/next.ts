@@ -9,13 +9,7 @@ import { cookies, headers } from "next/headers";
 import { platform } from "../platform";
 import { getAuth } from "./auth";
 import { CLIENT_IP_HEADER } from "./constants";
-
-/** Error name and code only: messages can contain the connection URL. */
-function safeErrorSummary(error: unknown): string {
-  const name = error instanceof Error ? error.name : typeof error;
-  const code = (error as { code?: unknown } | null)?.code;
-  return typeof code === "string" ? `${name} ${code}` : name;
-}
+import { logAuthFailure } from "./diagnostics";
 
 let warnedNoClientIp = false;
 
@@ -114,8 +108,7 @@ export async function callAuthEndpoint(
   try {
     auth = await getAuth();
   } catch (error) {
-    // Name only: a driver error message can contain the connection URL.
-    console.error(`[auth] unavailable: ${safeErrorSummary(error)}`);
+    logAuthFailure("auth_unavailable", error);
     auth = null;
   }
   if (!auth) return { ok: false, status: 503, code: "AUTH_UNAVAILABLE" };
@@ -131,13 +124,19 @@ export async function callAuthEndpoint(
     authRequestBase(auth.options.baseURL, incoming),
   );
 
-  const response = await auth.handler(
-    new Request(url, {
-      method: "POST",
-      headers: withClientIp(forwarded),
-      body: JSON.stringify(body),
-    }),
-  );
+  let response: Response;
+  try {
+    response = await auth.handler(
+      new Request(url, {
+        method: "POST",
+        headers: withClientIp(forwarded),
+        body: JSON.stringify(body),
+      }),
+    );
+  } catch (error) {
+    logAuthFailure("handler_failed", error);
+    return { ok: false, status: 503, code: "AUTH_UNAVAILABLE" };
+  }
 
   const setCookie = response.headers.get("set-cookie");
   if (setCookie) {

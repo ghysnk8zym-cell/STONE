@@ -13,7 +13,7 @@ import { ADMIN_BUTTON_PRIMARY } from "./parts";
 /**
  * Fulfillment select and "Update fulfillment" of the Order detail card (Figma Orders 1440 1077:52374). Saves through
  * the guarded `setOrderStatus` action, then re-renders the page; the Client sees the new status in their Orders.
- * Keyed by the order number and its stored status by the page, so it starts from the right value on every order.
+ * Keyed by order number; fresh server status must not remount feedback or the focused submit button.
  */
 export function OrderStatusForm({
   number,
@@ -24,13 +24,15 @@ export function OrderStatusForm({
 }) {
   const t = useTranslations("admin.orders");
   const router = useRouter();
-  const [value, setValue] = useState<OrderStatus>(status);
+  const [draft, setDraft] = useState<OrderStatus | null>(null);
+  const value = draft ?? status;
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
   const [pending, startTransition] = useTransition();
 
   function save() {
+    if (pending) return;
     setMessage(null);
     startTransition(async () => {
       try {
@@ -39,6 +41,7 @@ export function OrderStatusForm({
           setMessage({ ok: false, text: t(`detail.errors.${result.code}`) });
           return;
         }
+        setDraft(null);
         setMessage({ ok: true, text: t("detail.saved") });
       } catch {
         // The action threw (database timeout, 5xx): show the message instead of the error boundary; the chosen status stays.
@@ -56,20 +59,26 @@ export function OrderStatusForm({
         save();
       }}
       className="flex flex-col gap-5"
+      aria-busy={pending}
     >
-      <AdminSelect
-        label={t("detail.fulfillment")}
-        name="status"
-        value={value}
-        onChange={(next) => setValue(next as OrderStatus)}
-        options={[
-          { value: "in_progress", label: t("status.in_progress") },
-          { value: "delivered", label: t("status.delivered") },
-        ]}
-      />
+      <fieldset disabled={pending} className="contents">
+        <AdminSelect
+          label={t("detail.fulfillment")}
+          name="status"
+          value={value}
+          onChange={(next) => {
+            setDraft(next as OrderStatus);
+            setMessage(null);
+          }}
+          options={[
+            { value: "in_progress", label: t("status.in_progress") },
+            { value: "delivered", label: t("status.delivered") },
+          ]}
+        />
+      </fieldset>
       <button
         type="submit"
-        disabled={pending}
+        aria-disabled={pending}
         className={`${ADMIN_BUTTON_PRIMARY} w-fit min-[90rem]:w-full`}
       >
         {t("detail.update")}
