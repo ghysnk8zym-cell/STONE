@@ -23,7 +23,7 @@
 
 - `order.kind text not null default 'demo'` (check in `demo`, `test_checkout`), `order.idempotency_key uuid null`, `order.submission_digest text null`; unique index `(user_id, idempotency_key)` where key is not null; sequence `order_number_seq` start 2001.
 - `order_item.area_hundredths integer null` (check 1–1 000 000), `order_item.line_total_cents integer null` (check ≥ 0). Area lines store `quantity = 1`; existing rows untouched.
-- Demo cap: at most 50 test orders per user (checked inside the insert statement).
+- Demo cap: a soft limit of 50 test orders per user (counted inside the insert statement; not serialised, see docs/SECURITY.md).
 
 ## Limits and errors
 

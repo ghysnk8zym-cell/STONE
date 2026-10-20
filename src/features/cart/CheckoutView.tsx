@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 import { useAccountLabels } from "@/components/account/labels";
 import {
@@ -16,53 +16,21 @@ import { cn } from "@/components/cn";
 import { useRouter } from "@/i18n/navigation";
 import { placeTestOrder } from "@/server/shop/actions";
 
+import { createAttemptKeys, type AttemptKeys } from "./attempt-key";
 import { cart, useCart, useCartReady } from "./cart-store";
 import { useAreaFormat } from "./CartView";
-import type { CartLine, PlaceOrderCode, Quote } from "./input";
+import type { PlaceOrderCode, Quote } from "./input";
 import { useQuote } from "./use-quote";
 
 /*
  * Checkout (signed in; no Figma frame, composed from the Account cards and catalog pills). No card fields and no
  * payment provider: "Place test order" sends the cart, a per-attempt idempotency key and the total the customer
- * sees. The key lives in sessionStorage until the order is saved, so a lost response and a retry return the same
- * order. On `prices_changed` the fresh quote replaces the summary and a second confirmation is needed. The order
+ * sees. The key is kept in memory for the page (mirrored to sessionStorage when available; see attempt-key.ts)
+ * until the order is saved, so a lost response and a retry return the same order. On `prices_changed` the fresh quote replaces the summary and a second confirmation is needed. The order
  * number is shown only after the server saved it, on the order page.
  */
 
-const ATTEMPT_KEY = "stone.checkout.attempt";
 const DASH = "—";
-
-/** The idempotency key of this cart content: reused while the content is the same, new otherwise. */
-function attemptKey(lines: readonly CartLine[]): string {
-  const content = JSON.stringify(lines);
-  try {
-    const stored = JSON.parse(
-      sessionStorage.getItem(ATTEMPT_KEY) ?? "null",
-    ) as {
-      key?: unknown;
-      content?: unknown;
-    } | null;
-    if (stored && stored.content === content && typeof stored.key === "string")
-      return stored.key;
-  } catch {
-    // unreadable: start a new attempt
-  }
-  const key = crypto.randomUUID();
-  try {
-    sessionStorage.setItem(ATTEMPT_KEY, JSON.stringify({ key, content }));
-  } catch {
-    // blocked storage: the key still covers retries within this page view
-  }
-  return key;
-}
-
-function forgetAttempt() {
-  try {
-    sessionStorage.removeItem(ATTEMPT_KEY);
-  } catch {
-    // nothing stored
-  }
-}
 
 export function CheckoutView({ locale }: { locale: string }) {
   const t = useTranslations("checkout");
@@ -77,6 +45,9 @@ export function CheckoutView({ locale }: { locale: string }) {
   const [fresh, setFresh] = useState<{ content: string; quote: Quote } | null>(
     null,
   );
+  // One idempotency key per submission, kept in memory (and mirrored to sessionStorage when it works).
+  const attempts = useRef<AttemptKeys | null>(null);
+  attempts.current ??= createAttemptKeys();
   const [pending, setPending] = useState(false);
   const [placed, setPlaced] = useState(false);
   const [error, setError] = useState<PlaceOrderCode | null>(null);
@@ -110,11 +81,11 @@ export function CheckoutView({ locale }: { locale: string }) {
     try {
       const result = await placeTestOrder({
         items: lines,
-        key: attemptKey(lines),
+        key: attempts.current!.keyFor(content),
         expectedTotalCents: shown.totalCents,
       });
       if (result.ok) {
-        forgetAttempt();
+        attempts.current!.forget();
         setPlaced(true);
         cart.clear();
         router.push(`/account/orders/${result.number}?placed=1`);
@@ -123,7 +94,7 @@ export function CheckoutView({ locale }: { locale: string }) {
       if (result.code === "prices_changed") {
         setFresh({ content, quote: result.quote });
       } else {
-        if (result.code === "conflict") forgetAttempt();
+        if (result.code === "conflict") attempts.current!.forget();
         setError(result.code);
       }
     } catch {

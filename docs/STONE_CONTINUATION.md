@@ -38,14 +38,24 @@ Read with `docs/STONE_HANDOFF.md` (state at 2026-10-18, still accurate for histo
 - **CI (Linux, run 39336297414, commit `e6ba2d0`):** all six jobs green, incl. the full e2e suite, `cf:build` + 3 MiB gate (2631.33 KiB) and the Docker/standalone smokes.
 - **Not run:** anything against real Neon or Cloudflare.
 
+### Update 2026-10-20 — checkout retry fix (after the review of `221a8c2`)
+
+- **Defect (confirmed):** `CheckoutView` created a new idempotency key on every attempt when sessionStorage could not be read or written, so a retry after a lost response could create a duplicate order.
+- **Fix:** `src/features/cart/attempt-key.ts` — one key per submission identity (cart content) kept in memory for the page (`useRef` in `CheckoutView`) and mirrored to sessionStorage when it works; rotates after success, `conflict` or a changed cart. Server-side uniqueness, ownership and re-pricing unchanged. Remaining limitation: with storage unavailable, a page reload after a lost response starts a new submission (the saved order, if any, is in the account's Orders).
+- **Tests added:** `tests/unit/attempt-key.test.ts` (6) and 3 in `tests/unit/cart-ui.test.tsx` (storage unreadable + unwritable, writes failing, lost response after persistence → retry → exactly one order on a fake per-key server; key rotation after success). Both regression tests failed before the fix (different keys) and pass after. Server-side tests for same-key retry and concurrent identical submissions already existed and pass.
+- **50-order cap:** documented as a soft demo limit (not serialised, no fixed overshoot bound) in `docs/SECURITY.md`; not changed in code.
+- **Local results:** `pnpm lint`, `format:check`, `typecheck` clean; `pnpm test` **953 passed** (77 files). E2E and the Cloudflare build were not re-run locally (CI after push).
+- Disk: C: had 0 MB free at the start of this session; the owner freed space (1.76 GB free before the work).
+
 ## 4. Unfinished work and known issues
 
 1. Committed and pushed to `feat/test-shop` (draft PR #6); nothing merged.
 2. Not deployed. Real Neon (HTTP driver writes, sequences, grants) and real Workers runtime (password hashing CPU on Workers Free, photo processing) are unverified.
-3. ±1 race on the 50-order demo cap (documented in `docs/SECURITY.md`); sign-out without JavaScript does not clear the cart.
-4. Cart/checkout/order screens and the test banner have no Figma frames — owner visual approval needed. Owner checklists in `docs/QA/*` remain open.
-5. Historical flaky admin Orders axe test (root cause unproven).
-6. `docs/STONE_HANDOFF.md` describes 2026-10-18 state; keep it unchanged as history.
+3. The 50-order cap is a soft demo limit (see `docs/SECURITY.md`); sign-out without JavaScript does not clear the cart.
+4. **Deployment blocked (2026-10-20):** `wrangler deploy --env test` failed with "No access to the specified resource" on `/workers/scripts/stone-test/deployments`: the OAuth token on this PC has only `user (read)`, `account (read)`, `workers (write)`. Owner step: `pnpm exec wrangler login` (browser consent, same account). Nothing was created on Cloudflare; Worker `stone-test` does not exist yet. The preview `https://feat-test-shop-stone.gb8cj746n2.workers.dev` is the Workers Builds preview of the Git-connected `stone` Worker without database secrets ("sign-in unavailable") — it is not the configured test shop.
+5. Cart/checkout/order screens and the test banner have no Figma frames — owner visual approval needed. Owner checklists in `docs/QA/*` remain open.
+6. Historical flaky admin Orders axe test (root cause unproven).
+7. `docs/STONE_HANDOFF.md` describes 2026-10-18 state; keep it unchanged as history.
 
 ## 5. Next commands
 
@@ -68,4 +78,5 @@ Then verify on `https://stone-test.gb8cj746n2.workers.dev`: RU/EN, mobile/deskto
 
 - Runtime: `DATABASE_URL` (secret), `BETTER_AUTH_SECRET` (secret), `BETTER_AUTH_URL`, `SITE_URL`, `APP_ENV`, `INDEXING`, `PLATFORM`. Seed only: `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_CLIENT_EMAIL`, `SEED_CLIENT_PASSWORD`, `SEED_ALLOW_REMOTE`. Test-only fake values live in `.env.test.example`; never commit real values.
 - Approvals still required from the owner: (a) commit + push the reviewed files to a branch and open a draft PR (triggers CI and possibly a Workers Builds preview of the `stone` Worker); (b) running the provisioning script (creates role `stone_app`, migrates and seeds `stone-test/neondb`, stores two secrets on Worker `stone-test`); (c) deploying the new Worker `stone-test` (Cloudflare account `7c9d39ab94bede596d336ddc609194ba`); (d) any paid plan if Workers Free CPU limits block sign-in — do not weaken password hashing.
-- Wrangler on this PC is logged in (OAuth, `workers (write)`); `versions`/`deployments` reads return "No access" because the OAuth token lacks some scopes — not needed for `wrangler deploy`/`secret put`; refresh with `wrangler login` only if a deploy fails with a permission error.
+- Owner approvals given on 2026-10-20: (a) commit/push to `feat/test-shop` + draft PR #6; (b)+(c) the provisioning script and the `stone-test` Worker deployment as described in §5. Still open: (d) paid plan, only if needed.
+- Wrangler on this PC is logged in (OAuth) but its token lacks the scopes `wrangler deploy` needs (`versions`/`deployments` endpoints answer "No access"); the owner must run `pnpm exec wrangler login` before the deploy.

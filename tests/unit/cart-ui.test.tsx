@@ -314,6 +314,125 @@ describe("checkout", () => {
     expect(keys[1]).toBe(keys[0]);
   });
 
+  /** Makes sessionStorage (only) throw on reads and/or writes; localStorage keeps working for the cart. */
+  function blockSessionStorage(block: { reads: boolean; writes: boolean }) {
+    const originalGet = Storage.prototype.getItem;
+    const originalSet = Storage.prototype.setItem;
+    const get = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(function (this: Storage, name: string) {
+        if (block.reads && this === window.sessionStorage)
+          throw new DOMException("blocked", "SecurityError");
+        return originalGet.call(this, name);
+      });
+    const set = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(function (this: Storage, name: string, v: string) {
+        if (block.writes && this === window.sessionStorage)
+          throw new DOMException("quota", "QuotaExceededError");
+        return originalSet.call(this, name, v);
+      });
+    return { get, set };
+  }
+
+  /** A fake server that keeps one order per idempotency key, like the real unique index. */
+  function fakeServer() {
+    const orders = new Map<string, string>();
+    let next = 2001;
+    return {
+      orders,
+      /** Saves (or finds) the order, then loses the response once. */
+      saveThenLose: async (input: unknown) => {
+        const { key } = input as { key: string };
+        if (!orders.has(key)) orders.set(key, `T-${next++}`);
+        throw new Error("response lost after the order was saved");
+      },
+      save: async (input: unknown) => {
+        const { key } = input as { key: string };
+        if (!orders.has(key)) orders.set(key, `T-${next++}`);
+        return { ok: true, number: orders.get(key)! };
+      },
+    };
+  }
+
+  async function placeTwice() {
+    renderWithIntl(<CheckoutView locale="en" />);
+    await waitFor(() =>
+      expect(screen.getByTestId("checkout-total").textContent).toBe("$528.00"),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Place test order" }));
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Place test order" }));
+    await waitFor(() => expect(mocks.place).toHaveBeenCalledTimes(2));
+    return mocks.place.mock.calls.map(
+      ([input]) => (input as { key: string }).key,
+    );
+  }
+
+  it("keeps one key and one order when sessionStorage cannot be read or written at all", async () => {
+    seed();
+    const server = fakeServer();
+    mocks.place.mockImplementationOnce(server.saveThenLose);
+    mocks.place.mockImplementationOnce(server.save);
+    const { get, set } = blockSessionStorage({ reads: true, writes: true });
+    try {
+      const keys = await placeTwice();
+      expect(keys[1]).toBe(keys[0]);
+      expect(server.orders.size).toBe(1);
+      await waitFor(() =>
+        expect(mocks.push).toHaveBeenCalledWith(
+          "/account/orders/T-2001?placed=1",
+        ),
+      );
+    } finally {
+      get.mockRestore();
+      set.mockRestore();
+    }
+  });
+
+  it("keeps one key and one order when sessionStorage writes fail (quota) but reads work", async () => {
+    seed();
+    const server = fakeServer();
+    mocks.place.mockImplementationOnce(server.saveThenLose);
+    mocks.place.mockImplementationOnce(server.save);
+    const { get, set } = blockSessionStorage({ reads: false, writes: true });
+    try {
+      const keys = await placeTwice();
+      expect(keys[1]).toBe(keys[0]);
+      expect(server.orders.size).toBe(1);
+      // the write was really attempted and refused
+      expect(set).toHaveBeenCalled();
+    } finally {
+      get.mockRestore();
+      set.mockRestore();
+    }
+  });
+
+  it("starts a new key after a successful order, even for the same cart content", async () => {
+    seed();
+    const server = fakeServer();
+    mocks.place.mockImplementation(server.save);
+    const first = renderWithIntl(<CheckoutView locale="en" />);
+    await waitFor(() =>
+      expect(screen.getByTestId("checkout-total").textContent).toBe("$528.00"),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Place test order" }));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledTimes(1));
+    first.unmount();
+    seed();
+    renderWithIntl(<CheckoutView locale="en" />);
+    await waitFor(() =>
+      expect(screen.getByTestId("checkout-total").textContent).toBe("$528.00"),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Place test order" }));
+    await waitFor(() => expect(mocks.place).toHaveBeenCalledTimes(2));
+    const keys = mocks.place.mock.calls.map(
+      ([input]) => (input as { key: string }).key,
+    );
+    expect(keys[1]).not.toBe(keys[0]);
+    expect(server.orders.size).toBe(2);
+  });
+
   it("on prices_changed shows the new total and asks for a second confirmation", async () => {
     seed();
     const fresh = quoteFor(

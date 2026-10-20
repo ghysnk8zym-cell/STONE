@@ -204,9 +204,17 @@ session user, so another customer's number reads as a 404. A cart whose total wo
 query whatever the cart size, and an order attempt about six (Workers allow 50 subrequests per request). The
 browser cart is cleared once a sign-out is confirmed (shared devices).
 
-Residual (accepted for the demo): the 50-order cap is counted inside the insert statement but not serialised, so
-two concurrent distinct attempts by the same user at 49 orders can both pass and leave the user at 51 (±1 per
-concurrent pair). The cap only bounds demo data volume; it is not a security boundary.
+Residual (accepted for the demo): the 50-order cap is a **soft demo limit**. It is counted inside the insert
+statement but not serialised (each statement sees the order count at its start), so concurrent distinct
+submissions by the same user near the limit can each pass and end above 50; there is no fixed bound on the
+overshoot. It only limits demo data volume and is not a security or business quota. A strict quota would need a
+serialised counter (e.g. a per-user row updated in the same statement, as the stone-request budget does).
+
+Client retry key: `placeTestOrder` gets one idempotency key per submission, kept in memory for the page and
+mirrored to sessionStorage (`src/features/cart/attempt-key.ts`). Retries in the same page view reuse it even when
+storage is blocked or full; the key rotates after a success, a `conflict` or a changed cart. Limitation: with
+storage unavailable, reloading the page after a lost response starts a new submission (any order saved by the
+lost attempt is listed in the account's Orders).
 
 ## Public request/photo demo
 
