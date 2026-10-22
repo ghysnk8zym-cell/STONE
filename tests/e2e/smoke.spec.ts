@@ -7,7 +7,7 @@ import ru from "../../messages/ru.json";
 const hero = (h: typeof ru.pages.home.hero) =>
   [h.line1, h.line2, h.line3, h.line4].join(" ");
 const homeTitle = {
-  ru: hero(ru.pages.home.hero),
+  ru: hero(en.pages.home.hero),
   en: hero(en.pages.home.hero),
 };
 
@@ -38,6 +38,7 @@ test.describe("smoke", { tag: "@smoke" }, () => {
       expect(response?.status()).toBe(200);
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
       await expect(page.locator("h1")).toHaveText(homeTitle[locale]);
+      await expect(page.locator("h1")).toHaveAttribute("lang", "en");
     });
   }
 
