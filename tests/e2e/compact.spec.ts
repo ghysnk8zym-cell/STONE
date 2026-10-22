@@ -21,7 +21,10 @@ for (const width of [1920, 1440, 390, 320]) {
       await expect(page.locator("h1")).toHaveText(
         /WHERE\s+DESIGN\s+MEETS\s+DURABILITY/i,
       );
-      await expect(page.locator("header")).toHaveCSS("height", "60px");
+      await expect(page.locator("header")).toHaveCSS(
+        "height",
+        width >= 1024 ? "48px" : "60px",
+      );
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth - innerWidth,
@@ -43,6 +46,14 @@ for (const width of [1920, 1440, 390, 320]) {
           const prev = section.getByRole("button", {
             name: messages.components.carousel.prev,
           });
+          const overflows = await track.evaluate(
+            (el) => el.scrollWidth - el.clientWidth > 2,
+          );
+          if (!overflows) {
+            await expect(next).toHaveAttribute("aria-disabled", "true");
+            await expect(prev).toHaveAttribute("aria-disabled", "true");
+            continue;
+          }
           await expect(next).not.toHaveAttribute("aria-disabled", "true");
           await next.click();
           await expect

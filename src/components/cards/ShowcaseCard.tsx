@@ -41,7 +41,7 @@ type Common = {
   /**
    * Product / promo only: accessible name of the Heart that Figma draws on the phone (Mobile) cards
    * (390 frames; none on Desktop). Inert unless `favoriteSlug` is given.
-   * Hidden from 768 px up.
+   * Hidden from 768 px up by default; Home explicitly restores it at its desktop breakpoint.
    */
   favoriteLabel?: string;
   /** With `favoriteLabel`: the Heart is live (the catalog favourite of this slug) instead of inert. */
@@ -240,6 +240,7 @@ export function ShowcaseCard({
         )}
         {favoriteLabel !== undefined && layout !== "desktop" && (
           <span
+            data-showcase-favorite
             className={cn(
               "absolute top-1.5 right-1.5 z-20",
               layout === "responsive" && "md:hidden",

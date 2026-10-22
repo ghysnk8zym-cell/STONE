@@ -14,30 +14,26 @@ import type { HomeText } from "@/features/content/home-fields";
  * requests at 1440 and 390). A `<picture>` with `<source media>` was tried first: Chromium's preload
  * scanner in phone emulation requested the 1920 source as well, i.e. two downloads. `getImageProps`
  * builds each 1x / 2x pair through the project's custom loader (manifest keys only).
- * Source size / displayed box: 1920 -> 1920x630, 1440 -> 1440x630, 1024 -> 1024x470 (full-bleed
- * behind the header), 768 -> 704x330 and 390 / 360 -> 358x168 / 328x154 (inset, headline below).
+ * Desktop uses the existing wide 1920x630 composition at its natural aspect ratio below the
+ * header. Smaller layouts retain their original scenes: 768 -> 704x330 and
+ * 390 / 360 -> 358x168 / 328x154 (inset, headline below).
  * The scene is decorative (the headline is live text), so it is a presentational element.
  */
 const SCENES = [
   { media: null, key: "360", width: 328, height: 154 },
   { media: "(min-width: 390px)", key: "390", width: 358, height: 168 },
   { media: "(min-width: 768px)", key: "768", width: 704, height: 330 },
-  { media: "(min-width: 1024px)", key: "1024", width: 1024, height: 470 },
-  { media: "(min-width: 1440px)", key: "1440", width: 1440, height: 630 },
-  { media: "(min-width: 1920px)", key: "1920", width: 1920, height: 630 },
+  { media: "(min-width: 1024px)", key: "1920", width: 1920, height: 630 },
 ] as const;
 
 /*
  * LCP: from 1024 px the scene is the largest paint. A CSS background is only discovered after the
- * stylesheet, so each wide layout gets a `<link rel="preload" as="image" imagesrcset media>` whose media
- * query is exclusive of the others (a phone or tablet preloads nothing, and the 1x / 2x candidate the
- * browser picks is the same one `image-set()` picks): still exactly one hero request. The >= 1920
- * scene has no preload: Chromium's phone emulation evaluates `min-width: 1920px` link media as true
- * at parse time and would request that image next to the real one (a second hero download).
+ * stylesheet, so the 1024–1919 desktop range preloads its scene. Keep the upper media bound:
+ * Chromium's phone preload scanner can request an unbounded desktop preload as well as the
+ * phone's CSS scene. At >=1920 CSS discovers the same single image without a preload.
  */
 const PRELOAD_MEDIA: Record<string, string> = {
-  "1024": "(min-width: 1024px) and (max-width: 1439.98px)",
-  "1440": "(min-width: 1440px) and (max-width: 1919.98px)",
+  "1920": "(min-width: 1024px) and (max-width: 1919.98px)",
 };
 
 /** "a.webp 1x, b.webp 2x" (next/image srcset) -> image-set(url("a.webp") 1x, url("b.webp") 2x) */

@@ -257,7 +257,7 @@ test.describe("home", () => {
     await expect(promo.getByText(HOME.placeholderPrices)).toBeVisible();
   });
 
-  test("phone cards carry live hearts, desktop cards none", async ({
+  test("phone and desktop home cards carry live hearts", async ({
     page,
   }, testInfo) => {
     await page.goto("/ru");
@@ -266,7 +266,7 @@ test.describe("home", () => {
       await expect(hearts).toHaveCount(10);
       await expect(hearts.first()).toBeVisible();
     } else {
-      await expect(hearts.first()).toBeHidden();
+      await expect(hearts.first()).toBeVisible();
     }
   });
 
@@ -305,7 +305,7 @@ test.describe("home", () => {
       testInfo.project.name !== "desktop",
       "arrows are hidden on phones",
     );
-    // at 1024 the three cards overflow the track, so both arrows have work to do
+    // At 1024 the expanded promo selection overflows the three visible cards.
     await page.setViewportSize({ width: 1024, height: 900 });
     await page.goto("/ru");
     const promo = page.getByRole("region", { name: HOME.sections.promo });
@@ -319,35 +319,39 @@ test.describe("home", () => {
 
     await expect(prev).toHaveAttribute("aria-disabled", "true");
     await expect(next).not.toHaveAttribute("aria-disabled", "true");
-    await next.click();
-    await expect
-      .poll(() => track.evaluate((el) => el.scrollLeft))
-      .toBeGreaterThan(0);
-    // Continue to the end of the expanded promo selection.
-    for (
-      let i = 0;
-      i < 4 && (await next.getAttribute("aria-disabled")) !== "true";
-      i++
-    ) {
-      await next.click();
-      await page.waitForTimeout(350);
-    }
+    const bounds = await track.evaluate((el) => ({
+      max: el.scrollWidth - el.clientWidth,
+      step:
+        el.querySelector("li")!.getBoundingClientRect().width +
+        Number.parseFloat(getComputedStyle(el.querySelector("ul")!).columnGap),
+    }));
+    // Wait for each smooth scroll to settle before reading the next disabled state.
+    // Otherwise a final in-flight scroll can disable an arrow after the loop's guard.
+    const move = async (direction: 1 | -1, keyboard = false) => {
+      const before = await track.evaluate((el) => el.scrollLeft);
+      const target = Math.max(
+        0,
+        Math.min(bounds.max, before + direction * bounds.step),
+      );
+      const arrow = direction === 1 ? next : prev;
+      if (keyboard) await arrow.press("Enter");
+      else await arrow.click();
+      await expect
+        .poll(async () =>
+          Math.abs((await track.evaluate((el) => el.scrollLeft)) - target),
+        )
+        .toBeLessThan(2);
+    };
+    const steps = Math.ceil(bounds.max / bounds.step);
+    for (let i = 0; i < steps; i++) await move(1);
     await expect(prev).not.toHaveAttribute("aria-disabled", "true");
     await expect(next).toHaveAttribute("aria-disabled", "true");
     // keyboard: focus on the exhausted arrow stays there (it is aria-disabled, not disabled)
     await prev.focus();
-    await prev.press("Enter");
+    await move(-1, true);
     await next.focus();
     await expect(next).toBeFocused();
-    await prev.click();
-    for (
-      let i = 0;
-      i < 4 && (await prev.getAttribute("aria-disabled")) !== "true";
-      i++
-    ) {
-      await prev.click();
-      await page.waitForTimeout(350);
-    }
+    for (let i = 1; i < steps; i++) await move(-1);
     await expect(prev).toHaveAttribute("aria-disabled", "true");
     await expect(next).not.toHaveAttribute("aria-disabled", "true");
   });

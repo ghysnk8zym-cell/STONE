@@ -117,3 +117,89 @@
 html {
   scroll-padding-top: 80px;
 }
+
+/* Home-only desktop refinement. Keep every rule below the existing desktop
+   boundary so the approved phone/tablet composition and shared pages stay intact. */
+@media (min-width: 1024px) {
+  [data-site-shell]:has(.home-page) [data-site-header] {
+    --type-nav-size: 16px;
+    --type-logo-size: 24px;
+    height: 48px;
+  }
+  [data-site-shell]:has(.home-page) [data-site-header] nav :is(a, button) {
+    height: 36px;
+  }
+  [data-site-shell]:has(.home-page)
+    [data-site-header]
+    nav
+    :is(a, button):has(> .icon-mask:only-child) {
+    width: 36px;
+  }
+  .home-page {
+    --layout-content-width: 1600px;
+    --home-visible-cards: 3;
+    margin-top: 0;
+  }
+  .home-page > div:last-child {
+    padding-inline: 40px;
+  }
+  .home-hero {
+    height: auto;
+    aspect-ratio: 1920 / 630;
+  }
+  .home-hero .hero-scene {
+    background-position: center top;
+  }
+  .home-hero-intro {
+    position: absolute;
+    top: 22%;
+    left: 5.5%;
+    width: auto;
+    max-width: 24%;
+    margin: 0;
+    padding: 0;
+    gap: 16px;
+  }
+  .home-hero h1 {
+    font-size: 22px;
+    line-height: 28px;
+  }
+  .home-hero summary {
+    height: 40px;
+  }
+  .home-page [data-carousel-track] {
+    container-type: inline-size;
+  }
+  .home-page [data-carousel-track] > ul {
+    width: 100%;
+  }
+  .home-page .home-product-item {
+    width: calc(
+      (100cqw - (var(--home-visible-cards) - 1) * var(--layout-card-gap)) /
+        var(--home-visible-cards)
+    );
+  }
+  .home-page [data-carousel-track] > ul:has(.home-work-item) {
+    justify-content: center;
+  }
+  .home-page .home-work-item {
+    width: min(320px, calc((100cqw - 2 * var(--layout-card-gap)) / 3));
+  }
+  .home-page [data-showcase-favorite] {
+    display: block;
+  }
+}
+@media (min-width: 1280px) {
+  .home-page {
+    --home-visible-cards: 4;
+  }
+  .home-hero h1 {
+    font-size: 24px;
+    line-height: 30px;
+  }
+}
+@media (min-width: 1600px) {
+  .home-page {
+    --home-visible-cards: 5;
+  }
+}

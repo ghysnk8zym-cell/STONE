@@ -91,6 +91,40 @@ function isMobileProject(testInfo: { project: { name: string } }) {
 
 test.describe("Guest", () => {
   for (const locale of LOCALES) {
+    test(`${locale}: home heart survives sign-in, refresh and removal`, async ({
+      page,
+      browser,
+      baseURL,
+      clientIp,
+    }) => {
+      const email = await createAccount(
+        browser,
+        baseURL!,
+        clientIp,
+        NEW_PASSWORD,
+      );
+      await page.goto(`/${locale}`);
+      await accountStateKnown(page, "guest");
+      const heart = page.getByRole("button", {
+        name: heartName(locale, "black-marble"),
+      });
+      await expect(heart).toBeVisible();
+      await heart.press("Enter");
+      await page.waitForURL(new RegExp(`/${locale}/sign-in\\?next=`));
+      expect(new URL(page.url()).searchParams.get("next")).toBe(`/${locale}`);
+      await fillSignIn(page, locale, { email, password: NEW_PASSWORD });
+      await page.waitForURL(`**/${locale}`);
+      await accountStateKnown(page, "signed-in");
+      await expect(heart).toHaveAttribute("aria-pressed", "true");
+      await page.reload();
+      await expect(heart).toHaveAttribute("aria-pressed", "true");
+      await clickAndSettle(page, heart);
+      await expect(heart).toHaveAttribute("aria-pressed", "false");
+      await page.reload();
+      await expect(heart).toHaveAttribute("aria-pressed", "false");
+    });
+  }
+  for (const locale of LOCALES) {
     for (const path of PAGES) {
       test(`/${locale}/${path} sends a Guest to sign-in with next`, async ({
         page,
