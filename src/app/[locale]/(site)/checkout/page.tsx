@@ -52,7 +52,7 @@ export default async function CheckoutPage({
       {...{ [PAGE_SURFACE_ATTR]: PAGE_SURFACE_CATALOG }}
       className="bg-stone-catalog-page flex-1 px-(--layout-margin) pt-(--layout-main-top) pb-16"
     >
-      <div className="mx-auto flex w-full max-w-[1286px] flex-col gap-(--layout-section-gap)">
+      <div className="mx-auto flex w-full max-w-(--layout-content-width) flex-col gap-(--layout-section-gap)">
         <div>
           <IconButton icon="back" tone="ink" href="/cart" label={t("back")} />
         </div>

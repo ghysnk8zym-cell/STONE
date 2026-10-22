@@ -100,7 +100,7 @@ export default async function ProductPage({
       {...{ [PAGE_SURFACE_ATTR]: PAGE_SURFACE_CATALOG }}
       className="bg-stone-catalog-page flex-1 px-4 pt-5 pb-10 md:px-8 md:pt-6 md:pb-20 lg:px-10 lg:pt-8 min-[90rem]:px-[77px]"
     >
-      <div className="mx-auto flex w-full max-w-[1286px] flex-col">
+      <div className="mx-auto flex w-full max-w-(--layout-content-width) flex-col">
         <div className="pb-4">
           <IconButton
             icon="back"
@@ -135,7 +135,7 @@ export default async function ProductPage({
             />
             <div className="flex min-w-0 flex-col gap-6">
               <div className="flex items-center justify-between gap-4">
-                <h1 className="text-ink min-w-0 flex-1 [font-family:var(--font-display)] text-[28px] leading-9 md:text-[44px] md:leading-[52px] min-[90rem]:text-[56px] min-[90rem]:leading-16">
+                <h1 className="type-catalog-page-title-56 text-ink min-w-0 flex-1 [font-family:var(--font-display)] text-[28px] leading-9 md:text-[44px] md:leading-[52px] min-[90rem]:text-[56px] min-[90rem]:leading-16">
                   {name}
                 </h1>
                 <FavoriteSaveButton slug={product.slug} label={t("save")} />

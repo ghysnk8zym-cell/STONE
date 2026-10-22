@@ -30,7 +30,10 @@ export function SiteHeader({
   const t = useTranslations("components.nav");
 
   return (
-    <header className="border-glass glass-header sticky top-0 z-40 flex h-[72px] w-full items-center justify-between border-b px-(--layout-header-pad-x)">
+    <header
+      data-site-header
+      className="border-glass glass-header sticky top-0 z-40 flex h-[72px] w-full items-center justify-between border-b px-(--layout-header-pad-x)"
+    >
       <Logo />
       <nav
         aria-label={t("primary")}

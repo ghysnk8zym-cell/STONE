@@ -599,6 +599,86 @@
       "title": "Something went wrong",
       "body": "A temporary problem stopped this page from loading. Try again in a moment.",
       "retry": "Try again"
+    },
+    "works": {
+      "label": "Our works",
+      "title": "Stone, made into rooms",
+      "intro": "From raw slab to finished work: the materials we cut, carve and light, and what they became.",
+      "demo": "Illustrative projects from the design prototype. Dimensions and production times are examples, not confirmed offers.",
+      "raw": "The raw stones",
+      "source": "Source material",
+      "view": "View material",
+      "request": "Request similar",
+      "space": "Space",
+      "time": "Made in",
+      "size": "Size",
+      "finish": "Finish",
+      "process": "How a work is made",
+      "cta": "Have a work like this in mind?",
+      "ctaBody": "Send a photo or a sketch with your request.",
+      "create": "Create Your Stone",
+      "projects": "5 projects",
+      "shown": "Shown on this page",
+      "days": "4–9 days",
+      "duration": "Illustrative production time",
+      "materials": "Materials",
+      "available": "Explore the catalog",
+      "steps": {
+        "choose": {
+          "title": "Choose the stone",
+          "body": "Pick a material from the catalog or prepare a reference photo."
+        },
+        "make": {
+          "title": "Cut and carve",
+          "body": "Discuss the shape, finish and production time for your project."
+        },
+        "fit": {
+          "title": "Delivery and fitting",
+          "body": "Agree on delivery and installation when your project is confirmed."
+        }
+      },
+      "items": {
+        "backlit": {
+          "title": "Backlit rock panel",
+          "description": "Two slabs of hand-split Golden Rock joined by a seam of warm light. Cut, mounted and wired for an entry wall.",
+          "space": "Entry hall",
+          "time": "5 days",
+          "size": "1200 × 2400 mm",
+          "finish": "Split face, LED edge"
+        },
+        "facade": {
+          "title": "Facade cladding",
+          "description": "Irregular Rustic Split stone wrapped around a terrace wall, with uplights set into the joints.",
+          "space": "Terrace and facade",
+          "time": "9 days",
+          "size": "38 m²",
+          "finish": "Dry-stack look"
+        },
+        "bedroom": {
+          "title": "Bedroom rock wall",
+          "description": "A full wall of layered Taupe Rock, split by hand so every ledge catches the light.",
+          "space": "Bedroom",
+          "time": "6 days",
+          "size": "14 m²",
+          "finish": "Split face"
+        },
+        "clocks": {
+          "title": "Stone wall clocks",
+          "description": "Three clocks cut from natural stone slabs, each edge backlit by a warm line of light.",
+          "space": "Living room",
+          "time": "4 days",
+          "size": "Ø 600–900 mm",
+          "finish": "Natural edge, brass hands"
+        },
+        "relief": {
+          "title": "Sculpted relief panel",
+          "description": "A lime-white relief carved from a single slab: soft pores, deep channels, no two panels alike.",
+          "space": "Gallery wall",
+          "time": "5 days",
+          "size": "600 × 1200 mm",
+          "finish": "Hand carved, matte"
+        }
+      }
     }
   },
   "auth": {
@@ -996,7 +1076,8 @@
         "unavailable": "The database is unavailable. Try again later.",
         "generic": "The save could not be confirmed. Your input is still in the form. Reload and review before retrying."
       },
-      "breadcrumb": "Home / {section}"
+      "breadcrumb": "Home / {section}",
+      "brandLocked": "The brand headline is fixed in English for every language."
     },
     "overview": {
       "title": "Overview",

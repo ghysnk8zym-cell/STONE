@@ -98,12 +98,12 @@ describe("home text content (real PGlite and Better Auth)", () => {
       expect(await db.select().from(schema.siteContent)).toEqual([]);
     });
   it("uses each locale's messages when records are absent or no database is configured", async () => {
-    expect((await content.getHomeText("en")).values["hero.line1"]).toBe(
-      en.pages.home.hero.line1,
-    );
-    expect((await content.getHomeText("ru")).values["hero.line1"]).toBe(
-      ru.pages.home.hero.line1,
-    );
+    expect(
+      (await content.getHomeText("en")).values["hero.searchPlaceholder"],
+    ).toBe(en.pages.home.hero.searchPlaceholder);
+    expect(
+      (await content.getHomeText("ru")).values["hero.searchPlaceholder"],
+    ).toBe(ru.pages.home.hero.searchPlaceholder);
     vi.stubEnv("DATABASE_URL", "");
     try {
       expect((await content.getHomeText("en")).values["sections.catalog"]).toBe(
@@ -114,16 +114,16 @@ describe("home text content (real PGlite and Better Auth)", () => {
     }
   });
   it.each([
-    ["xx", "hero.line1", "Hello", null],
+    ["xx", "hero.searchPlaceholder", "Hello", null],
     ["en", "__proto__", "Hello", null],
     ["en", "meta.home.title", "Hello", null],
-    ["en", "hero.line1", "", null],
-    ["en", "hero.line1", "  ", null],
-    ["en", "hero.line1", "x".repeat(1000), null],
-    ["en", "hero.line1", "bad\u202e", null],
-    ["en", "hero.line1", "bad\nline", null],
-    ["en", "hero.line1", {}, null],
-    ["en", "hero.line1", "Hello", {}],
+    ["en", "hero.searchPlaceholder", "", null],
+    ["en", "hero.searchPlaceholder", "  ", null],
+    ["en", "hero.searchPlaceholder", "x".repeat(1000), null],
+    ["en", "hero.searchPlaceholder", "bad\u202e", null],
+    ["en", "hero.searchPlaceholder", "bad\nline", null],
+    ["en", "hero.searchPlaceholder", {}, null],
+    ["en", "hero.searchPlaceholder", "Hello", {}],
   ])(
     "rejects invalid or out-of-scope input %j",
     async (locale, key, text, expected) => {
@@ -135,55 +135,82 @@ describe("home text content (real PGlite and Better Auth)", () => {
       expect(request.paths).toEqual([]);
     },
   );
+  it("keeps the brand slogan English even with old CMS records", async () => {
+    asBrowser(admin);
+    await db
+      .insert(schema.siteContent)
+      .values({ key: "hero.line1", locale: "ru", text: "Где" });
+    expect((await content.getHomeText("ru")).values["hero.line1"]).toBe(
+      en.pages.home.hero.line1,
+    );
+    expect(
+      await actions.saveHomeText("ru", "hero.line1", "Другое", "Где"),
+    ).toEqual({ ok: false, code: "invalid" });
+    await db
+      .delete(schema.siteContent)
+      .where(eq(schema.siteContent.key, "hero.line1"));
+  });
   it("edits one locale/key, treats markup and ICU syntax as literal text, and resets to fallback", async () => {
     asBrowser(admin);
     const literal = "<b>{name}</b>";
     expect(
-      await actions.saveHomeText("en", "hero.line1", literal, null),
+      await actions.saveHomeText("en", "hero.searchPlaceholder", literal, null),
     ).toEqual({ ok: true, text: literal });
-    expect((await content.getHomeText("en")).values["hero.line1"]).toBe(
-      literal,
-    );
-    expect((await content.getHomeText("ru")).values["hero.line1"]).toBe(
-      ru.pages.home.hero.line1,
-    );
-    expect((await content.getHomeText("en")).values["hero.line2"]).toBe(
-      en.pages.home.hero.line2,
+    expect(
+      (await content.getHomeText("en")).values["hero.searchPlaceholder"],
+    ).toBe(literal);
+    expect(
+      (await content.getHomeText("ru")).values["hero.searchPlaceholder"],
+    ).toBe(ru.pages.home.hero.searchPlaceholder);
+    expect((await content.getHomeText("en")).values["hero.searchLabel"]).toBe(
+      en.pages.home.hero.searchLabel,
     );
     expect(request.paths).toContain("/en");
     expect(
-      await actions.saveHomeText("en", "hero.line1", null, literal),
+      await actions.saveHomeText("en", "hero.searchPlaceholder", null, literal),
     ).toEqual({ ok: true, text: null });
-    expect((await content.getHomeText("en")).values["hero.line1"]).toBe(
-      en.pages.home.hero.line1,
-    );
+    expect(
+      (await content.getHomeText("en")).values["hero.searchPlaceholder"],
+    ).toBe(en.pages.home.hero.searchPlaceholder);
     expect(await db.select().from(schema.siteContent)).toEqual([]);
   });
   it("rejects stale inserts, edits and resets; different fields can be edited independently", async () => {
     asBrowser(admin);
     const results = await Promise.all([
-      actions.saveHomeText("en", "hero.line1", "First", null),
-      actions.saveHomeText("en", "hero.line1", "Second", null),
+      actions.saveHomeText("en", "hero.searchPlaceholder", "First", null),
+      actions.saveHomeText("en", "hero.searchPlaceholder", "Second", null),
     ]);
     expect(results.filter((r) => r.ok)).toHaveLength(1);
     expect(results.filter((r) => !r.ok && r.code === "conflict")).toHaveLength(
       1,
     );
-    const current = (await content.getHomeText("en")).stored["hero.line1"]!;
+    const current = (await content.getHomeText("en")).stored[
+      "hero.searchPlaceholder"
+    ]!;
     expect(
-      await actions.saveHomeText("en", "hero.line1", "New", current),
+      await actions.saveHomeText(
+        "en",
+        "hero.searchPlaceholder",
+        "New",
+        current,
+      ),
     ).toMatchObject({ ok: true });
     expect(
-      await actions.saveHomeText("en", "hero.line1", "Stale", current),
+      await actions.saveHomeText(
+        "en",
+        "hero.searchPlaceholder",
+        "Stale",
+        current,
+      ),
     ).toMatchObject({ ok: false, code: "conflict" });
     expect(
-      await actions.saveHomeText("en", "hero.line1", null, current),
+      await actions.saveHomeText("en", "hero.searchPlaceholder", null, current),
     ).toMatchObject({ ok: false, code: "conflict" });
     expect(
       await actions.saveHomeText("en", "sections.catalog", "Materials", null),
     ).toMatchObject({ ok: true });
     expect((await query.getHomeTextEditor("en")).values).toMatchObject({
-      "hero.line1": "New",
+      "hero.searchPlaceholder": "New",
       "sections.catalog": "Materials",
     });
   });

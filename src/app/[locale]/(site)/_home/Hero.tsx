@@ -2,6 +2,7 @@ import { getImageProps } from "next/image";
 import { preload } from "react-dom";
 import { useTranslations } from "next-intl";
 
+import en from "../../../../../messages/en.json";
 import { Icon } from "@/components/icons/Icon";
 import type { Locale } from "@/i18n/routing";
 import type { HomeText } from "@/features/content/home-fields";
@@ -83,27 +84,10 @@ function HeroScene() {
   );
 }
 
-/*
- * Home v2 hero (Section / Hero 722:1304 at 1440, 722:1567 at 1024, 724:1673 at 768, 716:1084 at 390),
- * built as Figma draws it, including its quirks:
- *  - >= 768 the header is drawn over the page top: the page root is pulled up by the 72 px header, so
- *    the hero starts at y = 0 and the sticky header covers its top (at 768 that is the top 56 px of
- *    the scene, which starts at y = 16).
- *  - >= 1024 the scene is full-bleed, 630 high at 1440 and 470 at 1024; the intro panel sits on it:
- *    headline in four lines (text/ink, Hero/Headline, tracking 0.14em) and the Search pill under it.
- *    Left / top offset 131 / 122 at 1440, 43 / 87 at 1024; gap 16 / 12.
- *  - < 1024 the scene is inset by the layout margin with the 358:168 ratio, then the one-line
- *    headline (text/primary) and the Search pill right-aligned. The intro panel (768) and the hero
- *    (390) are fixed 46 px high in Figma, so their content overflows: at 768 the pill fills the
- *    section's bottom padding, at 390 the whole hero is 46 px high and the Main panels start right
- *    under the scene's top, covering the headline and the pill (the Main wrapper paints above).
- * Search is Figma's Search/Pill Graphite (21:108): the closed pill 168x46, and the Open variant
- * (971:28937) = the pill (fill rgba(88,92,96,.2) to rgba(74,77,81,.2)) with the 168x52 "Search panel"
- * 8 px below it, which holds the input. A native <details> toggles it (no JavaScript); the form
- * submits to /catalog?q=...
- * At 390 the form is `invisible` (visibility: hidden): the pill is covered by the first panel, so it
- * must not stay in the tab order or the accessibility tree (WCAG 2.4.11 Focus Not Obscured). The h1
- * stays: it is text, not a control.
+/** Home v2 art direction with the approved compact desktop composition.
+ * compact.css overrides the source geometry and keeps the mobile headline/search in normal flow.
+ * Search uses native details and submits a GET request to the localized catalog.
+ * The brand slogan is always English, independently of the locale and CMS overrides.
  */
 export function Hero({
   locale,
@@ -116,22 +100,25 @@ export function Hero({
   const field = useTranslations("components.search");
 
   return (
-    <section className="relative flex flex-col items-end gap-4 px-(--layout-margin) pt-4 pb-6 max-md:h-[46px] md:gap-5 lg:h-[470px] lg:items-start lg:p-0 min-[90rem]:h-[630px]">
+    <section className="home-hero relative flex flex-col items-end gap-4 px-(--layout-margin) pt-4 pb-6 max-md:h-[46px] md:gap-5 lg:h-[470px] lg:items-start lg:p-0 min-[90rem]:h-[630px]">
       <div className="relative aspect-[358/168] w-full shrink-0 overflow-clip lg:absolute lg:inset-0 lg:aspect-auto">
         <HeroScene />
       </div>
-      <div className="flex w-full shrink-0 flex-col items-end gap-4 md:max-lg:h-[46px] lg:relative lg:mx-auto lg:max-w-[1440px] lg:items-start lg:gap-3 lg:pt-[87px] lg:pr-6 lg:pl-[43px] min-[90rem]:gap-4 min-[90rem]:pt-[122px] min-[90rem]:pl-[131px]">
-        <h1 className="type-hero-headline text-primary lg:text-ink w-full uppercase">
-          <span className="lg:block">{text?.["hero.line1"] ?? t("line1")}</span>{" "}
-          <span className="lg:block">{text?.["hero.line2"] ?? t("line2")}</span>{" "}
-          <span className="lg:block">{text?.["hero.line3"] ?? t("line3")}</span>{" "}
-          <span className="lg:block">{text?.["hero.line4"] ?? t("line4")}</span>
+      <div className="home-hero-intro flex w-full shrink-0 flex-col items-end gap-4 md:max-lg:h-[46px] lg:relative lg:mx-auto lg:max-w-[1440px] lg:items-start lg:gap-3 lg:pt-[87px] lg:pr-6 lg:pl-[43px] min-[90rem]:gap-4 min-[90rem]:pt-[122px] min-[90rem]:pl-[131px] min-[120rem]:max-w-none min-[120rem]:gap-[21px] min-[120rem]:pt-[163px] min-[120rem]:pl-[188px]">
+        <h1
+          lang="en"
+          className="type-hero-headline text-primary lg:text-ink w-full uppercase"
+        >
+          <span className="lg:block">{en.pages.home.hero.line1}</span>{" "}
+          <span className="lg:block">{en.pages.home.hero.line2}</span>{" "}
+          <span className="lg:block">{en.pages.home.hero.line3}</span>{" "}
+          <span className="lg:block">{en.pages.home.hero.line4}</span>
         </h1>
         <form
           role="search"
           action={`/${locale}/catalog`}
           method="get"
-          className="relative has-[details[open]]:z-20 max-md:invisible"
+          className="relative has-[details[open]]:z-20"
         >
           <details className="group">
             <summary className="focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus hov:border-glass-strong motion-hover flex h-[46px] w-[168px] cursor-pointer list-none items-center justify-center gap-4 rounded-full border border-[rgba(255,255,255,0.1)] bg-linear-to-b from-[rgba(76,80,83,0.2)] to-[rgba(65,68,72,0.2)] text-[16px] leading-5 font-medium text-white outline-0 drop-shadow-[0_8px_10px_rgba(20,23,26,0.35)] select-none group-open:from-[rgba(88,92,96,0.2)]! group-open:to-[rgba(74,77,81,0.2)]! md:from-[#4c5053] md:to-[#414448] [&::-webkit-details-marker]:hidden">

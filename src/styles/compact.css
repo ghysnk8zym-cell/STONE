@@ -1,0 +1,119 @@
+/* Approved 2026-10-22: compact desktop composition at 100% browser zoom.
+   Keep Figma source tokens intact; these are explicit product-level overrides. */
+:root {
+  --layout-content-width: 1120px;
+  --site-header-height: 60px;
+}
+[data-site-header] {
+  height: var(--site-header-height);
+}
+[data-test-banner] {
+  padding-block: 3px;
+}
+.home-page {
+  margin-top: calc(-1 * var(--site-header-height));
+}
+.home-hero {
+  height: 470px;
+  padding: 0;
+}
+.home-hero-intro {
+  max-width: var(--layout-content-width);
+  padding: 108px 24px 0;
+  margin-inline: auto;
+  gap: 16px;
+}
+.home-page > div:last-child {
+  padding-inline: 24px;
+}
+@media (min-width: 1024px) {
+  :root {
+    --layout-section-gap: 20px;
+    --layout-panel-pad: 22px;
+    --layout-card-gap: 20px;
+    --layout-main-top: 28px;
+    --type-nav-size: 19px;
+    --type-logo-size: 26px;
+    --type-headline-size: 26px;
+    --type-headline-lh: 33px;
+    --type-title-size: 18px;
+    --type-title-lh: 24px;
+    --type-body-size: 14px;
+    --type-body-lh: 20px;
+  }
+  .home-page {
+    --layout-content-width: 1072px;
+  }
+  .home-product-item {
+    width: 280px;
+  }
+  .home-work-item {
+    width: 320px;
+  }
+  .type-catalog-page-title {
+    font-size: 48px;
+    line-height: 1.12;
+  }
+  .type-catalog-page-title-56,
+  .type-auth-title,
+  .type-sign-out-title {
+    font-size: 42px;
+    line-height: 1.15;
+  }
+  .type-catalog-product-title {
+    font-size: 32px;
+    line-height: 1.2;
+  }
+  .type-catalog-product-name {
+    font-size: 23px;
+    line-height: 29px;
+  }
+  [data-site-header] nav {
+    gap: 16px;
+  }
+  [data-admin-shell] > aside {
+    width: 216px;
+  }
+  [data-admin-shell] > main {
+    padding: 24px;
+    gap: 20px;
+  }
+  [data-auth-form-column] {
+    max-width: 380px;
+  }
+}
+@media (max-width: 1023px) {
+  .home-page {
+    margin-top: 0;
+  }
+  .home-hero {
+    height: auto;
+    padding: 16px var(--layout-margin) 24px;
+    gap: 20px;
+  }
+  .home-hero-intro {
+    height: auto;
+    max-width: none;
+    padding: 0;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .home-hero h1 {
+    max-width: 30ch;
+  }
+  .home-page > div:last-child {
+    padding-inline: var(--layout-margin);
+  }
+}
+@media (min-width: 1920px) {
+  .home-hero {
+    height: 470px;
+  }
+  .home-hero-intro {
+    padding-top: 104px;
+  }
+}
+/* Anchor targets clear the sticky header; browser zoom uses normal responsive reflow. */
+html {
+  scroll-padding-top: 80px;
+}
