@@ -117,7 +117,7 @@ export function Hero({
           className="relative has-[details[open]]:z-20"
         >
           <details className="group">
-            <summary className="focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus hov:border-glass-strong motion-hover flex h-[46px] w-[168px] cursor-pointer list-none items-center justify-center gap-4 rounded-full border border-[rgba(255,255,255,0.1)] bg-linear-to-b from-[rgba(76,80,83,0.2)] to-[rgba(65,68,72,0.2)] text-[16px] leading-5 font-medium text-white outline-0 drop-shadow-[0_8px_10px_rgba(20,23,26,0.35)] select-none group-open:from-[rgba(88,92,96,0.2)]! group-open:to-[rgba(74,77,81,0.2)]! md:from-[#4c5053] md:to-[#414448] [&::-webkit-details-marker]:hidden">
+            <summary className="focusv:outline-2 focusv:outline-offset-2 focusv:outline-accent-focus hov:border-glass-strong motion-hover lg:text-primary flex h-[46px] w-[168px] cursor-pointer list-none items-center justify-center gap-4 rounded-full border border-[rgba(255,255,255,0.1)] bg-linear-to-b from-[rgba(76,80,83,0.2)] to-[rgba(65,68,72,0.2)] text-[16px] leading-5 font-medium outline-0 drop-shadow-[0_8px_10px_rgba(20,23,26,0.35)] select-none group-open:from-[rgba(88,92,96,0.2)]! group-open:to-[rgba(74,77,81,0.2)]! md:from-[#4c5053] md:to-[#414448] [&::-webkit-details-marker]:hidden">
               <Icon name="search" className="size-5!" />
               <span>
                 {text?.["hero.searchPlaceholder"] ?? t("searchPlaceholder")}

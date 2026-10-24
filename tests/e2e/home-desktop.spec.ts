@@ -42,6 +42,10 @@ for (const locale of ["en", "ru"]) {
         };
       });
       expect(geometry.header.height).toBe(48);
+      await expect(page.locator(".home-hero summary")).toHaveCSS(
+        "color",
+        "rgb(255, 255, 255)",
+      );
       expect(geometry.hero.y).toBeGreaterThanOrEqual(
         geometry.header.bottom - 1,
       );

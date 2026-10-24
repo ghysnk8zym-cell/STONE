@@ -20,12 +20,16 @@ import {
 const EMPTY: CartLine[] = [];
 const listeners = new Set<() => void>();
 let memory: string | null = null;
+let memoryOnly = false;
 let cachedRaw: string | null | undefined;
 let cachedLines: CartLine[] = EMPTY;
 
 function readRaw(): string | null {
+  if (memoryOnly) return memory;
   try {
-    return window.localStorage.getItem(CART_STORAGE_KEY);
+    const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+    memory = raw;
+    return raw;
   } catch {
     return memory;
   }
@@ -45,8 +49,11 @@ function write(lines: readonly CartLine[]) {
   memory = raw;
   try {
     window.localStorage.setItem(CART_STORAGE_KEY, raw);
+    memoryOnly = false;
   } catch {
-    // blocked storage: the in-memory copy above serves this page view
+    // A successful read of the old stored value must not undo an acknowledged write.
+    // A later successful write can persist this memory cart and resume cross-tab sync.
+    memoryOnly = true;
   }
   for (const listener of listeners) listener();
 }

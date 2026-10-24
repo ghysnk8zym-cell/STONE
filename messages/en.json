@@ -526,8 +526,8 @@
       "placeholderPrices": "Prices are illustrative",
       "back": "Back",
       "empty": {
-        "title": "No stone matches this pairing",
-        "body": "This color is not available in the selected material yet. Change one of the filters or start again.",
+        "title": "No matching stone found",
+        "body": "Try a different search or change the filters, or reset all to browse the catalog.",
         "clearColor": "Clear color",
         "clearMaterial": "Clear material",
         "reset": "Reset all"

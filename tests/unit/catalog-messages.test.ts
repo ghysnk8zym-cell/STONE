@@ -38,6 +38,17 @@ describe("catalog messages", () => {
     ["en", en],
     ["ru", ru],
   ])(
+    "%s empty results do not invent a selected material or colour",
+    (_locale, messages) => {
+      expect((messages as typeof en).pages.catalog.empty.body).not.toMatch(
+        /this color|selected material|этого цвета|выбранном материале/i,
+      );
+    },
+  );
+  it.each([
+    ["en", en],
+    ["ru", ru],
+  ])(
     "every seed product, material, colour group, colour and finish has %s copy",
     (_locale, messages) => {
       const missing = paths.filter((p) => !get(messages as Tree, p)?.trim());

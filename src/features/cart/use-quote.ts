@@ -22,17 +22,18 @@ export function useQuote(
   lines: readonly CartLine[],
   locale: string,
 ): QuoteState {
-  const key = JSON.stringify(lines);
+  const content = JSON.stringify(lines);
+  const key = `${locale}:${content}`;
   const [state, setState] = useState<{ key: string; value: QuoteState }>({
     key: "",
     value: { status: "idle" },
   });
 
   useEffect(() => {
-    if (key === "[]") return;
+    if (content === "[]") return;
     let current = true;
     const id = setTimeout(() => {
-      quoteCart(JSON.parse(key), locale)
+      quoteCart(JSON.parse(content), locale)
         .then((result) => {
           if (!current) return;
           setState({
@@ -50,9 +51,9 @@ export function useQuote(
       current = false;
       clearTimeout(id);
     };
-  }, [key, locale]);
+  }, [content, key, locale]);
 
-  if (key === "[]") return { status: "idle" };
+  if (content === "[]") return { status: "idle" };
   // Keep showing the previous answer while the new one loads (no flicker of the totals).
   if (state.key !== key)
     return state.value.status === "ok"
