@@ -38,7 +38,7 @@ export default async function AccountLayout({
       {...{ [PAGE_SURFACE_ATTR]: PAGE_SURFACE_CATALOG }}
       className="bg-stone-catalog-page flex-1 px-(--layout-margin) pt-(--layout-main-top) pb-16"
     >
-      <div className="mx-auto flex w-full max-w-[1286px] flex-col">
+      <div className="mx-auto flex w-full max-w-(--layout-content-width) flex-col">
         <div className="pb-4">
           <IconButton icon="back" tone="ink" href="/" label={t("back")} />
         </div>

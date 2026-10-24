@@ -40,7 +40,7 @@ export default async function CreateYourStone({
       data-page-surface="catalog"
       className="bg-stone-catalog-page text-stone-catalog-ink px-4 pt-6 pb-14 md:px-8 md:pt-8 md:pb-18 lg:px-10 lg:pt-10 lg:pb-20 xl:px-20 xl:pt-12 xl:pb-24"
     >
-      <div className="mx-auto max-w-[1286px]">
+      <div className="mx-auto max-w-(--layout-content-width)">
         <div className="mb-4">
           <IconButton
             icon="back"

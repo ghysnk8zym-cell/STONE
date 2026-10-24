@@ -15,8 +15,20 @@ function fold(text: string): string {
 }
 
 // Home v2 1440 (722:1300) order.
-const FEATURED = ["black-marble", "grey-limestone", "grey-marble"];
-const PROMO = ["taupe-rock", "graphite-rock", "split-limestone"];
+const FEATURED = [
+  "black-marble",
+  "grey-limestone",
+  "grey-marble",
+  "charcoal-ledger",
+  "silver-ledger",
+  "golden-rock",
+];
+const PROMO = [
+  "taupe-rock",
+  "graphite-rock",
+  "split-limestone",
+  "concrete-paver",
+];
 
 export function createStaticRepository(
   products: readonly Product[],

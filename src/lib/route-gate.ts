@@ -24,6 +24,7 @@ export const SLUG_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   "",
   "catalog",
+  "works",
   "create-your-stone",
   "_styleguide",
   "sign-in",

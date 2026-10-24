@@ -190,11 +190,15 @@ describe.each(implementations)("catalog contract: $name", ({ create }) => {
       "black-marble",
       "grey-limestone",
       "grey-marble",
+      "charcoal-ledger",
+      "silver-ledger",
+      "golden-rock",
     ]);
     expect((await catalog.listPromo()).map((p) => p.slug)).toEqual([
       "taupe-rock",
       "graphite-rock",
       "split-limestone",
+      "concrete-paver",
     ]);
   });
 
@@ -261,6 +265,7 @@ describe("database catalog", () => {
     expect((await repository.listPromo()).map((p) => p.slug)).toEqual([
       "graphite-rock",
       "split-limestone",
+      "concrete-paver",
     ]);
   });
 

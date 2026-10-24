@@ -160,14 +160,14 @@ export default async function CatalogPage({
       {...{ [PAGE_SURFACE_ATTR]: PAGE_SURFACE_CATALOG }}
       className="bg-stone-catalog-page flex-1 px-4 pt-6 pb-14 md:px-8 md:pt-8 md:pb-[72px] lg:px-10 lg:pt-10 lg:pb-20 min-[90rem]:px-20 min-[90rem]:pt-12 min-[90rem]:pb-24"
     >
-      <div className="mx-auto flex w-full max-w-[1286px] flex-col">
+      <div className="mx-auto flex w-full max-w-(--layout-content-width) flex-col">
         <div className="pb-4">
           <IconButton icon="back" tone="ink" href="/" label={t("back")} />
         </div>
         <div className="flex flex-col gap-7">
           <CatalogFilters
             title={
-              <h1 className="text-ink [font-family:var(--font-display)] text-[44px] leading-[52px] md:text-[56px] md:leading-[64px] min-[90rem]:text-[72px] min-[90rem]:leading-[80px]">
+              <h1 className="type-catalog-page-title text-ink [font-family:var(--font-display)] text-[44px] leading-[52px] md:text-[56px] md:leading-[64px] min-[90rem]:text-[72px] min-[90rem]:leading-[80px]">
                 {t("title")}
               </h1>
             }

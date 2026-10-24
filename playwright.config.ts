@@ -20,7 +20,7 @@ const authBaseURL = `http://localhost:${authPort}`;
 // Anchored: the named auth/account/admin/customers/promotions/access/shop (test checkout) specs (not `oauth.spec.ts`)
 // belong to the database server. A new spec that needs the database is added here on purpose.
 const AUTH_SPEC =
-  /(^|[\\/])(auth|account|admin|customers|promotions|site-content|stone-requests|public-requests|access|shop)\.spec\.ts$/;
+  /(^|[\\/])(auth|auth-compact|account|admin|customers|promotions|site-content|stone-requests|public-requests|access|shop)\.spec\.ts$/;
 const NO_DATABASE = { DATABASE_URL: "", BETTER_AUTH_SECRET: "" };
 
 // Tests tagged @production only make sense against the production-mode server.

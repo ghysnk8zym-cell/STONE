@@ -105,7 +105,7 @@ export default async function SignOutPage({
       className="bg-stone-catalog-page relative flex min-h-[calc(100dvh-72px)] flex-1 flex-col overflow-clip px-4 pt-12 md:px-8 md:pt-16 lg:px-10 lg:pt-30 min-[90rem]:px-20 min-[90rem]:pt-40 min-[120rem]:pt-[200px]"
     >
       <Art />
-      <div className="relative flex w-full lg:mx-auto lg:max-w-[1286px] lg:justify-end">
+      <div className="relative flex w-full lg:mx-auto lg:max-w-(--layout-content-width) lg:justify-end">
         <div className="flex w-full flex-col items-start gap-6 md:w-[456px] md:gap-8 lg:w-[360px] min-[90rem]:w-[400px] min-[90rem]:gap-10 min-[120rem]:w-[416px]">
           <h1 className="type-sign-out-title text-ink">{t("title")}</h1>
           {error ? (

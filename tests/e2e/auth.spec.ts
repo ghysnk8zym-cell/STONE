@@ -464,14 +464,17 @@ test.describe("layout and quality", () => {
     await expect(page.getByRole("contentinfo")).toBeVisible();
   });
 
-  test("the Russian sign-up title stays on one line at 1440 (Figma 64 px, nowrap) and the page does not overflow", async ({
+  test("the Russian sign-up title stays on one line at 1440 in the compact layout and the page does not overflow", async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "auth-desktop", "1440 layout only");
     await page.goto("/ru/sign-up");
     const box = (await page.locator("h1").boundingBox())!;
-    expect(box.height).toBeLessThanOrEqual(72);
-    await expect(page.locator("h1")).toHaveCSS("font-size", "64px");
+    expect(box.height).toBeLessThanOrEqual(50);
+    await expect(page.locator("h1")).toHaveCSS("font-size", "42px");
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(1440);
   });
 
   test("the auth background loads exactly one image", async ({ page }) => {

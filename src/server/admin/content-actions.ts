@@ -29,6 +29,7 @@ export async function saveHomeText(
     !language.success ||
     typeof key !== "string" ||
     !isHomeTextKey(key) ||
+    /^hero\.line[1-4]$/.test(key) ||
     !before.success
   )
     return { ok: false, code: "invalid" };

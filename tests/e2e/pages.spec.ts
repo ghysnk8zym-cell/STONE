@@ -167,17 +167,17 @@ test.describe("home", () => {
     const promo = page.getByRole("region", { name: HOME.sections.promo });
     const works = page.getByRole("region", { name: HOME.sections.works });
 
-    // three catalog cards, each one link to its product
-    await expect(catalog.getByRole("listitem")).toHaveCount(3);
+    // Six catalog cards provide a scrollable desktop selection.
+    await expect(catalog.getByRole("listitem")).toHaveCount(6);
     for (const slug of ["black-marble", "grey-limestone", "grey-marble"]) {
       await expect(
         catalog.locator(`a[href="/ru/catalog/${slug}"]`),
       ).toHaveCount(1);
     }
 
-    // three promo cards with discount badges, price and old price
-    await expect(promo.getByRole("listitem")).toHaveCount(3);
-    await expect(promo.locator("s")).toHaveCount(3);
+    // Four promo cards with discount badges, price and old price.
+    await expect(promo.getByRole("listitem")).toHaveCount(4);
+    await expect(promo.locator("s")).toHaveCount(4);
     await expect(promo.getByText("−20%")).toHaveCount(2);
     await expect(promo.getByText("−25%")).toHaveCount(1);
     for (const slug of ["taupe-rock", "graphite-rock", "split-limestone"]) {
@@ -186,9 +186,9 @@ test.describe("home", () => {
       );
     }
 
-    // three work cards, not links
+    // Three work cards and the section action open Our works.
     await expect(works.getByRole("listitem")).toHaveCount(3);
-    await expect(works.locator("a")).toHaveCount(0);
+    await expect(works.locator('a[href="/ru/works"]')).toHaveCount(4);
     for (const key of [
       "marble-kitchen-countertop",
       "natural-stone-fireplace-portal",
@@ -212,24 +212,20 @@ test.describe("home", () => {
     await expect(page).toHaveURL(/\/ru\/catalog\?q=marble$/);
   });
 
-  test("hero search pill is not in the tab order at 390", async ({
+  test("hero search is visible and usable at 390", async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "mobile", "phone layout only");
     await page.goto("/ru");
-    // Figma draws the catalog panel over the pill at 390: hidden, so never focusable while obscured
-    const pill = page.getByText(HOME.hero.searchPlaceholder, { exact: true });
-    await expect(pill).toBeHidden();
-    const reached: string[] = [];
-    for (let i = 0; i < 12; i++) {
-      await page.keyboard.press("Tab");
-      reached.push(
-        await page.evaluate(() => document.activeElement?.tagName ?? ""),
-      );
-    }
-    expect(reached).not.toContain("SUMMARY");
-    // the h1 stays available to assistive tech
-    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    const pill = page.locator("summary");
+    await expect(pill).toBeVisible();
+    await pill.focus();
+    await pill.press("Enter");
+    const field = page.getByRole("searchbox", { name: HOME.hero.searchLabel });
+    await expect(field).toBeVisible();
+    await field.fill("marble");
+    await field.press("Enter");
+    await expect(page).toHaveURL(/\/ru\/catalog\?q=marble$/);
   });
 
   test("Offers links to /catalog?sale=1 and Open catalog to /catalog", async ({
@@ -244,14 +240,13 @@ test.describe("home", () => {
     ).toHaveAttribute("href", "/ru/catalog");
   });
 
-  test("Projects is inert", async ({ page }) => {
+  test("Projects opens Our works", async ({ page }) => {
     await page.goto("/ru");
-    await expect(
-      page.getByRole("button", { name: HOME.actions.projects }),
-    ).toHaveAttribute("aria-disabled", "true");
-    await expect(
-      page.locator("a", { hasText: HOME.actions.projects }),
-    ).toHaveCount(0);
+    await page
+      .getByRole("link", { name: HOME.actions.projects, exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/ru\/works$/);
+    await expect(page.locator("main article")).toHaveCount(5);
   });
 
   test("placeholder price line is visible under Promo products", async ({
@@ -262,16 +257,16 @@ test.describe("home", () => {
     await expect(promo.getByText(HOME.placeholderPrices)).toBeVisible();
   });
 
-  test("phone cards carry live hearts, desktop cards none", async ({
+  test("phone and desktop home cards carry live hearts", async ({
     page,
   }, testInfo) => {
     await page.goto("/ru");
     const hearts = page.locator("article button[aria-pressed]");
     if (testInfo.project.name === "mobile") {
-      await expect(hearts).toHaveCount(6);
+      await expect(hearts).toHaveCount(10);
       await expect(hearts.first()).toBeVisible();
     } else {
-      await expect(hearts.first()).toBeHidden();
+      await expect(hearts.first()).toBeVisible();
     }
   });
 
@@ -310,7 +305,7 @@ test.describe("home", () => {
       testInfo.project.name !== "desktop",
       "arrows are hidden on phones",
     );
-    // at 1024 the three cards overflow the track, so both arrows have work to do
+    // At 1024 the expanded promo selection overflows the three visible cards.
     await page.setViewportSize({ width: 1024, height: 900 });
     await page.goto("/ru");
     const promo = page.getByRole("region", { name: HOME.sections.promo });
@@ -324,19 +319,39 @@ test.describe("home", () => {
 
     await expect(prev).toHaveAttribute("aria-disabled", "true");
     await expect(next).not.toHaveAttribute("aria-disabled", "true");
-    await next.click();
-    await expect
-      .poll(() => track.evaluate((el) => el.scrollLeft))
-      .toBeGreaterThan(0);
-    // 923 px of cards in a 774 px track: one step reaches the end
+    const bounds = await track.evaluate((el) => ({
+      max: el.scrollWidth - el.clientWidth,
+      step:
+        el.querySelector("li")!.getBoundingClientRect().width +
+        Number.parseFloat(getComputedStyle(el.querySelector("ul")!).columnGap),
+    }));
+    // Wait for each smooth scroll to settle before reading the next disabled state.
+    // Otherwise a final in-flight scroll can disable an arrow after the loop's guard.
+    const move = async (direction: 1 | -1, keyboard = false) => {
+      const before = await track.evaluate((el) => el.scrollLeft);
+      const target = Math.max(
+        0,
+        Math.min(bounds.max, before + direction * bounds.step),
+      );
+      const arrow = direction === 1 ? next : prev;
+      if (keyboard) await arrow.press("Enter");
+      else await arrow.click();
+      await expect
+        .poll(async () =>
+          Math.abs((await track.evaluate((el) => el.scrollLeft)) - target),
+        )
+        .toBeLessThan(2);
+    };
+    const steps = Math.ceil(bounds.max / bounds.step);
+    for (let i = 0; i < steps; i++) await move(1);
     await expect(prev).not.toHaveAttribute("aria-disabled", "true");
     await expect(next).toHaveAttribute("aria-disabled", "true");
     // keyboard: focus on the exhausted arrow stays there (it is aria-disabled, not disabled)
     await prev.focus();
-    await prev.press("Enter");
+    await move(-1, true);
     await next.focus();
     await expect(next).toBeFocused();
-    await prev.click();
+    for (let i = 1; i < steps; i++) await move(-1);
     await expect(prev).toHaveAttribute("aria-disabled", "true");
     await expect(next).not.toHaveAttribute("aria-disabled", "true");
   });
@@ -812,7 +827,7 @@ test.describe("long product names", () => {
  * 24 px above the footer at 390.
  */
 test.describe("home design QA geometry", () => {
-  test("Our works card and panel heights match Figma", async ({
+  test("Our works keeps card height with compact panel padding", async ({
     page,
   }, testInfo) => {
     const mobile = testInfo.project.name === "mobile";
@@ -821,8 +836,8 @@ test.describe("home design QA geometry", () => {
     const card = works.getByRole("article").first();
     // Figma 713:561 Work: media 300 / 240 plus the 4 px rim on both sides
     expect((await card.boundingBox())!.height).toBe(mobile ? 248 : 308);
-    // 25 px padding + border each side, header 40, gap 20 (Figma 722:1340: 418; 390: 338)
-    expect((await works.boundingBox())!.height).toBe(mobile ? 338 : 418);
+    // Compact desktop: 22 px padding + border each side, header 40, gap 20. Mobile is unchanged.
+    expect((await works.boundingBox())!.height).toBe(mobile ? 338 : 414);
   });
 
   test("the last home panel is 24 px above the footer at 390", async ({

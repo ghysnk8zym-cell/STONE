@@ -198,11 +198,12 @@ test.describe("product", () => {
     expect(total.clipped).toBeLessThanOrEqual(0);
   });
 
-  test("the total keeps the Figma 40 px at the project width", async ({
+  test("the total uses the responsive size at the project width", async ({
     page,
   }) => {
     const total = await maxTotal(page);
-    expect(total.fontSize).toBe("40px");
+    const compactDesktop = page.viewportSize()!.width >= 1024;
+    expect(total.fontSize).toBe(compactDesktop ? "32px" : "40px");
     expect(total.insideRight).toBeGreaterThanOrEqual(0);
   });
 

@@ -44,7 +44,7 @@ export function ShowcaseSection({
   return (
     <section
       aria-labelledby={headingId}
-      className="glass-blur glass-panel-veil border-glass bg-surface-panel flex w-full max-w-[1286px] shrink-0 flex-col gap-3 overflow-clip rounded-[20px] border py-(--layout-panel-pad) shadow-[0_16px_40px_rgba(0,0,0,0.35)] md:gap-5 md:px-(--layout-panel-pad)"
+      className="glass-blur glass-panel-veil border-glass bg-surface-panel flex w-full max-w-(--layout-content-width) shrink-0 flex-col gap-3 overflow-clip rounded-[20px] border py-(--layout-panel-pad) shadow-[0_16px_40px_rgba(0,0,0,0.35)] md:gap-5 md:px-(--layout-panel-pad)"
     >
       <div className="flex items-center justify-between gap-3 max-md:px-(--layout-panel-pad)">
         <div className="flex min-w-0 flex-col gap-1">
