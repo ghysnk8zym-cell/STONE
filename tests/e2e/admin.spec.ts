@@ -26,7 +26,7 @@ async function newProduct(
   locale: "ru" | "en",
   fields: { en: string; ru: string; price: string; slug?: string },
 ) {
-  const t = en.admin.form;
+  const t = (locale === "ru" ? ru : en).admin.form;
   await page.goto(`/${locale}/admin/products/new`);
   // the form is a client component: wait for it before typing
   await expect(page.getByLabel(t.nameEn, { exact: true })).toBeVisible();
@@ -561,4 +561,266 @@ test.describe("admin screens", () => {
       ).toEqual([]);
     });
   }
+});
+
+test.describe("product photos", () => {
+  test.beforeEach(async ({ context }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "auth-desktop",
+      "Admin editing starts at 1024 px",
+    );
+    await signInInContext(context, SEEDED.admin);
+  });
+  for (const locale of ["ru", "en"] as const) {
+    test(
+      locale +
+        ": uploaded gallery survives save, supports main/reorder/removal and public mobile viewing",
+      async ({ page, browser }, testInfo) => {
+        const t = (locale === "ru" ? ru : en).admin.form;
+        const name = "Photo Stone " + tag();
+        await newProduct(page, locale, {
+          en: name,
+          ru: "Камень " + name,
+          price: "125",
+        });
+        const slug = await page
+          .getByLabel(t.slug, { exact: true })
+          .inputValue();
+        const guest = await browser.newContext({
+          baseURL: testInfo.project.use.baseURL,
+          viewport: { width: 1440, height: 900 },
+        });
+        try {
+          await page
+            .getByRole("button", {
+              name: t.upload.removeLabel.replace("{number}", "1"),
+              exact: true,
+            })
+            .click();
+          const files = [
+            "tests/visual/figma/product-card-default-390.png",
+            "public/images/catalog/grey-marble-390.webp",
+          ];
+          await page
+            .getByLabel(t.upload.choose, { exact: true })
+            .setInputFiles(files);
+          await expect(
+            page.getByRole("status").filter({ hasText: t.upload.ready }),
+          ).toBeVisible();
+          const list = page.getByRole("list", { name: t.upload.list });
+          await expect(list.getByRole("listitem")).toHaveCount(2);
+          const first = await list
+            .getByRole("listitem")
+            .nth(0)
+            .locator("img")
+            .getAttribute("src");
+          const second = await list
+            .getByRole("listitem")
+            .nth(1)
+            .locator("img")
+            .getAttribute("src");
+          expect(first).toContain("/api/product-images/");
+          expect((await guest.request.get(first!)).status()).toBe(404);
+          await page
+            .getByRole("button", { name: t.upload.makeMain, exact: true })
+            .click();
+          await expect(
+            list.getByRole("listitem").first().locator("img"),
+          ).toHaveAttribute("src", second!);
+          await page
+            .getByRole("button", { name: t.saveDraft, exact: true })
+            .click();
+          await page.waitForURL(new RegExp("/" + locale + "/admin/products$"));
+          await page.goto("/" + locale + "/admin/products/" + slug);
+          await expect(
+            page
+              .getByRole("list", { name: t.upload.list })
+              .getByRole("listitem"),
+          ).toHaveCount(2);
+          await page.reload();
+          await expect(
+            page
+              .getByRole("list", { name: t.upload.list })
+              .getByRole("listitem")
+              .first()
+              .locator("img"),
+          ).toHaveAttribute("src", second!);
+          await page
+            .getByRole("button", { name: t.publish, exact: true })
+            .click();
+          await page.waitForURL(new RegExp("/" + locale + "/admin/products$"));
+          const publicPage = await guest.newPage();
+          await publicPage.goto("/" + locale + "/catalog/" + slug);
+          await expect(
+            publicPage.locator("[data-gallery-main] img"),
+          ).toHaveAttribute("src", second!);
+          const thumbs = publicPage
+            .getByRole("group", {
+              name: (locale === "ru" ? ru : en).pages.product.gallery.label,
+            })
+            .getByRole("button");
+          await expect(thumbs).toHaveCount(2);
+          await thumbs.nth(1).focus();
+          await publicPage.keyboard.press("Enter");
+          await expect(
+            publicPage.locator("[data-gallery-main] img"),
+          ).toHaveAttribute("src", first!);
+          await publicPage.screenshot({
+            path: "../qa/product-photos-" + locale + "-desktop.png",
+            fullPage: true,
+          });
+          await publicPage.setViewportSize({ width: 390, height: 844 });
+          await expect(
+            publicPage.locator("[data-gallery-main] img"),
+          ).toBeVisible();
+          expect(
+            await publicPage.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+          ).toBe(true);
+          await thumbs.nth(0).click();
+          await expect(
+            publicPage.locator("[data-gallery-main] img"),
+          ).toHaveAttribute("src", second!);
+          await publicPage.screenshot({
+            path: "../qa/product-photos-" + locale + "-mobile.png",
+            fullPage: true,
+          });
+          await page.goto("/" + locale + "/admin/products/" + slug);
+          await page
+            .getByRole("button", {
+              name: t.upload.earlier.replace("{number}", "2"),
+              exact: true,
+            })
+            .click();
+          await expect(
+            page
+              .getByRole("list", { name: t.upload.list })
+              .getByRole("listitem")
+              .first()
+              .locator("img"),
+          ).toHaveAttribute("src", first!);
+          await page
+            .getByRole("button", {
+              name: t.upload.removeLabel.replace("{number}", "2"),
+              exact: true,
+            })
+            .click();
+          await page.screenshot({
+            path: "../qa/product-photos-" + locale + "-admin.png",
+            fullPage: true,
+          });
+          await page
+            .getByRole("button", { name: t.saveChanges, exact: true })
+            .click();
+          await page.waitForURL(new RegExp("/" + locale + "/admin/products$"));
+          expect((await guest.request.get(second!)).status()).toBe(404);
+          expect((await guest.request.get(first!)).status()).toBe(200);
+        } finally {
+          await guest.close();
+        }
+      },
+    );
+  }
+  test("invalid files, empty gallery and failed uploads preserve the form", async ({
+    page,
+  }) => {
+    const t = en.admin.form;
+    await newProduct(page, "en", {
+      en: "Invalid Photo " + tag(),
+      ru: "Проверка",
+      price: "125",
+    });
+    await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles({
+      name: "bad.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("not a photo"),
+    });
+    await expect(
+      page.getByRole("alert").filter({ hasText: /\S/ }),
+    ).toBeVisible();
+    await expect(page.getByLabel(t.nameRu, { exact: true })).toHaveValue(
+      "Проверка",
+    );
+    await page.route("**/api/admin/product-images", (route) =>
+      route.fulfill({ status: 503, body: "{}" }),
+    );
+    await page
+      .getByLabel(t.upload.choose, { exact: true })
+      .setInputFiles("public/images/catalog/grey-marble-390.webp");
+    await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+      t.upload.unavailable,
+    );
+    await page
+      .getByRole("button", {
+        name: t.upload.removeLabel.replace("{number}", "1"),
+        exact: true,
+      })
+      .click();
+    await page.getByRole("button", { name: t.saveDraft, exact: true }).click();
+    await expect(
+      page.getByText(t.upload.required, { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByLabel(t.nameRu, { exact: true })).toHaveValue(
+      "Проверка",
+    );
+  });
+});
+
+test("product photos: JPEG and upload limits", async ({
+  page,
+  context,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "auth-desktop",
+    "Admin editing starts at 1024 px",
+  );
+  await signInInContext(context, SEEDED.admin);
+  const t = en.admin.form;
+  await newProduct(page, "en", {
+    en: "JPEG Photo " + tag(),
+    ru: "Фото JPEG",
+    price: "125",
+  });
+  const encoded = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 240;
+    canvas.height = 160;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#8e9290";
+    ctx.fillRect(0, 0, 240, 160);
+    return canvas.toDataURL("image/jpeg").split(",")[1];
+  });
+  await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles({
+    name: "stone.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from(encoded, "base64"),
+  });
+  await expect(
+    page.getByRole("status").filter({ hasText: t.upload.ready }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: t.upload.list }).getByRole("listitem"),
+  ).toHaveCount(2);
+  await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles({
+    name: "large.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.alloc(5 * 1024 * 1024 + 1),
+  });
+  await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+    t.upload.file,
+  );
+  await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles(
+    Array.from({ length: 7 }, (_, index) => ({
+      name: "stone" + index + ".jpg",
+      mimeType: "image/jpeg",
+      buffer: Buffer.from(encoded, "base64"),
+    })),
+  );
+  await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+    t.upload.limit,
+  );
+  await expect(
+    page.getByRole("list", { name: t.upload.list }).getByRole("listitem"),
+  ).toHaveCount(2);
 });

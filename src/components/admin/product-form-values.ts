@@ -22,6 +22,7 @@ export type ProductFormValues = {
   oldPrice: string;
   discountPercent: string;
   image: string;
+  gallery?: string[];
 };
 
 /** "240", "240.5", "240,50" -> integer cents; null when it is not an amount with at most two decimals. */

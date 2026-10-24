@@ -36,6 +36,7 @@ function toProduct(
     // confirms them (ADR-002). The column exists so 4b can flip it per product.
     isPlaceholder: true,
     image: row.image,
+    ...(row.gallery.length ? { gallery: row.gallery } : {}),
     imageFit: row.imageFit as Product["imageFit"],
   };
   if (copy) product.copy = copy;

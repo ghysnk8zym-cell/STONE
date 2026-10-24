@@ -1,4 +1,5 @@
 import manifest from "../../assets/figma-manifest.json";
+import { parseProductMedia } from "./product-media";
 
 // Prepared widths per image, keyed by manifest `file` (no leading slash, no extension).
 const widthsByFile = new Map<string, readonly number[]>(
@@ -21,6 +22,7 @@ export default function imageLoader({
   src: string;
   width: number;
 }): string {
+  if (parseProductMedia(src)) return src;
   const file = src.replace(/^\//, "");
   const widths = widthsByFile.get(file);
   if (!widths || widths.length === 0) {

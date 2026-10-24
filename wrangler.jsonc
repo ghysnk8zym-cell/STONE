@@ -46,6 +46,13 @@
       "name": "stone-test",
       "workers_dev": true,
       "preview_urls": false,
+      // Private product photos; dedicated test bucket provisioned on 2026-10-25.
+      "r2_buckets": [
+        {
+          "binding": "PRODUCT_IMAGES",
+          "bucket_name": "stone-test-product-images",
+        },
+      ],
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",

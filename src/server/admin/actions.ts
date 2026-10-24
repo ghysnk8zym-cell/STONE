@@ -17,6 +17,7 @@ import { requestLocale } from "@/server/auth/request-locale";
 import { getDb, schema, type Db } from "../db";
 import { writeAtomically } from "../db/atomic";
 import { imageFitFor } from "./images";
+import { validProductMedia } from "./product-media";
 import {
   createProductSchema,
   failedFields,
@@ -34,7 +35,7 @@ import {
  * reads or validates anything: a Client or a Guest calling one directly (bypassing the UI) is turned
  * away by the guard (404 for a Client, sign-in for a Guest). Arguments are `unknown` and validated
  * with zod: a server action is a public POST endpoint whatever the form sends. Money is integer cents,
- * the picture must be a manifest catalog image, texts are plain text. Results are codes only
+ * the picture must be a manifest asset or a registered upload, texts are plain text. Results are codes only
  * (src/features/admin/results.ts).
  *
  * After a product changes, invalidate the affected client navigation entries as well as server caches.
@@ -64,6 +65,7 @@ function productValues(input: ProductInput) {
     oldPriceCents: input.oldPriceCents,
     discountPercent: input.discountPercent,
     image: input.image,
+    ...(input.gallery ? { gallery: input.gallery } : {}),
     imageFit: imageFitFor(input.image),
     published: input.published,
   };
@@ -112,6 +114,8 @@ export async function createProduct(
   if (!db) return { ok: false, code: "unavailable" };
 
   const { slug, ...fields } = parsed.data;
+  if (!(await validProductMedia(db, [fields.image, ...(fields.gallery ?? [])])))
+    return { ok: false, code: "invalid", fields: ["image"] };
   const [taken] = await db
     .select({ id: schema.product.id })
     .from(schema.product)
@@ -168,6 +172,8 @@ export async function updateProduct(
   const revision = revisionSchema.safeParse(expectedRevision);
   if (!revision.success) return { ok: false, code: "invalid" };
   const p = parsed.data;
+  if (!(await validProductMedia(db, [p.image, ...(p.gallery ?? [])])))
+    return { ok: false, code: "invalid", fields: ["image"] };
   // One statement works on Neon HTTP as well as pg/PGlite. Only the winning UPDATE
   // supplies IDs to the copy upsert; a conflict or failed translation writes nothing.
   const result = await db.execute<{ slug: string; revision: number }>(sql`
@@ -177,6 +183,14 @@ export async function updateProduct(
         format=array[${p.lengthMm},${p.widthMm},${p.thicknessMm}]::integer[],
         price_cents=${p.priceCents}, old_price_cents=${p.oldPriceCents}, discount_percent=${p.discountPercent},
         image=${p.image}, image_fit=${imageFitFor(p.image)}, published=${p.published},
+        gallery=${
+          p.gallery
+            ? sql`array[${sql.join(
+                p.gallery.map((image) => sql`${image}`),
+                sql`, `,
+              )}]::text[]`
+            : sql`case when image=${p.image} then gallery else '{}'::text[] end`
+        },
         revision=revision+1, updated_at=now()
       where slug=${parsedSlug.data} and revision=${revision.data} and revision<2147483647
       returning id, slug, revision

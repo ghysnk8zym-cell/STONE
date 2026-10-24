@@ -11,7 +11,7 @@ import {
   updateProduct,
 } from "@/server/admin/actions";
 
-import { ProductImage } from "../account/parts";
+import { ProductPhotos } from "./ProductPhotos";
 import { AdminInput, AdminSelect, AdminTextarea } from "./fields";
 import { useAdminMoney } from "./money";
 import {
@@ -76,6 +76,10 @@ export function ProductForm({
   const router = useRouter();
   const money = useAdminMoney();
   const [values, setValues] = useState(initial);
+  const [photos, setPhotos] = useState(
+    initial.gallery?.length ? initial.gallery : [initial.image].filter(Boolean),
+  );
+  const [uploading, setUploading] = useState(false);
   // Keep the token paired with the original inputs, even if a refresh brings newer props.
   const [expectedRevision] = useState(revision);
   // Until the admin types a slug, it follows the English name.
@@ -113,6 +117,7 @@ export function ProductForm({
   }
 
   function submit(publish: boolean) {
+    if (uploading) return;
     const { unreadable: bad, ...payload } = toPayload(values);
     const found: Record<string, string> = {};
     for (const field of bad) found[field] = unreadable;
@@ -125,7 +130,12 @@ export function ProductForm({
     setErrors({});
     setFormError(null);
     startTransition(async () => {
-      const input = { ...payload, published: publish };
+      const input = {
+        ...payload,
+        image: photos[0] ?? "",
+        gallery: photos,
+        published: publish,
+      };
       let result: ProductActionResult;
       try {
         result =
@@ -170,15 +180,13 @@ export function ProductForm({
   const previewName = (locale === "en" ? values.nameEn : values.nameRu) || "—";
   const materialLabel =
     options.material.find((o) => o.value === values.material)?.label ?? "";
-  const fit =
-    options.image.find((o) => o.value === values.image)?.fit ?? "cover";
 
   return (
     <form
       noValidate
       onSubmit={(event) => event.preventDefault()}
       className="flex flex-col gap-6"
-      aria-busy={pending}
+      aria-busy={pending || uploading}
     >
       <div className="flex flex-col gap-8 min-[90rem]:flex-row min-[90rem]:gap-10">
         <div className="flex min-w-0 flex-1 flex-col gap-8">
@@ -366,21 +374,18 @@ export function ProductForm({
             <h2 id="form-photos" className={ADMIN_CARD_TITLE}>
               {t("photos")}
             </h2>
-            <ProductImage
-              image={values.image}
-              fit={fit}
-              className="aspect-[411/400] w-full rounded-xl"
-              sizes="(min-width: 1440px) 411px, 60vw"
-            />
-            <AdminSelect
-              label={t("image")}
-              name="image"
-              value={values.image}
-              error={errors.image}
-              hint={t("imageHint")}
+            <ProductPhotos
+              photos={photos}
               options={options.image}
-              onChange={set("image")}
+              disabled={pending}
+              onChange={setPhotos}
+              onBusy={setUploading}
             />
+            {(errors.image || errors.gallery) && (
+              <p role="alert" className="type-footer-small text-[#9b3d33]">
+                {t("upload.required")}
+              </p>
+            )}
           </section>
           <div className="bg-stone-catalog-line h-px" />
           <section
@@ -415,7 +420,7 @@ export function ProductForm({
       <div className="border-stone-catalog-line flex flex-wrap items-center justify-between gap-4 border-t pt-6">
         <button
           type="button"
-          disabled={pending}
+          disabled={pending || uploading}
           onClick={() => router.push("/admin/products")}
           className="type-button-label text-stone-catalog-ink focusv:outline-2 focusv:outline-ink-primary rounded-lg px-1 py-2 outline-0"
         >
@@ -426,7 +431,7 @@ export function ProductForm({
             <>
               <button
                 type="button"
-                disabled={pending}
+                disabled={pending || uploading}
                 onClick={unpublish}
                 className={ADMIN_BUTTON_SECONDARY}
               >
@@ -434,7 +439,7 @@ export function ProductForm({
               </button>
               <button
                 type="button"
-                disabled={pending}
+                disabled={pending || uploading}
                 onClick={() => submit(true)}
                 className={ADMIN_BUTTON_PRIMARY}
               >
@@ -445,7 +450,7 @@ export function ProductForm({
             <>
               <button
                 type="button"
-                disabled={pending}
+                disabled={pending || uploading}
                 onClick={() => submit(false)}
                 className={ADMIN_BUTTON_SECONDARY}
               >
@@ -453,7 +458,7 @@ export function ProductForm({
               </button>
               <button
                 type="button"
-                disabled={pending}
+                disabled={pending || uploading}
                 onClick={() => submit(true)}
                 className={ADMIN_BUTTON_PRIMARY}
               >

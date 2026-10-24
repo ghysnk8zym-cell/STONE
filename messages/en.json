@@ -1169,7 +1169,7 @@
       "placeholderPrices": "Prices are placeholders until the owner confirms them.",
       "photos": "Product photo",
       "image": "Picture",
-      "imageHint": "Pictures come from the site's image set; uploads come later.",
+      "imageHint": "JPG, PNG or WebP, up to 5 MB each. Up to 8 photos. The first photo is the main image. To replace one, add the new photo and remove the old one.",
       "preview": "Storefront preview",
       "perM2": "/ m²",
       "cancel": "Cancel",
@@ -1187,7 +1187,30 @@
         "generic": "Something went wrong. Please try again.",
         "conflict": "This product changed since you opened it. Reload and review the latest values before saving. Your unsaved input has been kept."
       },
-      "previewMeta": "{material} · {l}×{w}×{d} mm"
+      "previewMeta": "{material} · {l}×{w}×{d} mm",
+      "upload": {
+        "choose": "Upload photos",
+        "hint": "JPG, PNG or WebP, up to 5 MB each. Up to 8 photos. The first photo is the main image. To replace one, add the new photo and remove the old one.",
+        "limit": "A product can have up to 8 photos. Remove some or select fewer files.",
+        "progress": "Uploading {current} of {total}…",
+        "ready": "Photos uploaded. Save the product to apply your changes.",
+        "unavailable": "Image storage is unavailable. Try again later; your product fields are preserved.",
+        "session": "Your admin session expired. Please sign in again.",
+        "file": "Unsupported or damaged file. Choose a valid JPG, PNG or WebP up to 5 MB.",
+        "retry": "Could not upload the photo. Check the file and connection, then select it again. Completed uploads are preserved.",
+        "empty": "Upload a photo or choose an image from the site collection.",
+        "list": "Product photos",
+        "main": "Main photo",
+        "number": "Photo {number}",
+        "makeMain": "Make main",
+        "remove": "Remove",
+        "removeLabel": "Remove photo {number}",
+        "earlier": "Move photo {number} earlier",
+        "later": "Move photo {number} later",
+        "existing": "Existing image",
+        "addExisting": "Add existing image",
+        "required": "Add at least one photo and check the selected images."
+      }
     },
     "orders": {
       "title": "Orders",

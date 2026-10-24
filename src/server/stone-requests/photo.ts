@@ -18,13 +18,20 @@ const allowed = new Set([
 ]);
 
 /** Only bounded, noninterlaced browser PNGs reach the streaming decoder. */
-export async function canonicalPhoto(input: Buffer): Promise<Buffer> {
+export async function canonicalPhoto(
+  input: Buffer,
+  bounds = {
+    bytes: PHOTO_MAX_BYTES,
+    side: PHOTO_MAX_SIDE,
+    inflated: 2 * 1024 * 1024,
+  },
+): Promise<Buffer> {
   const invalid = () => {
     throw new Error("Invalid reference photo");
   };
   if (
     input.length < 45 ||
-    input.length > PHOTO_MAX_BYTES ||
+    input.length > bounds.bytes ||
     !input.subarray(0, 8).equals(signature)
   )
     invalid();
@@ -38,8 +45,8 @@ export async function canonicalPhoto(input: Buffer): Promise<Buffer> {
   if (
     !width ||
     !height ||
-    width > PHOTO_MAX_SIDE ||
-    height > PHOTO_MAX_SIDE ||
+    width > bounds.side ||
+    height > bounds.side ||
     input[24] !== 8 ||
     ![2, 6].includes(input[25]) ||
     input[26] !== 0 ||
@@ -79,7 +86,7 @@ export async function canonicalPhoto(input: Buffer): Promise<Buffer> {
   // Local workerd rejects some valid PNGs with an exact scanline-size cap.
   // Keep a fixed 2 MiB inflated-output cap, then require the exact image size.
   const inflated = inflateSync(Buffer.concat(imageData), {
-    maxOutputLength: 2 * 1024 * 1024,
+    maxOutputLength: bounds.inflated,
   });
   if (inflated.length !== expected) invalid();
   const decoded = await new Promise<PNG>((resolve, reject) => {
@@ -93,6 +100,6 @@ export async function canonicalPhoto(input: Buffer): Promise<Buffer> {
     { width, height, data: decoded.data },
     { colorType: 6, bitDepth: 8, deflateLevel: 6 },
   );
-  if (result.length > PHOTO_MAX_BYTES) invalid();
+  if (result.length > bounds.bytes) invalid();
   return result;
 }
