@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { prepareProductPhoto } from "@/features/admin/prepare-product-photo";
+import {
+  PRODUCT_PHOTO_ACCEPT,
+  ProductPhotoError,
+} from "@/features/admin/product-photo-input";
 import { parseProductMedia, PRODUCT_PHOTO_LIMIT } from "@/lib/product-media";
 import { ProductImage } from "../account/parts";
 import { Icon } from "../icons/Icon";
@@ -45,9 +49,10 @@ export function ProductPhotos({
     const next = [...photos];
     let failed = false;
     for (let index = 0; index < files.length; index++) {
-      setProgress(t("progress", { current: index + 1, total: files.length }));
+      setProgress(t("preparing", { current: index + 1, total: files.length }));
       try {
         const body = await prepareProductPhoto(files[index]);
+        setProgress(t("progress", { current: index + 1, total: files.length }));
         const response = await fetch("/api/admin/product-images", {
           method: "POST",
           headers: { "Content-Type": "image/png" },
@@ -75,13 +80,7 @@ export function ProductPhotos({
         next.push(result.image);
         onChange([...next]);
       } catch (error) {
-        setError(
-          t(
-            error instanceof Error && error.message === "file"
-              ? "file"
-              : "retry",
-          ),
-        );
+        setError(t(error instanceof ProductPhotoError ? error.code : "retry"));
         failed = true;
         break;
       }
@@ -109,7 +108,7 @@ export function ProductPhotos({
         <span>{t("choose")}</span>
         <input
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={PRODUCT_PHOTO_ACCEPT}
           multiple
           disabled={disabled || busy || photos.length >= PRODUCT_PHOTO_LIMIT}
           onChange={(event) => {

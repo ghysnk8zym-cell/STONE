@@ -1,6 +1,7 @@
 /** Immutable, same-origin image references. No arbitrary remote URLs enter the image loader. */
 export const PRODUCT_PHOTO_LIMIT = 8;
-export const PRODUCT_PHOTO_ORIGINAL_BYTES = 5 * 1024 * 1024;
+export const PRODUCT_PHOTO_ORIGINAL_BYTES = 30 * 1024 * 1024;
+export const PRODUCT_PHOTO_ORIGINAL_PIXELS = 60_000_000;
 export const PRODUCT_PHOTO_BYTES = 2 * 1024 * 1024;
 export const PRODUCT_PHOTO_SIDE = 1600;
 const source =

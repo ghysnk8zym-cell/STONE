@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { PNG } from "pngjs";
+import { crc32 } from "node:zlib";
 import {
   parseProductMedia,
   productMediaSource,
@@ -155,5 +156,47 @@ describe("uploaded product media", () => {
     expect((await post()).status).toBe(503);
     state.fail = false;
     expect((await db.select().from(schema.productMedia)).length).toBe(before);
+  });
+  it("accepts bounded browser PNGs with many small IDAT chunks without changing private request limits", async () => {
+    const data = Buffer.alloc(24 * 16 * 4);
+    for (let i = 0; i < data.length; i++)
+      data[i] = (i * 17 + (i >> 3) * 29) % 256;
+    const original = PNG.sync.write({ width: 24, height: 16, data });
+    const parts = [original.subarray(0, 8)];
+    let count = 0;
+    for (let at = 8; at < original.length;) {
+      const size = original.readUInt32BE(at);
+      const end = at + 12 + size;
+      if (original.toString("ascii", at + 4, at + 8) === "IDAT") {
+        for (let offset = at + 8; offset < at + 8 + size; offset += 4) {
+          const payload = original.subarray(
+            offset,
+            Math.min(offset + 4, at + 8 + size),
+          );
+          const chunk = Buffer.alloc(payload.length + 12);
+          chunk.writeUInt32BE(payload.length);
+          chunk.write("IDAT", 4);
+          payload.copy(chunk, 8);
+          chunk.writeUInt32BE(
+            crc32(chunk.subarray(4, chunk.length - 4)),
+            chunk.length - 4,
+          );
+          parts.push(chunk);
+          count++;
+        }
+      } else parts.push(original.subarray(at, end));
+      at = end;
+    }
+    expect(count).toBeGreaterThan(64);
+    const fragmented = Buffer.concat(parts);
+    const { canonicalPhoto } = await import("@/server/stone-requests/photo");
+    await expect(canonicalPhoto(fragmented)).rejects.toThrow();
+    const response = await post(fragmented);
+    expect(response.status).toBe(201);
+    const { image } = await response.json();
+    const stored = await get(image);
+    expect(PNG.sync.read(Buffer.from(await stored.arrayBuffer())).data).toEqual(
+      data,
+    );
   });
 });

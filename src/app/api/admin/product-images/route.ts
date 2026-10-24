@@ -40,6 +40,8 @@ export async function POST(request: Request) {
       bytes: PRODUCT_PHOTO_BYTES,
       side: PRODUCT_PHOTO_SIDE,
       inflated: 16 * 1024 * 1024,
+      // OffscreenCanvas can emit 4 KiB IDAT chunks in an otherwise valid 2 MiB PNG.
+      chunks: 1024,
     });
   } catch {
     return Response.json({ code: "file" }, { status: 400 });

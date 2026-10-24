@@ -5,7 +5,9 @@ migrations and deployment require separate owner approval.
 
 ## Editor and storefront
 
-The product editor accepts JPEG, PNG and WebP originals up to 5 MiB each. A product
+The product editor accepts JPEG/JFIF, PNG, WebP, AVIF, BMP and HEIC/HEIF originals
+up to 30 MiB and 60,000,000 pixels each. Files are identified by their contents;
+missing or incorrect browser MIME types do not reject a valid photo. A product
 has up to eight ordered images; the first image is its card/main image. Admins can
 select multiple files, make an image main, move it earlier/later, remove it from
 the gallery, and add an existing catalog asset. To replace an image, add the new
@@ -15,11 +17,20 @@ Uploads complete before Save draft / Publish / Save changes become available.
 An upload does not publish the product. Completed uploads remain in the editor if
 a later file fails. A failed save preserves the fields and selected images.
 
-The browser applies image orientation, strips metadata and normalizes to PNG,
+The browser checks header dimensions before decoding, applies image orientation,
+strips metadata and normalizes to PNG,
 with a maximum side of 1600 pixels and a maximum encoded size of 2 MiB. It tries
 smaller sizes down to 800 pixels when necessary. The server independently checks
 the signature, dimensions, bounded inflation, PNG chunks, CRC and decoded bytes,
-then re-encodes the image. SVG, animated formats and arbitrary external URLs are
+then re-encodes the image. Each photo is prepared in a fresh dedicated browser
+worker and the files are processed sequentially. The worker (and any nested HEIC
+decoder) is terminated on completion, error or the two-minute preparation timeout.
+HEIC/HEIF uses native decoding when available, otherwise a lazy-loaded `heic-to`
+1.6.6 decoder; photos are never sent to an external conversion service. The decoder
+is a client worker asset, not a server dependency. See `THIRD_PARTY.md` for notices.
+The editor distinguishes preparation, uploading, byte/pixel limit errors and
+unreadable files, preserves completed uploads, and enables retry after failure.
+SVG, animated formats and arbitrary external URLs are
 not accepted. The existing private request-photo limits remain unchanged.
 
 Published cards use the main image. The product page switches between real photos
@@ -40,11 +51,18 @@ Local disk fallback is disabled for remote databases and APP_ENV=production.
 
 The Cloudflare adapter expects the private R2 binding `PRODUCT_IMAGES`. Local
 `env.test` configuration names the dedicated bucket `stone-test-product-images`.
-This configuration is not deployed. Uploads fail honestly when storage is unavailable.
+That bucket is used by the existing test deployment. The expanded input-format
+support is local until a separately approved release. Uploads fail honestly when
+storage is unavailable.
 
 `POST /api/admin/product-images` requires an admin session and same-origin request,
 and bounds the body while reading. A failed database registration attempts to
 remove its newly written object. Clients and Guests cannot upload.
+
+The product endpoint permits up to 1024 PNG chunks: browser OffscreenCanvas encoders
+can emit 4 KiB IDAT chunks. The byte, dimension and inflated-output limits remain
+independent of that count. Private stone-request photos retain their existing
+64-chunk default and their smaller byte/dimension limits.
 
 `GET /api/product-images/:id` serves bytes only if referenced by a published product
 or requested by an admin. Draft/staged/removed images are private. Responses use

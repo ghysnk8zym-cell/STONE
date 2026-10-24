@@ -20,7 +20,7 @@ const allowed = new Set([
 /** Only bounded, noninterlaced browser PNGs reach the streaming decoder. */
 export async function canonicalPhoto(
   input: Buffer,
-  bounds = {
+  bounds: { bytes: number; side: number; inflated: number; chunks?: number } = {
     bytes: PHOTO_MAX_BYTES,
     side: PHOTO_MAX_SIDE,
     inflated: 2 * 1024 * 1024,
@@ -60,7 +60,8 @@ export async function canonicalPhoto(
   let endSeen = false;
   const imageData: Buffer[] = [];
   while (offset < input.length) {
-    if (++chunks > 64 || offset + 12 > input.length) invalid();
+    if (++chunks > (bounds.chunks ?? 64) || offset + 12 > input.length)
+      invalid();
     const length = input.readUInt32BE(offset);
     const type = input.toString("ascii", offset + 4, offset + 8);
     if (

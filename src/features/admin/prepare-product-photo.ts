@@ -1,47 +1,70 @@
 import {
+  checkPhotoSize,
+  inspectPhoto,
+  ProductPhotoError,
+  type PhotoErrorCode,
+} from "./product-photo-input";
+import {
   PRODUCT_PHOTO_BYTES,
-  PRODUCT_PHOTO_ORIGINAL_BYTES,
   PRODUCT_PHOTO_SIDE,
+  PRODUCT_PHOTO_ORIGINAL_PIXELS,
 } from "@/lib/product-media";
 
-/** Browser convenience only; the server independently decodes and validates the PNG. */
+/** A fresh worker per photo bounds lifetime/memory, including the optional HEIC decoder. */
 export async function prepareProductPhoto(file: File): Promise<Blob> {
-  if (
-    !file.size ||
-    file.size > PRODUCT_PHOTO_ORIGINAL_BYTES ||
-    !["image/png", "image/jpeg", "image/webp"].includes(file.type)
-  )
-    throw new Error("file");
-  let bitmap: ImageBitmap;
-  try {
-    bitmap = await createImageBitmap(file);
-  } catch {
-    throw new Error("file");
-  }
-  try {
-    if (
-      !bitmap.width ||
-      !bitmap.height ||
-      bitmap.width > 8192 ||
-      bitmap.height > 8192 ||
-      bitmap.width * bitmap.height > 24_000_000
-    )
-      throw new Error("file");
-    for (const side of [PRODUCT_PHOTO_SIDE, 1280, 1024, 800]) {
-      const ratio = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
-      canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("file");
-      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/png"),
+  checkPhotoSize(file.size);
+  const input = inspectPhoto(new Uint8Array(await file.arrayBuffer()));
+  return new Promise((resolve, reject) => {
+    let worker: Worker;
+    try {
+      // Keep the worker and optional decoder separate from the initial editor bundle.
+      const source = new URL(
+        "./prepare-product-photo.worker.js",
+        import.meta.url,
       );
-      if (blob && blob.size <= PRODUCT_PHOTO_BYTES) return blob;
+      worker = new Worker(source, { type: "module" });
+    } catch {
+      reject(new ProductPhotoError("preparation"));
+      return;
     }
-    throw new Error("file");
-  } finally {
-    bitmap.close();
-  }
+    const finish = () => {
+      clearTimeout(timer);
+      worker.terminate();
+    };
+    const timer = setTimeout(() => {
+      finish();
+      reject(new ProductPhotoError("preparation"));
+    }, 120_000);
+    worker.onmessage = (
+      event: MessageEvent<{ photo?: Blob; error?: PhotoErrorCode }>,
+    ) => {
+      finish();
+      if (event.data.photo instanceof Blob) resolve(event.data.photo);
+      else reject(new ProductPhotoError(event.data.error ?? "file"));
+    };
+    const failed = () => {
+      finish();
+      reject(new ProductPhotoError("preparation"));
+    };
+    worker.onerror = failed;
+    worker.onmessageerror = failed;
+    try {
+      worker.postMessage({
+        file,
+        ...input,
+        maxPixels: PRODUCT_PHOTO_ORIGINAL_PIXELS,
+        maxSide: PRODUCT_PHOTO_SIDE,
+        maxBytes: PRODUCT_PHOTO_BYTES,
+        decoder: input.heic
+          ? new URL(
+              "../../../node_modules/heic-to/dist/next/heic-to.js",
+              import.meta.url,
+            ).href
+          : null,
+      });
+    } catch {
+      finish();
+      reject(new ProductPhotoError("preparation"));
+    }
+  });
 }
