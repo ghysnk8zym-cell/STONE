@@ -8,12 +8,13 @@ import { SLUG_SHAPE } from "@/lib/route-gate";
 
 import { COLOR_GROUPS, COLORS, FINISHES, MATERIALS } from "../catalog/types";
 import { isCatalogImage } from "./images";
+import { parseProductMedia, PRODUCT_PHOTO_LIMIT } from "@/lib/product-media";
 
 /*
  * Validation of what the admin product form sends. A server action is a public POST endpoint, so
  * every field is checked here whatever the form does. Money is integer cents (the form converts the
  * dollars the admin types); texts are plain text on one line (names) or several (descriptions) with
- * no control characters; the picture must be a catalog image of the asset manifest.
+ * no control characters; images are manifest assets or bounded product-media references, verified against the registry by actions.
  */
 
 export const SLUG_MAX = 80;
@@ -73,7 +74,21 @@ const productFields = z.object({
   priceCents: cents,
   oldPriceCents: cents.nullable(),
   discountPercent: z.number().int().min(0).max(100).nullable(),
-  image: z.string().refine(isCatalogImage, { error: "not a catalog image" }),
+  image: z
+    .string()
+    .refine((value) => isCatalogImage(value) || !!parseProductMedia(value), {
+      error: "not a product image",
+    }),
+  gallery: z
+    .array(
+      z
+        .string()
+        .refine((value) => isCatalogImage(value) || !!parseProductMedia(value)),
+    )
+    .min(1)
+    .max(PRODUCT_PHOTO_LIMIT)
+    .refine((values) => new Set(values).size === values.length)
+    .optional(),
   published: z.boolean(),
 });
 
@@ -86,11 +101,16 @@ const oldPriceIssue = {
   error: "the old price must be above the price",
 };
 
+const mainInGallery = (value: { image: string; gallery?: string[] }) =>
+  !value.gallery || value.gallery[0] === value.image;
+
 /** Fields of a product (everything but the slug, which names the product and never changes). */
-export const productInputSchema = productFields.refine(
-  oldPriceAbovePrice,
-  oldPriceIssue,
-);
+export const productInputSchema = productFields
+  .refine(oldPriceAbovePrice, oldPriceIssue)
+  .refine(mainInGallery, {
+    path: ["gallery"],
+    error: "main image must be first",
+  });
 
 /** Existing product price fields, shared by the dedicated Promotions editor. */
 const promotionFields = productFields.pick({
@@ -108,7 +128,11 @@ export const promotionInputSchema = promotionFields.refine(
 
 export const createProductSchema = productFields
   .extend({ slug: slugSchema })
-  .refine(oldPriceAbovePrice, oldPriceIssue);
+  .refine(oldPriceAbovePrice, oldPriceIssue)
+  .refine(mainInGallery, {
+    path: ["gallery"],
+    error: "main image must be first",
+  });
 
 export type ProductInput = z.infer<typeof productFields>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;

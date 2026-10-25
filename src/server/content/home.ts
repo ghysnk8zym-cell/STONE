@@ -37,5 +37,9 @@ export async function getHomeText(locale: Locale): Promise<HomeText> {
         values[row.key] = row.text;
       }
   }
+  for (const key of ["line1", "line2", "line3", "line4"] as const) {
+    defaults[`hero.${key}`] = en.pages.home.hero[key];
+    values[`hero.${key}`] = en.pages.home.hero[key];
+  }
   return { defaults, stored, values };
 }

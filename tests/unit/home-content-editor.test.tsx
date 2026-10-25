@@ -40,6 +40,27 @@ describe("Home content editor", () => {
     ["ru", ru],
   ] as const) {
     const t = messages.admin.siteContent;
+    it(`${locale}: locks the English brand slogan`, () => {
+      renderWithIntl(
+        <HomeContentEditor
+          data={{ en: data, ru: data }}
+          initialLocale={locale}
+        />,
+        locale,
+      );
+      fireEvent.change(screen.getByLabelText(t.field), {
+        target: { value: "hero.line1" },
+      });
+      expect(
+        (screen.getByLabelText(t.fields.line1) as HTMLInputElement).disabled,
+      ).toBe(true);
+      expect(
+        (screen.getByRole("button", { name: t.save }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+      expect(screen.getByText(t.brandLocked)).toBeTruthy();
+      expect(mocks.save).not.toHaveBeenCalled();
+    });
     it(`${locale}: retains two field drafts and their original baseline across sections and refreshed props`, async () => {
       mocks.save.mockResolvedValue({ ok: false, code: "conflict" });
       const view = renderWithIntl(
@@ -49,24 +70,25 @@ describe("Home content editor", () => {
         />,
         locale,
       );
-      fireEvent.change(screen.getByLabelText(t.fields.line1), {
+      fireEvent.change(screen.getByLabelText(t.fields.searchButton), {
         target: { value: "Draft one" },
       });
       fireEvent.change(screen.getByLabelText(t.field), {
-        target: { value: "hero.line2" },
+        target: { value: "hero.searchLabel" },
       });
-      fireEvent.change(screen.getByLabelText(t.fields.line2), {
+      fireEvent.change(screen.getByLabelText(t.fields.searchLabel), {
         target: { value: "Draft two" },
       });
       fireEvent.click(screen.getByRole("button", { name: t.sections.catalog }));
       fireEvent.click(screen.getByRole("button", { name: t.sections.hero }));
       expect(
-        (screen.getByLabelText(t.fields.line1) as HTMLInputElement).value,
+        (screen.getByLabelText(t.fields.searchButton) as HTMLInputElement)
+          .value,
       ).toBe("Draft one");
       const newer = {
         ...data,
-        values: { ...data.values, "hero.line1": "Server edit" },
-        stored: { ...data.stored, "hero.line1": "Server edit" },
+        values: { ...data.values, "hero.searchPlaceholder": "Server edit" },
+        stored: { ...data.stored, "hero.searchPlaceholder": "Server edit" },
       };
       view.rerender(
         <NextIntlClientProvider locale={locale} messages={messages}>
@@ -80,7 +102,7 @@ describe("Home content editor", () => {
       await waitFor(() =>
         expect(mocks.save).toHaveBeenCalledWith(
           locale,
-          "hero.line1",
+          "hero.searchPlaceholder",
           "Draft one",
           null,
         ),
@@ -92,10 +114,10 @@ describe("Home content editor", () => {
         ).toBe(false),
       );
       fireEvent.change(screen.getByLabelText(t.field), {
-        target: { value: "hero.line2" },
+        target: { value: "hero.searchLabel" },
       });
       expect(
-        (screen.getByLabelText(t.fields.line2) as HTMLInputElement).value,
+        (screen.getByLabelText(t.fields.searchLabel) as HTMLInputElement).value,
       ).toBe("Draft two");
     });
     it(`${locale}: preserves input and expected value on conflict or an exception`, async () => {
@@ -109,7 +131,9 @@ describe("Home content editor", () => {
         />,
         locale,
       );
-      const input = screen.getByLabelText(t.fields.line1) as HTMLInputElement;
+      const input = screen.getByLabelText(
+        t.fields.searchButton,
+      ) as HTMLInputElement;
       fireEvent.change(input, { target: { value: "Typed value" } });
       for (const error of [t.errors.conflict, t.errors.generic]) {
         const button = screen.getByRole("button", { name: t.save });
@@ -124,7 +148,7 @@ describe("Home content editor", () => {
       }
       expect(mocks.save).toHaveBeenLastCalledWith(
         locale,
-        "hero.line1",
+        "hero.searchPlaceholder",
         "Typed value",
         null,
       );
@@ -139,20 +163,22 @@ describe("Home content editor", () => {
         />,
         locale,
       );
-      fireEvent.change(screen.getByLabelText(t.fields.line1), {
+      fireEvent.change(screen.getByLabelText(t.fields.searchButton), {
         target: { value: "Saved" },
       });
       fireEvent.change(screen.getByLabelText(t.language), {
         target: { value: locale === "en" ? "ru" : "en" },
       });
       expect(
-        (screen.getByLabelText(t.fields.line1) as HTMLInputElement).value,
+        (screen.getByLabelText(t.fields.searchButton) as HTMLInputElement)
+          .value,
       ).toBe("Default");
       fireEvent.change(screen.getByLabelText(t.language), {
         target: { value: locale },
       });
       expect(
-        (screen.getByLabelText(t.fields.line1) as HTMLInputElement).value,
+        (screen.getByLabelText(t.fields.searchButton) as HTMLInputElement)
+          .value,
       ).toBe("Saved");
       fireEvent.click(screen.getByRole("button", { name: t.save }));
       expect((await screen.findByRole("status")).textContent).toBe(t.saved);
@@ -165,14 +191,15 @@ describe("Home content editor", () => {
       await waitFor(() =>
         expect(mocks.save).toHaveBeenLastCalledWith(
           locale,
-          "hero.line1",
+          "hero.searchPlaceholder",
           null,
           "Saved",
         ),
       );
       await waitFor(() =>
         expect(
-          (screen.getByLabelText(t.fields.line1) as HTMLInputElement).value,
+          (screen.getByLabelText(t.fields.searchButton) as HTMLInputElement)
+            .value,
         ).toBe("Default"),
       );
     });

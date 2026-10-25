@@ -71,6 +71,7 @@ export type Product = {
   isPlaceholder: true;
   /** manifest key `images/catalog/<slug>`: cards and the product page main image. */
   image: string;
+  gallery?: string[];
   /** "contain" for the studio slabs (Black Marble, Grey Limestone, Grey Marble). */
   imageFit: "cover" | "contain";
   /** Figma 1440 product screen node id (a design annotation of the static seed; not stored in the database). */

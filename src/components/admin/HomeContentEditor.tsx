@@ -37,7 +37,7 @@ export function HomeContentEditor({
   const router = useRouter();
   const [locale, setLocale] = useState(initialLocale);
   const [section, setSection] = useState<HomeSection>("hero");
-  const [key, setKey] = useState<HomeTextKey>("hero.line1");
+  const [key, setKey] = useState<HomeTextKey>("hero.searchPlaceholder");
   const [drafts, setDrafts] = useState({
     ru: data.ru.values,
     en: data.en.values,
@@ -53,11 +53,13 @@ export function HomeContentEditor({
   const fields = HOME_TEXT_KEYS.filter(
     (field) => HOME_FIELDS[field].section === section,
   );
+  const brandLocked = /^hero\.line[1-4]$/.test(key);
   const text = drafts[locale][key];
   const dirty = text !== (expected[locale][key] ?? data[locale].defaults[key]);
   const label = (field: HomeTextKey) => t(`fields.${HOME_FIELDS[field].label}`);
 
   function save(reset: boolean) {
+    if (brandLocked) return;
     setMessage(null);
     startTransition(async () => {
       try {
@@ -116,7 +118,9 @@ export function HomeContentEditor({
                 setSection(value);
                 setKey(
                   HOME_TEXT_KEYS.find(
-                    (field) => HOME_FIELDS[field].section === value,
+                    (field) =>
+                      HOME_FIELDS[field].section === value &&
+                      !/^hero\.line[1-4]$/.test(field),
                   )!,
                 );
                 setMessage(null);
@@ -175,6 +179,7 @@ export function HomeContentEditor({
         <AdminInput
           label={label(key)}
           name="contentText"
+          disabled={brandLocked}
           value={text}
           maxLength={HOME_FIELDS[key].max}
           required
@@ -193,7 +198,9 @@ export function HomeContentEditor({
             {data[locale].defaults[key]}
           </p>
         </div>
-        <p className={ADMIN_MUTED}>{t("saveHint")}</p>
+        <p className={ADMIN_MUTED}>
+          {t(brandLocked ? "brandLocked" : "saveHint")}
+        </p>
         {message && (
           <p
             role={message.ok ? "status" : "alert"}
@@ -205,12 +212,17 @@ export function HomeContentEditor({
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
+            disabled={brandLocked}
             onClick={() => save(true)}
             className={ADMIN_BUTTON_SECONDARY}
           >
             {t("restore")}
           </button>
-          <button type="submit" className={ADMIN_BUTTON_PRIMARY}>
+          <button
+            type="submit"
+            disabled={brandLocked}
+            className={ADMIN_BUTTON_PRIMARY}
+          >
             {t("save")}
           </button>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { type Locale, routing } from "@/i18n/routing";
@@ -37,13 +38,25 @@ function readQuery(search: string): Query {
  * The query is read from `window.location` at click time, not with `useSearchParams()`: that
  * hook forces a Suspense boundary and client-side rendering of every page that has a header.
  */
-export function LanguageSwitch({ onSwitch }: { onSwitch?: () => void }) {
+export function LanguageSwitch({
+  onSwitch,
+  variant = "pill",
+  className,
+  leading,
+}: {
+  onSwitch?: () => void;
+  variant?: "pill" | "sidebar";
+  className?: string;
+  /** Decorative leading slots keep the sidebar label aligned with its other actions. */
+  leading?: ReactNode;
+}) {
   const t = useTranslations("components.languageSwitch");
   const locale = useLocale() as Locale;
   const pathname = usePathname();
   const router = useRouter();
 
   const target = routing.locales.find((code) => code !== locale) ?? locale;
+  const inactive = variant === "sidebar" ? "text-secondary" : INACTIVE;
 
   const handleClick = () => {
     const query = readQuery(window.location.search);
@@ -54,32 +67,43 @@ export function LanguageSwitch({ onSwitch }: { onSwitch?: () => void }) {
     onSwitch?.();
   };
 
-  return (
-    <NavPill
-      onClick={handleClick}
-      aria-label={t("label", { language: t(`languages.${target}`) })}
-    >
-      <span className="inline-flex items-baseline gap-2">
-        {routing.locales.map((code, index) => (
-          <span key={code} className="contents">
-            {index > 0 ? (
-              <span aria-hidden="true" className={INACTIVE}>
-                {t("separator")}
-              </span>
-            ) : null}
-            <span
-              lang={code}
-              className={cn(
-                code === locale
-                  ? "text-primary underline decoration-1 underline-offset-4"
-                  : INACTIVE,
-              )}
-            >
-              {t(`codes.${code}`)}
+  const content = (
+    <span className="inline-flex items-baseline gap-2">
+      {routing.locales.map((code, index) => (
+        <span key={code} className="contents">
+          {index > 0 ? (
+            <span aria-hidden="true" className={inactive}>
+              {t("separator")}
             </span>
+          ) : null}
+          <span
+            lang={code}
+            className={cn(
+              code === locale
+                ? "text-primary underline decoration-1 underline-offset-4"
+                : inactive,
+            )}
+          >
+            {t(`codes.${code}`)}
           </span>
-        ))}
-      </span>
-    </NavPill>
+        </span>
+      ))}
+    </span>
   );
+  const buttonProps = {
+    onClick: handleClick,
+    "aria-label": t("label", { language: t(`languages.${target}`) }),
+    className,
+  };
+
+  if (variant === "sidebar") {
+    return (
+      <button type="button" {...buttonProps}>
+        {leading}
+        {content}
+      </button>
+    );
+  }
+
+  return <NavPill {...buttonProps}>{content}</NavPill>;
 }

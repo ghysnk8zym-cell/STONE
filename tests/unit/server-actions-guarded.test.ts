@@ -34,8 +34,12 @@ const PUBLIC_ACTIONS: Record<string, string> = {
     "Read-only cart pricing a Guest needs too: takes only slugs and areas (never a user id), reads published catalog data only and writes nothing.",
 };
 
-/** Route handlers that are public by design (a guard would defeat their purpose). */
+/** Public reads or explicit HTTP guards (redirecting page guards cannot express their response contract). */
 const PUBLIC_ROUTE_HANDLERS: Record<string, string> = {
+  "src/app/api/admin/product-images/route.ts#POST":
+    "Checks the session admin role before reading bytes and rejects Guests/Clients with HTTP 404, then checks same-origin; product-media.test.ts verifies both boundaries.",
+  "src/app/api/product-images/[id]/route.ts#GET":
+    "Public only when referenced by a published product; staged/draft/removed files require an admin session. Product-media tests verify publication and revocation.",
   "src/app/api/me/route.ts#GET":
     "How a Guest finds out they are one: reads only the caller's own session, returns no id or email and only the caller's own favourites.",
   "src/app/api/health/db/route.ts#GET":
@@ -121,8 +125,10 @@ describe("every route handler is guarded or public by design", () => {
 
   it("finds the route handlers", () => {
     expect(routes.map(posix).sort()).toEqual([
+      "src/app/api/admin/product-images/route.ts",
       "src/app/api/health/db/route.ts",
       "src/app/api/me/route.ts",
+      "src/app/api/product-images/[id]/route.ts",
       "src/app/api/stone-requests/[id]/photo/route.ts",
     ]);
   });

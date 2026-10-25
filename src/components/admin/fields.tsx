@@ -98,9 +98,11 @@ export function AdminInput({
   required,
   placeholder,
   prefix,
+  disabled,
 }: Shared & {
   unit?: string;
   prefix?: string;
+  disabled?: boolean;
   value: string;
   onChange: (value: string) => void;
   inputMode?: "decimal" | "numeric" | "text";
@@ -125,6 +127,7 @@ export function AdminInput({
           id={id}
           name={name}
           type="text"
+          disabled={disabled}
           value={value}
           inputMode={inputMode}
           maxLength={maxLength}

@@ -526,8 +526,8 @@
       "placeholderPrices": "Prices are illustrative",
       "back": "Back",
       "empty": {
-        "title": "No stone matches this pairing",
-        "body": "This color is not available in the selected material yet. Change one of the filters or start again.",
+        "title": "No matching stone found",
+        "body": "Try a different search or change the filters, or reset all to browse the catalog.",
         "clearColor": "Clear color",
         "clearMaterial": "Clear material",
         "reset": "Reset all"
@@ -599,6 +599,86 @@
       "title": "Something went wrong",
       "body": "A temporary problem stopped this page from loading. Try again in a moment.",
       "retry": "Try again"
+    },
+    "works": {
+      "label": "Our works",
+      "title": "Stone, made into rooms",
+      "intro": "From raw slab to finished work: the materials we cut, carve and light, and what they became.",
+      "demo": "Illustrative projects from the design prototype. Dimensions and production times are examples, not confirmed offers.",
+      "raw": "The raw stones",
+      "source": "Source material",
+      "view": "View material",
+      "request": "Request similar",
+      "space": "Space",
+      "time": "Made in",
+      "size": "Size",
+      "finish": "Finish",
+      "process": "How a work is made",
+      "cta": "Have a work like this in mind?",
+      "ctaBody": "Send a photo or a sketch with your request.",
+      "create": "Create Your Stone",
+      "projects": "5 projects",
+      "shown": "Shown on this page",
+      "days": "4–9 days",
+      "duration": "Illustrative production time",
+      "materials": "Materials",
+      "available": "Explore the catalog",
+      "steps": {
+        "choose": {
+          "title": "Choose the stone",
+          "body": "Pick a material from the catalog or prepare a reference photo."
+        },
+        "make": {
+          "title": "Cut and carve",
+          "body": "Discuss the shape, finish and production time for your project."
+        },
+        "fit": {
+          "title": "Delivery and fitting",
+          "body": "Agree on delivery and installation when your project is confirmed."
+        }
+      },
+      "items": {
+        "backlit": {
+          "title": "Backlit rock panel",
+          "description": "Two slabs of hand-split Golden Rock joined by a seam of warm light. Cut, mounted and wired for an entry wall.",
+          "space": "Entry hall",
+          "time": "5 days",
+          "size": "1200 × 2400 mm",
+          "finish": "Split face, LED edge"
+        },
+        "facade": {
+          "title": "Facade cladding",
+          "description": "Irregular Rustic Split stone wrapped around a terrace wall, with uplights set into the joints.",
+          "space": "Terrace and facade",
+          "time": "9 days",
+          "size": "38 m²",
+          "finish": "Dry-stack look"
+        },
+        "bedroom": {
+          "title": "Bedroom rock wall",
+          "description": "A full wall of layered Taupe Rock, split by hand so every ledge catches the light.",
+          "space": "Bedroom",
+          "time": "6 days",
+          "size": "14 m²",
+          "finish": "Split face"
+        },
+        "clocks": {
+          "title": "Stone wall clocks",
+          "description": "Three clocks cut from natural stone slabs, each edge backlit by a warm line of light.",
+          "space": "Living room",
+          "time": "4 days",
+          "size": "Ø 600–900 mm",
+          "finish": "Natural edge, brass hands"
+        },
+        "relief": {
+          "title": "Sculpted relief panel",
+          "description": "A lime-white relief carved from a single slab: soft pores, deep channels, no two panels alike.",
+          "space": "Gallery wall",
+          "time": "5 days",
+          "size": "600 × 1200 mm",
+          "finish": "Hand carved, matte"
+        }
+      }
     }
   },
   "auth": {
@@ -996,7 +1076,8 @@
         "unavailable": "The database is unavailable. Try again later.",
         "generic": "The save could not be confirmed. Your input is still in the form. Reload and review before retrying."
       },
-      "breadcrumb": "Home / {section}"
+      "breadcrumb": "Home / {section}",
+      "brandLocked": "The brand headline is fixed in English for every language."
     },
     "overview": {
       "title": "Overview",
@@ -1088,7 +1169,7 @@
       "placeholderPrices": "Prices are placeholders until the owner confirms them.",
       "photos": "Product photo",
       "image": "Picture",
-      "imageHint": "Pictures come from the site's image set; uploads come later.",
+      "imageHint": "JPG, PNG or WebP, up to 5 MB each. Up to 8 photos. The first photo is the main image. To replace one, add the new photo and remove the old one.",
       "preview": "Storefront preview",
       "perM2": "/ m²",
       "cancel": "Cancel",
@@ -1106,7 +1187,34 @@
         "generic": "Something went wrong. Please try again.",
         "conflict": "This product changed since you opened it. Reload and review the latest values before saving. Your unsaved input has been kept."
       },
-      "previewMeta": "{material} · {l}×{w}×{d} mm"
+      "previewMeta": "{material} · {l}×{w}×{d} mm",
+      "upload": {
+        "choose": "Upload photos",
+        "hint": "Photos from your phone or computer: JPG, PNG, WebP, AVIF, BMP, HEIC/HEIF. Up to 30 MB and 60 MP each, up to 8 photos. Size and format are prepared automatically. The first photo is the main image.",
+        "limit": "A product can have up to 8 photos. Remove some or select fewer files.",
+        "progress": "Uploading {current} of {total}…",
+        "preparing": "Preparing photo {current} of {total}…",
+        "ready": "Photos uploaded. Save the product to apply your changes.",
+        "unavailable": "Image storage is unavailable. Try again later; your product fields are preserved.",
+        "session": "Your admin session expired. Please sign in again.",
+        "file": "Could not read the photo. Choose a valid JPG, PNG, WebP, AVIF, BMP or HEIC/HEIF. Your product fields and completed uploads are preserved.",
+        "size": "This photo exceeds 30 MB. Choose a smaller file. Your product fields and completed uploads are preserved.",
+        "pixels": "This photo exceeds 60 MP. Choose a lower-resolution photo. Your product fields and completed uploads are preserved.",
+        "preparation": "Could not prepare the photo. Select it again or try another browser. Your product fields and completed uploads are preserved.",
+        "retry": "Could not upload the photo. Check the file and connection, then select it again. Completed uploads are preserved.",
+        "empty": "Upload a photo or choose an image from the site collection.",
+        "list": "Product photos",
+        "main": "Main photo",
+        "number": "Photo {number}",
+        "makeMain": "Make main",
+        "remove": "Remove",
+        "removeLabel": "Remove photo {number}",
+        "earlier": "Move photo {number} earlier",
+        "later": "Move photo {number} later",
+        "existing": "Existing image",
+        "addExisting": "Add existing image",
+        "required": "Add at least one photo and check the selected images."
+      }
     },
     "orders": {
       "title": "Orders",

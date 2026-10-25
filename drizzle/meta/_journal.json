@@ -50,6 +50,13 @@
       "when": 1792445460346,
       "tag": "0006_test-checkout",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792851704099,
+      "tag": "0007_product-media",
+      "breakpoints": true
     }
   ]
 }

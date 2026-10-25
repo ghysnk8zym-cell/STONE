@@ -141,6 +141,11 @@ export const product = pgTable(
     isPlaceholder: boolean("is_placeholder").default(true).notNull(),
     /** Asset manifest key, e.g. `images/catalog/<slug>`. */
     image: text("image").notNull(),
+    /** Ordered real photos; first entry is the card/main image. Empty for legacy assets. */
+    gallery: text("gallery")
+      .array()
+      .default(sql`'{}'::text[]`)
+      .notNull(),
     imageFit: text("image_fit").default("cover").notNull(),
     published: boolean("published").default(true).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
@@ -171,6 +176,16 @@ export const product = pgTable(
     index("product_published_sort_idx").on(table.published, table.sortOrder),
   ],
 );
+
+/** Uploaded files live in object storage; only immutable metadata lives in PostgreSQL. */
+export const productMedia = pgTable("product_media", {
+  id: uuid("id").primaryKey(),
+  objectKey: text("object_key").notNull().unique(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  bytes: integer("bytes").notNull(),
+  createdAt: timestamptz("created_at").defaultNow().notNull(),
+});
 
 export const productTranslation = pgTable(
   "product_translation",

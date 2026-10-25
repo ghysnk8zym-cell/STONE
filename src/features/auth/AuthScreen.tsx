@@ -106,10 +106,16 @@ export function AuthTitle({ children }: { children: ReactNode }) {
 /** The form column: 360 / 440 / 480 px wide from 1024, 480 at 768 and the full width on phones. */
 export function AuthScreen({ children }: { children: ReactNode }) {
   return (
-    <div className="relative isolate flex min-h-dvh flex-1 flex-col">
+    <div
+      data-auth-screen
+      className="relative isolate flex min-h-dvh flex-1 flex-col"
+    >
       <AuthScene />
       <div className="relative flex flex-1 flex-col justify-end px-4 pb-12 min-[390px]:px-8 md:px-16 lg:justify-center lg:pr-0 lg:pb-[72px] lg:pl-14 min-[90rem]:pl-[116px] min-[120rem]:pl-[200px]">
-        <div className="flex w-full flex-col items-start md:w-[480px] lg:w-[360px] min-[90rem]:w-[440px] min-[120rem]:w-[480px]">
+        <div
+          data-auth-form-column
+          className="flex w-full flex-col items-start md:w-[480px] lg:w-[360px] min-[90rem]:w-[440px] min-[120rem]:w-[480px]"
+        >
           {children}
         </div>
       </div>

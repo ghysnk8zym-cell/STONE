@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { BrowserContext, Page } from "@playwright/test";
+import { PNG } from "pngjs";
 
 import en from "../../messages/en.json";
 import ru from "../../messages/ru.json";
@@ -26,7 +27,7 @@ async function newProduct(
   locale: "ru" | "en",
   fields: { en: string; ru: string; price: string; slug?: string },
 ) {
-  const t = en.admin.form;
+  const t = (locale === "ru" ? ru : en).admin.form;
   await page.goto(`/${locale}/admin/products/new`);
   // the form is a client component: wait for it before typing
   await expect(page.getByLabel(t.nameEn, { exact: true })).toBeVisible();
@@ -139,6 +140,75 @@ test.describe("admin screens", () => {
     await expect(
       nav.getByRole("link", { name: a.nav.signOut }),
     ).toHaveAttribute("href", "/en/sign-out");
+  });
+
+  test("sidebar language switch keeps the admin page, filters and keyboard access", async ({
+    page,
+  }) => {
+    for (const width of [1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/ru/admin/products?q=marble&status=published");
+      const nav = page.getByRole("navigation", { name: ru.admin.nav.label });
+      const language = nav.getByRole("button", { name: /^RU \/ EN/ });
+      const exit = nav.getByRole("link", {
+        name: ru.admin.nav.signOut,
+        exact: true,
+      });
+      await expect(language.locator('[lang="ru"]')).toHaveCSS(
+        "text-decoration-line",
+        "underline",
+      );
+      const box = (await language.boundingBox())!;
+      const exitBox = (await exit.boundingBox())!;
+      expect(box.height).toBe(46);
+      expect(box.y + box.height).toBeLessThanOrEqual(exitBox.y);
+      await nav
+        .getByRole("link", { name: ru.admin.nav.siteContent, exact: true })
+        .focus();
+      await page.keyboard.press("Tab");
+      await expect(language).toBeFocused();
+      await expect(language).toHaveCSS("outline-width", "2px");
+      await page.keyboard.press("Enter");
+      await page.waitForURL((url) => url.pathname === "/en/admin/products");
+      expect(new URL(page.url()).searchParams.get("q")).toBe("marble");
+      expect(new URL(page.url()).searchParams.get("status")).toBe("published");
+      const englishNav = page.getByRole("navigation", {
+        name: en.admin.nav.label,
+      });
+      const englishLanguage = englishNav.getByRole("button", {
+        name: /^RU \/ EN/,
+      });
+      await expect(englishLanguage.locator('[lang="en"]')).toHaveCSS(
+        "text-decoration-line",
+        "underline",
+      );
+      await expect(
+        englishNav.getByRole("link", {
+          name: en.admin.nav.signOut,
+          exact: true,
+        }),
+      ).toHaveAttribute("href", "/en/sign-out");
+      await englishLanguage.click();
+      await page.waitForURL((url) => url.pathname === "/ru/admin/products");
+      expect(new URL(page.url()).searchParams.get("q")).toBe("marble");
+      expect(new URL(page.url()).searchParams.get("status")).toBe("published");
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    await page.goto("/ru/admin/products/black-marble");
+    await page
+      .getByRole("navigation", { name: ru.admin.nav.label })
+      .getByRole("button", { name: /^RU \/ EN/ })
+      .click();
+    await page.waitForURL(
+      (url) => url.pathname === "/en/admin/products/black-marble",
+    );
+    await expect(
+      page.getByRole("heading", { level: 1, name: en.admin.products.edit }),
+    ).toBeVisible();
   });
 
   test("the request section renders its working list in both languages", async ({
@@ -562,3 +632,422 @@ test.describe("admin screens", () => {
     });
   }
 });
+
+test.describe("product photos", () => {
+  test.beforeEach(async ({ context }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "auth-desktop",
+      "Admin editing starts at 1024 px",
+    );
+    await signInInContext(context, SEEDED.admin);
+  });
+  for (const locale of ["ru", "en"] as const) {
+    test(
+      locale +
+        ": uploaded gallery survives save, supports main/reorder/removal and public mobile viewing",
+      async ({ page, browser }, testInfo) => {
+        const t = (locale === "ru" ? ru : en).admin.form;
+        const name = "Photo Stone " + tag();
+        await newProduct(page, locale, {
+          en: name,
+          ru: "Камень " + name,
+          price: "125",
+        });
+        const slug = await page
+          .getByLabel(t.slug, { exact: true })
+          .inputValue();
+        const guest = await browser.newContext({
+          baseURL: testInfo.project.use.baseURL,
+          viewport: { width: 1440, height: 900 },
+        });
+        try {
+          await page
+            .getByRole("button", {
+              name: t.upload.removeLabel.replace("{number}", "1"),
+              exact: true,
+            })
+            .click();
+          const files = [
+            "tests/visual/figma/product-card-default-390.png",
+            "public/images/catalog/grey-marble-390.webp",
+          ];
+          await page
+            .getByLabel(t.upload.choose, { exact: true })
+            .setInputFiles(files);
+          await expect(
+            page.getByRole("status").filter({ hasText: t.upload.ready }),
+          ).toBeVisible();
+          const list = page.getByRole("list", { name: t.upload.list });
+          await expect(list.getByRole("listitem")).toHaveCount(2);
+          const first = await list
+            .getByRole("listitem")
+            .nth(0)
+            .locator("img")
+            .getAttribute("src");
+          const second = await list
+            .getByRole("listitem")
+            .nth(1)
+            .locator("img")
+            .getAttribute("src");
+          expect(first).toContain("/api/product-images/");
+          expect((await guest.request.get(first!)).status()).toBe(404);
+          await page
+            .getByRole("button", { name: t.upload.makeMain, exact: true })
+            .click();
+          await expect(
+            list.getByRole("listitem").first().locator("img"),
+          ).toHaveAttribute("src", second!);
+          await page
+            .getByRole("button", { name: t.saveDraft, exact: true })
+            .click();
+          await page.waitForURL(new RegExp("/" + locale + "/admin/products$"));
+          await page.goto("/" + locale + "/admin/products/" + slug);
+          await expect(
+            page
+              .getByRole("list", { name: t.upload.list })
+              .getByRole("listitem"),
+          ).toHaveCount(2);
+          await page.reload();
+          await expect(
+            page
+              .getByRole("list", { name: t.upload.list })
+              .getByRole("listitem")
+              .first()
+              .locator("img"),
+          ).toHaveAttribute("src", second!);
+          await page
+            .getByRole("button", { name: t.publish, exact: true })
+            .click();
+          await page.waitForURL(new RegExp("/" + locale + "/admin/products$"));
+          const publicPage = await guest.newPage();
+          await publicPage.goto("/" + locale + "/catalog/" + slug);
+          await expect(
+            publicPage.locator("[data-gallery-main] img"),
+          ).toHaveAttribute("src", second!);
+          const thumbs = publicPage
+            .getByRole("group", {
+              name: (locale === "ru" ? ru : en).pages.product.gallery.label,
+            })
+            .getByRole("button");
+          await expect(thumbs).toHaveCount(2);
+          await thumbs.nth(1).focus();
+          await publicPage.keyboard.press("Enter");
+          await expect(
+            publicPage.locator("[data-gallery-main] img"),
+          ).toHaveAttribute("src", first!);
+          await publicPage.screenshot({
+            path: "../qa/product-photos-" + locale + "-desktop.png",
+            fullPage: true,
+          });
+          await publicPage.setViewportSize({ width: 390, height: 844 });
+          await expect(
+            publicPage.locator("[data-gallery-main] img"),
+          ).toBeVisible();
+          expect(
+            await publicPage.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+          ).toBe(true);
+          await thumbs.nth(0).click();
+          await expect(
+            publicPage.locator("[data-gallery-main] img"),
+          ).toHaveAttribute("src", second!);
+          await publicPage.screenshot({
+            path: "../qa/product-photos-" + locale + "-mobile.png",
+            fullPage: true,
+          });
+          await page.goto("/" + locale + "/admin/products/" + slug);
+          await page
+            .getByRole("button", {
+              name: t.upload.earlier.replace("{number}", "2"),
+              exact: true,
+            })
+            .click();
+          await expect(
+            page
+              .getByRole("list", { name: t.upload.list })
+              .getByRole("listitem")
+              .first()
+              .locator("img"),
+          ).toHaveAttribute("src", first!);
+          await page
+            .getByRole("button", {
+              name: t.upload.removeLabel.replace("{number}", "2"),
+              exact: true,
+            })
+            .click();
+          await page.screenshot({
+            path: "../qa/product-photos-" + locale + "-admin.png",
+            fullPage: true,
+          });
+          await page
+            .getByRole("button", { name: t.saveChanges, exact: true })
+            .click();
+          await page.waitForURL(new RegExp("/" + locale + "/admin/products$"));
+          expect((await guest.request.get(second!)).status()).toBe(404);
+          expect((await guest.request.get(first!)).status()).toBe(200);
+        } finally {
+          await guest.close();
+        }
+      },
+    );
+  }
+  test("invalid files, empty gallery and failed uploads preserve the form", async ({
+    page,
+  }) => {
+    const t = en.admin.form;
+    await newProduct(page, "en", {
+      en: "Invalid Photo " + tag(),
+      ru: "Проверка",
+      price: "125",
+    });
+    await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles({
+      name: "bad.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("not a photo"),
+    });
+    await expect(
+      page.getByRole("alert").filter({ hasText: /\S/ }),
+    ).toBeVisible();
+    await expect(page.getByLabel(t.nameRu, { exact: true })).toHaveValue(
+      "Проверка",
+    );
+    await page.route("**/api/admin/product-images", (route) =>
+      route.fulfill({ status: 503, body: "{}" }),
+    );
+    await page
+      .getByLabel(t.upload.choose, { exact: true })
+      .setInputFiles("public/images/catalog/grey-marble-390.webp");
+    await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+      t.upload.unavailable,
+    );
+    await page
+      .getByRole("button", {
+        name: t.upload.removeLabel.replace("{number}", "1"),
+        exact: true,
+      })
+      .click();
+    await page.getByRole("button", { name: t.saveDraft, exact: true }).click();
+    await expect(
+      page.getByText(t.upload.required, { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByLabel(t.nameRu, { exact: true })).toHaveValue(
+      "Проверка",
+    );
+  });
+});
+
+test("product photos: JPEG and upload limits", async ({
+  page,
+  context,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "auth-desktop",
+    "Admin editing starts at 1024 px",
+  );
+  await signInInContext(context, SEEDED.admin);
+  const t = en.admin.form;
+  await newProduct(page, "en", {
+    en: "JPEG Photo " + tag(),
+    ru: "Фото JPEG",
+    price: "125",
+  });
+  const encoded = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 240;
+    canvas.height = 160;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#8e9290";
+    ctx.fillRect(0, 0, 240, 160);
+    return canvas.toDataURL("image/jpeg").split(",")[1];
+  });
+  await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles({
+    name: "stone.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from(encoded, "base64"),
+  });
+  await expect(
+    page.getByRole("status").filter({ hasText: t.upload.ready }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: t.upload.list }).getByRole("listitem"),
+  ).toHaveCount(2);
+  await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles({
+    name: "large.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.alloc(30 * 1024 * 1024 + 1),
+  });
+  await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+    t.upload.size,
+  );
+  await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles(
+    Array.from({ length: 7 }, (_, index) => ({
+      name: "stone" + index + ".jpg",
+      mimeType: "image/jpeg",
+      buffer: Buffer.from(encoded, "base64"),
+    })),
+  );
+  await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+    t.upload.limit,
+  );
+  await expect(
+    page.getByRole("list", { name: t.upload.list }).getByRole("listitem"),
+  ).toHaveCount(2);
+});
+
+for (const locale of ["ru", "en"] as const) {
+  test(`product photos: ${locale} originals are prepared automatically and recover after limits`, async ({
+    page,
+    context,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "auth-desktop",
+      "Admin editing starts at 1024 px",
+    );
+    await signInInContext(context, SEEDED.admin);
+    const t = (locale === "ru" ? ru : en).admin.form;
+    const decoders: string[] = [];
+    page.on("request", (request) => {
+      if (/\/heic-to\.[^/]+\.js/.test(request.url()))
+        decoders.push(request.url());
+    });
+    await newProduct(page, locale, {
+      en: "Original Photo " + tag(),
+      ru: "Исходное фото",
+      price: "125",
+    });
+    const slug = await page.getByLabel(t.slug, { exact: true }).inputValue();
+    await page
+      .getByRole("button", {
+        name: t.upload.removeLabel.replace("{number}", "1"),
+        exact: true,
+      })
+      .click();
+    const jpeg = Buffer.from(
+      await page.evaluate(() => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 200;
+        canvas.height = 100;
+        const context = canvas.getContext("2d")!;
+        context.fillStyle = "#ff0000";
+        context.fillRect(0, 0, 100, 100);
+        context.fillStyle = "#00ff00";
+        context.fillRect(100, 0, 100, 100);
+        return canvas.toDataURL("image/jpeg", 0.95).split(",")[1];
+      }),
+      "base64",
+    );
+    // EXIF orientation 6: stored landscape pixels must become an upright portrait.
+    const exif = Buffer.alloc(36);
+    exif.writeUInt16BE(0xffe1, 0);
+    exif.writeUInt16BE(34, 2);
+    exif.write("Exif\0\0", 4, "binary");
+    exif.write("II", 10);
+    exif.writeUInt16LE(42, 12);
+    exif.writeUInt32LE(8, 14);
+    exif.writeUInt16LE(1, 18);
+    exif.writeUInt16LE(0x112, 20);
+    exif.writeUInt16LE(3, 22);
+    exif.writeUInt32LE(1, 24);
+    exif.writeUInt16LE(6, 28);
+    const rotated = Buffer.concat([
+      jpeg.subarray(0, 2),
+      exif,
+      jpeg.subarray(2),
+    ]);
+    const transparent = PNG.sync.write({
+      width: 48,
+      height: 24,
+      data: Buffer.alloc(48 * 24 * 4),
+    });
+    const bmp = Buffer.alloc(54 + 48 * 24 * 3, 128);
+    bmp.fill(0, 0, 54);
+    bmp.write("BM");
+    bmp.writeUInt32LE(bmp.length, 2);
+    bmp.writeUInt32LE(54, 10);
+    bmp.writeUInt32LE(40, 14);
+    bmp.writeInt32LE(48, 18);
+    bmp.writeInt32LE(24, 22);
+    bmp.writeUInt16LE(1, 26);
+    bmp.writeUInt16LE(24, 28);
+    const sources = [
+      {
+        name: "camera.bin",
+        mimeType: "",
+        buffer: Buffer.concat([jpeg, Buffer.alloc(6 * 1024 * 1024)]),
+        size: [200, 100],
+      },
+      {
+        name: "portrait.jpg",
+        mimeType: "image/jpeg",
+        buffer: rotated,
+        size: [100, 200],
+      },
+      {
+        name: "transparent.png",
+        mimeType: "image/png",
+        buffer: transparent,
+        size: [48, 24],
+      },
+      { name: "photo.bmp", mimeType: "image/bmp", buffer: bmp, size: [48, 24] },
+    ];
+    for (const source of sources) {
+      const response = page.waitForResponse(
+        (r) =>
+          r.url().includes("/api/admin/product-images") &&
+          r.request().method() === "POST",
+      );
+      await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles({
+        name: source.name,
+        mimeType: source.mimeType,
+        buffer: source.buffer,
+      });
+      const uploaded = await response;
+      expect(uploaded.status()).toBe(201);
+      expect(uploaded.request().headers()["content-type"]).toBe("image/png");
+      const { image } = await uploaded.json();
+      const stored = await page.request.get(image);
+      expect(stored.status()).toBe(200);
+      const bytes = await stored.body();
+      const png = PNG.sync.read(bytes);
+      expect([png.width, png.height]).toEqual(source.size);
+      expect(bytes.length).toBeLessThanOrEqual(2 * 1024 * 1024);
+      if (source.name === "transparent.png") expect(png.data[3]).toBe(0);
+      if (source.name === "portrait.jpg") {
+        expect(png.data[(20 * png.width + 20) * 4]).toBeGreaterThan(200);
+        expect(png.data[(180 * png.width + 20) * 4 + 1]).toBeGreaterThan(200);
+      }
+    }
+    const oversized = Buffer.from(transparent);
+    oversized.writeUInt32BE(10_000, 16);
+    oversized.writeUInt32BE(6001, 20);
+    await page.getByLabel(t.upload.choose, { exact: true }).setInputFiles({
+      name: "huge.png",
+      mimeType: "image/png",
+      buffer: oversized,
+    });
+    await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+      t.upload.pixels,
+    );
+    await expect(page.getByLabel(t.nameRu, { exact: true })).toHaveValue(
+      "Исходное фото",
+    );
+    await page
+      .getByLabel(t.upload.choose, { exact: true })
+      .setInputFiles("public/images/catalog/grey-marble-390.webp");
+    await expect(
+      page.getByRole("status").filter({ hasText: t.upload.ready }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("list", { name: t.upload.list }).getByRole("listitem"),
+    ).toHaveCount(5);
+    await page.getByRole("button", { name: t.saveDraft, exact: true }).click();
+    await page.waitForURL(`**/${locale}/admin/products`);
+    await page.goto(`/${locale}/admin/products/${slug}`);
+    await page.reload();
+    await expect(
+      page.getByRole("list", { name: t.upload.list }).getByRole("listitem"),
+    ).toHaveCount(5);
+    expect(decoders).toHaveLength(0);
+  });
+}

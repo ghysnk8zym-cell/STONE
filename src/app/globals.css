@@ -5,6 +5,7 @@
 @import "../styles/tokens/effects.css";
 @import "../styles/tokens/motion.css";
 @import "tailwindcss";
+@import "../styles/compact.css";
 
 /* Default Tailwind palette and fonts are disabled: only STONE tokens (Phase 2) may be used. */
 @theme {

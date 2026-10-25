@@ -106,6 +106,7 @@ export function Carousel({ label, itemClassName, children }: CarouselProps) {
       </span>
       <div
         ref={scrollerRef}
+        data-carousel-track
         onScroll={update}
         role={needsFocusStop ? "region" : undefined}
         aria-label={needsFocusStop ? t("scrollable", { label }) : undefined}

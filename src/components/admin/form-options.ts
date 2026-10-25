@@ -84,5 +84,6 @@ export function productValuesOf(
     discountPercent:
       product.discountPercent === null ? "" : String(product.discountPercent),
     image: product.image,
+    gallery: product.gallery,
   };
 }

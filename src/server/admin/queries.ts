@@ -40,6 +40,7 @@ export type AdminProduct = {
 
 /** A product with everything the edit form needs. */
 export type AdminProductDetail = {
+  gallery: string[];
   slug: string;
   revision: number;
   published: boolean;
@@ -162,6 +163,7 @@ export async function getAdminProduct(
     discountPercent: row.discountPercent,
     image: row.image,
     imageFit: fit(row.imageFit),
+    gallery: row.gallery,
     names: { ru: of("ru")?.name ?? "", en: of("en")?.name ?? "" },
     descriptions: {
       ru: of("ru")?.description ?? "",

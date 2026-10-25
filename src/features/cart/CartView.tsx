@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useAccountLabels } from "@/components/account/labels";
@@ -51,8 +51,24 @@ function LineRow({
   const labels = useAccountLabels();
   const format = useFormatter();
   const area = useAreaFormat();
-  const [draft, setDraft] = useState(() => area(line.areaHundredths));
+  const locale = useLocale();
+  const [input, setInput] = useState(() => ({
+    value: area(line.areaHundredths),
+    areaHundredths: line.areaHundredths,
+    locale,
+  }));
   const [error, setError] = useState<string | undefined>();
+  // Preserve our own decimal draft, but adopt a changed value from another tab
+  // (or locale) before rendering the field and its new quote together.
+  if (input.areaHundredths !== line.areaHundredths || input.locale !== locale) {
+    setInput({
+      value: area(line.areaHundredths),
+      areaHundredths: line.areaHundredths,
+      locale,
+    });
+    setError(undefined);
+  }
+  const draft = input.value;
   const name = labels.name({
     slug: line.slug,
     name: quoted?.available ? quoted.name : null,
@@ -122,8 +138,14 @@ function LineRow({
           autoComplete="off"
           value={draft}
           onChange={(value) => {
-            setDraft(value);
             const parsed = parseArea(value);
+            setInput({
+              value,
+              areaHundredths: parsed.ok
+                ? parsed.hundredths
+                : line.areaHundredths,
+              locale,
+            });
             onValidity(line.slug, parsed.ok);
             if (parsed.ok) {
               setError(undefined);
@@ -164,15 +186,39 @@ export function CartView({ locale }: { locale: string }) {
   const lines = useCart();
   const ready = useCartReady();
   const quote = useQuote(lines, locale);
-  const [invalid, setInvalid] = useState<ReadonlySet<string>>(new Set());
+  const [validation, setValidation] = useState({
+    lines,
+    locale,
+    invalid: new Set<string>(),
+  });
+  let invalid = validation.invalid;
+  if (validation.lines !== lines || validation.locale !== locale) {
+    // Removed rows and externally replaced values cannot keep an old draft's error.
+    invalid = new Set(
+      [...invalid].filter(
+        (slug) =>
+          validation.locale === locale &&
+          lines.some(
+            (line) =>
+              line.slug === slug &&
+              validation.lines.some(
+                (old) =>
+                  old.slug === slug &&
+                  old.areaHundredths === line.areaHundredths,
+              ),
+          ),
+      ),
+    );
+    setValidation({ lines, locale, invalid });
+  }
 
   const onValidity = (slug: string, valid: boolean) =>
-    setInvalid((current) => {
-      if (valid === !current.has(slug)) return current;
-      const next = new Set(current);
+    setValidation((current) => {
+      if (valid === !current.invalid.has(slug)) return current;
+      const next = new Set(current.invalid);
       if (valid) next.delete(slug);
       else next.add(slug);
-      return next;
+      return { ...current, invalid: next };
     });
 
   const head = <TitleBlock title={t("title")} subtitle={t("subtitle")} />;
@@ -209,7 +255,8 @@ export function CartView({ locale }: { locale: string }) {
     invalid.size > 0 ||
     (ok !== null && !ok.orderable) ||
     lines.some((l) => !byslug.has(l.slug) && ok !== null);
-  const canCheckout = ok !== null && !blocked;
+  const canCheckout =
+    ok !== null && !blocked && !(quote.status === "ok" && quote.stale);
 
   return (
     <>

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
+import { parseProductMedia } from "@/lib/product-media";
 import { cn } from "@/components/cn";
 
 export type GalleryView = { id: "full" | "detail"; label: string };
@@ -11,6 +12,8 @@ export type GalleryView = { id: "full" | "detail"; label: string };
 export type GalleryCrop = { left: number; size: number };
 
 type GalleryProps = {
+  /** Ordered real photos for products created through the upload editor. */
+  photos?: string[];
   /** Manifest key of the one source image (e.g. `images/catalog/black-marble`). */
   image: string;
   alt: string;
@@ -104,6 +107,65 @@ const THUMB =
 export function Gallery(props: GalleryProps) {
   const { views, label } = props;
   const [view, setView] = useState<GalleryView["id"]>("full");
+  const [selected, setSelected] = useState(0);
+  if (
+    props.photos?.length &&
+    (props.photos.length > 1 || parseProductMedia(props.photos[0]))
+  ) {
+    const photos = props.photos;
+    const active = Math.min(selected, photos.length - 1);
+    return (
+      <div className="flex min-w-0 flex-col gap-4">
+        <div
+          data-gallery-main
+          data-view={active}
+          className="bg-stone-catalog-photo relative aspect-[726/572] w-full overflow-clip rounded-[20px]"
+        >
+          <Image
+            src={photos[active]}
+            alt={props.alt}
+            fill
+            sizes={frameSizes(1)}
+            className="object-contain"
+            loading="eager"
+          />
+        </div>
+        {photos.length > 1 && (
+          <div
+            role="group"
+            aria-label={label}
+            className="flex gap-4 overflow-x-auto p-1"
+          >
+            {photos.map((image, index) => (
+              <button
+                key={image}
+                type="button"
+                aria-label={`${label} ${index + 1}`}
+                aria-pressed={active === index}
+                onClick={() => setSelected(index)}
+                className={cn(THUMB, "min-w-24 shrink-0")}
+              >
+                <Image
+                  src={image}
+                  alt=""
+                  fill
+                  sizes="200px"
+                  className="object-contain"
+                />
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "border-ink pointer-events-none absolute inset-0 rounded-xl border-2",
+                    active === index ? "block" : "hidden",
+                  )}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-w-0 flex-col gap-4">

@@ -6,6 +6,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 
 import { cn } from "../cn";
 import { Icon } from "../icons/Icon";
+import { LanguageSwitch } from "../navigation/LanguageSwitch";
 import { ADMIN_SECTIONS, adminSectionFor } from "./sections";
 
 /*
@@ -13,7 +14,7 @@ import { ADMIN_SECTIONS, adminSectionFor } from "./sections";
  * and 216 px at 1024 (Admin 1024 1077:55042), padding 28 / 16 / 24, gap 6. From the top: Brand (a 24 px rule, STONE in
  * Brand/Logo, ADMIN in Section/Label), the seven section pills (46 px, the Account/Nav button look: idle = text/secondary
  * with 10 px left padding, selected = fill surface/selected, text/primary, 4 px more padding and the 3 x 18 indicator), a
- * spacer, a divider and Sign out. A client component because the current section comes from the route and a layout does
+ * spacer, a divider, language switch and Sign out. A client component because the current section comes from the route and a layout does
  * not know it.
  */
 const PILL =
@@ -71,6 +72,16 @@ export function AdminSidebar() {
       })}
       <div className="min-h-px flex-1" />
       <div className="bg-glass h-px w-full" />
+      <LanguageSwitch
+        variant="sidebar"
+        className={cn(IDLE, "cursor-pointer")}
+        leading={
+          <>
+            <Indicator visible={false} />
+            <span aria-hidden="true" className="size-6 shrink-0" />
+          </>
+        }
+      />
       <Link href="/sign-out" className={IDLE}>
         <Indicator visible={false} />
         <Icon name="sign-out" />

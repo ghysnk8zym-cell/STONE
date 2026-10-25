@@ -26,12 +26,14 @@ export async function generateMetadata({
 
 /*
  * Card widths in the carousels (Figma): phones 148 (catalog) / 240 (promo) / 280 (works); 222 at 768,
- * 297 at 1024 and 356 from 1440. The cards themselves fill their list item.
+ * 297 at 1024, 356 from 1440 and 353 from 1920 (Home v2 — 1920, 714:869: 1108 px track). The cards
+ * themselves fill their list item.
  */
-const FROM_TABLET = "md:w-[222px] lg:w-[297px] min-[90rem]:w-[356px]";
-const CATALOG_ITEM = `w-[148px] ${FROM_TABLET}`;
-const PROMO_ITEM = `w-[240px] ${FROM_TABLET}`;
-const WORK_ITEM = `w-[280px] ${FROM_TABLET}`;
+const FROM_TABLET =
+  "md:w-[222px] lg:w-[297px] min-[90rem]:w-[356px] min-[120rem]:w-[353px]";
+const CATALOG_ITEM = `w-[148px] ${FROM_TABLET} home-product-item`;
+const PROMO_ITEM = `w-[240px] ${FROM_TABLET} home-product-item`;
+const WORK_ITEM = `w-[280px] ${FROM_TABLET} home-work-item`;
 
 /*
  * The three work photos are crops of two source images (Figma Media of Card/Showcase Work, values from
@@ -98,7 +100,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
     });
 
   return (
-    <div className="relative isolate overflow-clip md:-mt-[72px]">
+    <div className="home-page relative isolate overflow-clip md:-mt-[72px]">
       <Backdrop />
       <Hero locale={locale as Locale} text={text} />
       <div className="relative z-10 flex flex-col items-center gap-(--layout-section-gap) px-(--layout-margin) pt-(--layout-main-top) pb-(--layout-section-gap) max-md:pt-0 max-md:pb-6">
@@ -157,13 +159,14 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
         <ShowcaseSection
           id="home-works"
           label={text["sections.works"]}
-          action={{ label: text["actions.projects"] }}
+          action={{ label: text["actions.projects"], href: "/works" }}
           carouselClassName={WORK_ITEM}
         >
           {WORKS.map((work) => (
             <ShowcaseCard
               key={work.key}
               type="work"
+              href="/works"
               layout="responsive"
               title={text[`works.${work.key}.title`]}
               subtitle={text[`works.${work.key}.subtitle`]}
