@@ -142,6 +142,75 @@ test.describe("admin screens", () => {
     ).toHaveAttribute("href", "/en/sign-out");
   });
 
+  test("sidebar language switch keeps the admin page, filters and keyboard access", async ({
+    page,
+  }) => {
+    for (const width of [1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/ru/admin/products?q=marble&status=published");
+      const nav = page.getByRole("navigation", { name: ru.admin.nav.label });
+      const language = nav.getByRole("button", { name: /^RU \/ EN/ });
+      const exit = nav.getByRole("link", {
+        name: ru.admin.nav.signOut,
+        exact: true,
+      });
+      await expect(language.locator('[lang="ru"]')).toHaveCSS(
+        "text-decoration-line",
+        "underline",
+      );
+      const box = (await language.boundingBox())!;
+      const exitBox = (await exit.boundingBox())!;
+      expect(box.height).toBe(46);
+      expect(box.y + box.height).toBeLessThanOrEqual(exitBox.y);
+      await nav
+        .getByRole("link", { name: ru.admin.nav.siteContent, exact: true })
+        .focus();
+      await page.keyboard.press("Tab");
+      await expect(language).toBeFocused();
+      await expect(language).toHaveCSS("outline-width", "2px");
+      await page.keyboard.press("Enter");
+      await page.waitForURL((url) => url.pathname === "/en/admin/products");
+      expect(new URL(page.url()).searchParams.get("q")).toBe("marble");
+      expect(new URL(page.url()).searchParams.get("status")).toBe("published");
+      const englishNav = page.getByRole("navigation", {
+        name: en.admin.nav.label,
+      });
+      const englishLanguage = englishNav.getByRole("button", {
+        name: /^RU \/ EN/,
+      });
+      await expect(englishLanguage.locator('[lang="en"]')).toHaveCSS(
+        "text-decoration-line",
+        "underline",
+      );
+      await expect(
+        englishNav.getByRole("link", {
+          name: en.admin.nav.signOut,
+          exact: true,
+        }),
+      ).toHaveAttribute("href", "/en/sign-out");
+      await englishLanguage.click();
+      await page.waitForURL((url) => url.pathname === "/ru/admin/products");
+      expect(new URL(page.url()).searchParams.get("q")).toBe("marble");
+      expect(new URL(page.url()).searchParams.get("status")).toBe("published");
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    await page.goto("/ru/admin/products/black-marble");
+    await page
+      .getByRole("navigation", { name: ru.admin.nav.label })
+      .getByRole("button", { name: /^RU \/ EN/ })
+      .click();
+    await page.waitForURL(
+      (url) => url.pathname === "/en/admin/products/black-marble",
+    );
+    await expect(
+      page.getByRole("heading", { level: 1, name: en.admin.products.edit }),
+    ).toBeVisible();
+  });
+
   test("the request section renders its working list in both languages", async ({
     page,
   }) => {
