@@ -1,6 +1,12 @@
 "use client";
 
-import { ViewTransition, useEffect, useRef, type ReactNode } from "react";
+import {
+  ViewTransition,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type ReactNode,
+} from "react";
 import { usePathname } from "next/navigation";
 
 const RETURN_KEY = "stone:catalog-return";
@@ -10,7 +16,9 @@ export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const previous = useRef(pathname);
 
-  useEffect(() => {
+  // Restore before React captures the destination geometry, so the reverse photo
+  // lands in the visible card rather than jumping after the animation ends.
+  useLayoutEffect(() => {
     const wasProduct = /^\/(ru|en)\/catalog\/[^/]+$/.test(previous.current);
     previous.current = pathname;
     if (!wasProduct || !/^\/(ru|en)\/catalog$/.test(pathname)) return;

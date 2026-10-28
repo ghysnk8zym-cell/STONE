@@ -11,6 +11,10 @@ for (const locale of ["ru", "en"] as const) {
     await page.addInitScript(() => {
       const start = document.startViewTransition?.bind(document);
       const observed: string[] = [];
+      const snapshots: { path: string; y: number }[] = [];
+      (
+        window as unknown as { motionSnapshots: typeof snapshots }
+      ).motionSnapshots = snapshots;
       (window as unknown as { motionObserved: string[] }).motionObserved =
         observed;
       if (start)
@@ -18,6 +22,7 @@ for (const locale of ["ru", "en"] as const) {
           const transition = start(...args);
           void transition.ready
             .then(() => {
+              snapshots.push({ path: location.pathname, y: scrollY });
               for (const animation of document.getAnimations()) {
                 const effect = animation.effect as KeyframeEffect | null;
                 if (effect?.pseudoElement) observed.push(effect.pseudoElement);
@@ -30,7 +35,7 @@ for (const locale of ["ru", "en"] as const) {
     await page.goto(`/${locale}/catalog?material=marble`);
     const card = page
       .locator("main article")
-      .filter({ has: page.locator('a[href$="/catalog/black-marble"]') })
+      .filter({ has: page.locator('a[href$="/catalog/grey-marble"]') })
       .first();
     await card.scrollIntoViewIfNeeded();
     await page.waitForFunction(
@@ -40,15 +45,17 @@ for (const locale of ["ru", "en"] as const) {
           k.startsWith("__reactProps$"),
         ),
     );
-    const y = await page.evaluate(() => scrollY);
+
     await page.evaluate(() => {
       (window as unknown as { shell: Element | null }).shell =
         document.querySelector("header");
     });
-    await card.locator('a[href$="/catalog/black-marble"]').click();
-    await expect(page).toHaveURL(
-      new RegExp(`/${locale}/catalog/black-marble$`),
+    await card.locator('a[href$="/catalog/grey-marble"]').click();
+    const y = await page.evaluate(
+      () =>
+        JSON.parse(sessionStorage.getItem("stone:catalog-return")!).y as number,
     );
+    await expect(page).toHaveURL(new RegExp(`/${locale}/catalog/grey-marble$`));
     await expect(page.locator("[data-gallery-main] img")).toBeVisible();
     await page.waitForFunction(() =>
       [
@@ -95,9 +102,7 @@ for (const locale of ["ru", "en"] as const) {
     );
     await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(y, -1);
     await page.goBack();
-    await expect(page).toHaveURL(
-      new RegExp(`/${locale}/catalog/black-marble$`),
-    );
+    await expect(page).toHaveURL(new RegExp(`/${locale}/catalog/grey-marble$`));
     await page.goBack();
     await expect(page).toHaveURL(
       new RegExp(`/${locale}/catalog\\?material=marble$`),
@@ -106,6 +111,17 @@ for (const locale of ["ru", "en"] as const) {
       () => (window as unknown as { motionObserved: string[] }).motionObserved,
     );
     expect(motion.some((name) => name.includes("stone-photo-"))).toBe(true);
+    const snapshots = await page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            motionSnapshots: { path: string; y: number }[];
+          }
+        ).motionSnapshots,
+    );
+    expect(
+      snapshots.find((s) => s.path === `/${locale}/catalog`)?.y,
+    ).toBeCloseTo(y, -1);
     expect(errors).toEqual([]);
   });
 }
