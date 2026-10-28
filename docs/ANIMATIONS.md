@@ -45,3 +45,28 @@ separate from that functional check; no owner acceptance is implied here.
   product gallery thumbnail swap (instant).
 - The styleguide (`/ru/_styleguide`, `/en/_styleguide`) shows frozen pressed states (`data-state="pressed"`), so
   the ripple can be reviewed without pressing a control.
+
+## Page transitions (owner selection 1 + 2, 2026-10-29)
+
+The owner approved restrained route crossfades plus catalog-to-product shared photos,
+and publication to the existing TEST shop. Implementation uses the installed
+React `ViewTransition` integration documented by Next 16.3.8, without a new dependency.
+
+- Public page roots: `PageTransition`, keyed by pathname; 300ms fade/rise of 16px.
+  Header, footer and tab bar remain outside the moving boundary. Filter-only query
+  changes do not remount the page boundary. Account/cart use a 160ms opacity fade.
+- Catalog photo to first product photo: matching, collision-free product identity,
+  `share="stone-product"`, 400ms with `cubic-bezier(0.2, 0, 0.2, 1)`.
+  Home carousels intentionally have no named pair to avoid duplicate product names.
+  Unmatched images, async fallback commits and unsupported browsers navigate normally.
+- Mobile below 768px: 240ms/12px page entry and 320ms photo movement.
+- Reduced motion: every route snapshot animation is disabled, including geometry morphs.
+- Catalog return: session-only origin URL (including filters/search) and scroll;
+  unavailable storage falls back to normal catalog links and native history.
+  Modified clicks, downloads and other origins are never intercepted.
+- React owns snapshot timing, image readiness, interruptions and cancellation. No
+  artificial route/loading delay or manual click lock is introduced. New tabs,
+  anchors and browser Back/Forward retain Next/browser semantics.
+
+Verification record will list the tested SHA, CI run, browser and viewport evidence.
+Independent agent review was not performed in this execution.

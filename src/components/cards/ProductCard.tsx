@@ -1,3 +1,4 @@
+import { ProductPhotoTransition } from "@/components/navigation/PageTransition";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
@@ -113,27 +114,29 @@ export function ProductCard({
   const t = useTranslations("components.productCard");
   return (
     <article data-state={state} className={CARD}>
-      <div className="bg-stone-catalog-photo relative h-[190px] shrink-0 overflow-clip rounded-xl md:h-[240px]">
-        {image ? (
-          <Image
-            src={image.src}
-            alt={image.alt}
-            fill
-            sizes={SIZES}
-            className={
-              imageFit === "contain" ? "object-contain" : "object-cover"
-            }
-          />
-        ) : (
-          <Placeholder />
-        )}
-        {discountPercent !== undefined && (
-          <DiscountBadge
-            percent={discountPercent}
-            className="absolute top-2 left-2"
-          />
-        )}
-      </div>
+      <ProductPhotoTransition href={href}>
+        <div className="bg-stone-catalog-photo relative h-[190px] shrink-0 overflow-clip rounded-xl md:h-[240px]">
+          {image ? (
+            <Image
+              src={image.src}
+              alt={image.alt}
+              fill
+              sizes={SIZES}
+              className={
+                imageFit === "contain" ? "object-contain" : "object-cover"
+              }
+            />
+          ) : (
+            <Placeholder />
+          )}
+          {discountPercent !== undefined && (
+            <DiscountBadge
+              percent={discountPercent}
+              className="absolute top-2 left-2"
+            />
+          )}
+        </div>
+      </ProductPhotoTransition>
 
       {/* Bubble 36 px: 8 px padding + 2 px + 4 px from the card edge (12 px padding on 768+). */}
       <div className="absolute top-3.5 right-3.5 z-10 md:top-[18px] md:right-[18px]">

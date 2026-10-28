@@ -1,3 +1,4 @@
+import { PageTransition } from "@/components/navigation/PageTransition";
 import { setRequestLocale } from "next-intl/server";
 
 import { AccountStateProvider } from "@/features/account/AccountStateProvider";
@@ -41,7 +42,9 @@ export default async function SiteLayout({
       >
         <TestBanner />
         <ShellHeader />
-        <main className="flex flex-1 flex-col">{children}</main>
+        <main className="flex flex-1 flex-col">
+          <PageTransition>{children}</PageTransition>
+        </main>
         <SiteFooter reserveTabBar />
         <ShellTabBar />
       </div>

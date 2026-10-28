@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { ViewTransition, useState } from "react";
+import { productTransitionName } from "@/components/navigation/PageTransition";
 
 import { parseProductMedia } from "@/lib/product-media";
 import { cn } from "@/components/cn";
@@ -12,6 +13,7 @@ export type GalleryView = { id: "full" | "detail"; label: string };
 export type GalleryCrop = { left: number; size: number };
 
 type GalleryProps = {
+  slug?: string;
   /** Ordered real photos for products created through the upload editor. */
   photos?: string[];
   /** Manifest key of the one source image (e.g. `images/catalog/black-marble`). */
@@ -116,20 +118,26 @@ export function Gallery(props: GalleryProps) {
     const active = Math.min(selected, photos.length - 1);
     return (
       <div className="flex min-w-0 flex-col gap-4">
-        <div
-          data-gallery-main
-          data-view={active}
-          className="bg-stone-catalog-photo relative aspect-[726/572] w-full overflow-clip rounded-[20px]"
+        <ViewTransition
+          name={props.slug ? productTransitionName(props.slug) : undefined}
+          default="none"
+          share={active === 0 ? "stone-product" : "none"}
         >
-          <Image
-            src={photos[active]}
-            alt={props.alt}
-            fill
-            sizes={frameSizes(1)}
-            className="object-contain"
-            loading="eager"
-          />
-        </div>
+          <div
+            data-gallery-main
+            data-view={active}
+            className="bg-stone-catalog-photo relative aspect-[726/572] w-full overflow-clip rounded-[20px]"
+          >
+            <Image
+              src={photos[active]}
+              alt={props.alt}
+              fill
+              sizes={frameSizes(1)}
+              className="object-contain"
+              loading="eager"
+            />
+          </div>
+        </ViewTransition>
         {photos.length > 1 && (
           <div
             role="group"
@@ -169,18 +177,24 @@ export function Gallery(props: GalleryProps) {
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div
-        data-gallery-main
-        data-view={view}
-        className="bg-stone-catalog-photo relative aspect-[726/572] w-full overflow-clip rounded-[20px]"
+      <ViewTransition
+        name={props.slug ? productTransitionName(props.slug) : undefined}
+        default="none"
+        share={view === "full" ? "stone-product" : "none"}
       >
-        <Frame
-          view={view}
-          props={props}
-          sizes={MAIN_SIZES[view](props.crop)}
-          eager
-        />
-      </div>
+        <div
+          data-gallery-main
+          data-view={view}
+          className="bg-stone-catalog-photo relative aspect-[726/572] w-full overflow-clip rounded-[20px]"
+        >
+          <Frame
+            view={view}
+            props={props}
+            sizes={MAIN_SIZES[view](props.crop)}
+            eager
+          />
+        </div>
+      </ViewTransition>
       {views.length > 1 ? (
         <div role="group" aria-label={label} className="flex gap-4">
           {views.map((v) => (
