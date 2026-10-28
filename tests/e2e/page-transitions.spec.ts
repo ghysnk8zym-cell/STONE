@@ -9,28 +9,40 @@ for (const locale of ["ru", "en"] as const) {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.addInitScript(() => {
-      const start = document.startViewTransition?.bind(document);
       const observed: string[] = [];
+      const cloneSafety: boolean[] = [];
+      (window as unknown as { cloneSafety: boolean[] }).cloneSafety =
+        cloneSafety;
       const snapshots: { path: string; y: number }[] = [];
+      (window as unknown as { motionObserved: string[] }).motionObserved =
+        observed;
       (
         window as unknown as { motionSnapshots: typeof snapshots }
       ).motionSnapshots = snapshots;
-      (window as unknown as { motionObserved: string[] }).motionObserved =
-        observed;
-      if (start)
-        document.startViewTransition = ((...args: Parameters<typeof start>) => {
-          const transition = start(...args);
-          void transition.ready
-            .then(() => {
-              snapshots.push({ path: location.pathname, y: scrollY });
-              for (const animation of document.getAnimations()) {
-                const effect = animation.effect as KeyframeEffect | null;
-                if (effect?.pseudoElement) observed.push(effect.pseudoElement);
-              }
-            })
-            .catch(() => {});
-          return transition;
-        }) as typeof document.startViewTransition;
+      const animate = Element.prototype.animate;
+      Element.prototype.animate = function (frames, options) {
+        const result = animate.call(this, frames, options);
+        const id = typeof options === "object" ? options.id || "" : "";
+        if (id.startsWith("stone-")) {
+          cloneSafety.push(
+            [
+              ...document.querySelectorAll<HTMLElement>(
+                "[data-stone-transition-overlay]",
+              ),
+            ].every(
+              (stage) =>
+                stage.inert &&
+                stage.getAttribute("aria-hidden") === "true" &&
+                !stage.querySelector(
+                  "[id],[name],[action],[formaction],title,meta,input[type=hidden]",
+                ),
+            ),
+          );
+          observed.push(id);
+          snapshots.push({ path: location.pathname, y: scrollY });
+        }
+        return result;
+      };
     });
     await page.goto(`/${locale}/catalog?material=marble`);
     const card = page
@@ -68,13 +80,22 @@ for (const locale of ["ru", "en"] as const) {
       .poll(() =>
         page.evaluate(
           () =>
-            document
-              .getAnimations()
-              .filter((a) => (a.effect as KeyframeEffect | null)?.pseudoElement)
+            document.getAnimations().filter((a) => a.id.startsWith("stone-"))
               .length,
         ),
       )
       .toBe(0);
+    await expect(page.locator("[data-stone-transition-overlay]")).toHaveCount(
+      0,
+    );
+    await expect(page.locator("[data-gallery-main]")).toHaveCSS("opacity", "1");
+    expect(
+      (
+        await page.evaluate(
+          () => (window as unknown as { cloneSafety: boolean[] }).cloneSafety,
+        )
+      ).every(Boolean),
+    ).toBe(true);
     await page.screenshot({
       path: testInfo.outputPath(`product-${locale}.png`),
     });
@@ -126,12 +147,12 @@ for (const locale of ["ru", "en"] as const) {
   });
 }
 
-test("reduced motion and unsupported browser keep navigation usable", async ({
+test("reduced motion and unavailable animation API keep navigation usable", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(() => {
-    Object.defineProperty(document, "startViewTransition", {
+    Object.defineProperty(Element.prototype, "animate", {
       value: undefined,
       configurable: true,
     });
@@ -173,20 +194,13 @@ test("ordinary navigation fades page content while the header stays mounted", as
   await page.addInitScript(() => {
     const observed: string[] = [];
     (window as unknown as { pageMotion: string[] }).pageMotion = observed;
-    const start = document.startViewTransition.bind(document);
-    document.startViewTransition = ((...args: Parameters<typeof start>) => {
-      const transition = start(...args);
-      void transition.ready
-        .then(() => {
-          observed.push(
-            ...document
-              .getAnimations()
-              .map((a) => (a as CSSAnimation).animationName || ""),
-          );
-        })
-        .catch(() => {});
-      return transition;
-    }) as typeof document.startViewTransition;
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, options) {
+      const result = animate.call(this, frames, options);
+      const id = typeof options === "object" ? options.id || "" : "";
+      if (id.startsWith("stone-")) observed.push(id);
+      return result;
+    };
   });
   await page.goto("/en");
   await page.waitForFunction(() =>
@@ -206,7 +220,7 @@ test("ordinary navigation fades page content while the header stays mounted", as
         () => (window as unknown as { pageMotion: string[] }).pageMotion,
       ),
     )
-    .toContain("stone-page-in");
+    .toContain("stone-page-enter");
   expect(
     await page.evaluate(
       () =>

@@ -48,25 +48,28 @@ separate from that functional check; no owner acceptance is implied here.
 
 ## Page transitions (owner selection 1 + 2, 2026-10-29)
 
-The owner approved restrained route crossfades plus catalog-to-product shared photos,
-and publication to the existing TEST shop. Implementation uses the installed
-React `ViewTransition` integration documented by Next 16.3.8, without a new dependency.
+The owner approved restrained page crossfades plus catalog-to-product shared photos,
+and publication to the existing TEST shop. The implementation uses the Web Animations API
+and temporary inert visual copies. Next routing and metadata remain mounted normally;
+there is no navigation interception, new dependency or server-side change.
 
-- Public page roots: `PageTransition`, keyed by pathname; 300ms fade/rise of 16px.
-  Header, footer and tab bar remain outside the moving boundary. Filter-only query
-  changes do not remount the page boundary. Account/cart use a 160ms opacity fade.
-- Catalog photo to first product photo: matching, collision-free product identity,
-  `share="stone-product"`, 400ms with `cubic-bezier(0.2, 0, 0.2, 1)`.
-  Home carousels intentionally have no named pair to avoid duplicate product names.
-  Unmatched images, async fallback commits and unsupported browsers navigate normally.
+- Page content crossfades and rises 16px over 300ms. The header/footer/tab bar stay
+  outside the copied main content. Query-only filter changes preserve the page and state.
+  Account, cart and checkout use a 160ms opacity fade. Live content remains opaque
+  and readable; the old decorative copy fades to reveal it.
+- Matching product photo frames use transform/opacity FLIP pairs over 400ms. Image
+  readiness is bounded to 180ms; missing/failed images fall back to normal navigation.
+  Back/Forward and explicit return restore the catalog query/scroll before measuring.
 - Mobile below 768px: 240ms/12px page entry and 320ms photo movement.
-- Reduced motion: every route snapshot animation is disabled, including geometry morphs.
-- Catalog return: session-only origin URL (including filters/search) and scroll;
-  unavailable storage falls back to normal catalog links and native history.
-  Modified clicks, downloads and other origins are never intercepted.
-- React owns snapshot timing, image readiness, interruptions and cancellation. No
-  artificial route/loading delay or manual click lock is introduced. New tabs,
-  anchors and browser Back/Forward retain Next/browser semantics.
+- Reduced motion disables the effects. Missing or failing animation APIs also leave
+  navigation and content usable. No autoplay or artificial navigation delay.
+- Visual copies use closed decorative trees with the current styles. They are aria-hidden, inert and pointer transparent. IDs, test IDs, form
+  names/actions, hidden inputs and document resources are removed. Copies and their
+  form values are erased after completion, cancellation, expiry, interruption or unmount.
+- Repeated clicks, scroll, resize and preference changes cancel the current effect.
+  Pending snapshots expire after 1800ms. No content is kept in storage; session storage
+  holds only the originating catalog URL and scroll offset. Native links, modified
+  clicks, anchors and browser history keep their own behavior.
 
-Verification record will list the tested SHA, CI run, browser and viewport evidence.
-Independent agent review was not performed in this execution.
+Verification evidence records the final SHA, full CI and live TEST checks.
+Independent agent review was not performed by the implementer.

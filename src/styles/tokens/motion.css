@@ -24,77 +24,6 @@
   }
 }
 
-/* React owns capture, readiness and interruption; links remain native Next links. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-}
-
-::view-transition-group(.stone-page),
-::view-transition-group(.stone-quiet) {
-  animation: none;
-}
-
-::view-transition-old(.stone-page) {
-  animation: stone-page-out var(--motion-page-duration) var(--motion-route-ease)
-    both;
-}
-
-::view-transition-new(.stone-page) {
-  animation: stone-page-in var(--motion-page-duration) var(--motion-route-ease)
-    both;
-}
-
-::view-transition-old(.stone-quiet) {
-  animation: stone-page-out var(--motion-quiet-duration) ease-out both;
-}
-
-::view-transition-new(.stone-quiet) {
-  animation: stone-quiet-in var(--motion-quiet-duration) ease-out both;
-}
-
-::view-transition-group(.stone-product) {
-  animation-duration: var(--motion-product-duration);
-  animation-timing-function: var(--motion-route-ease);
-}
-
-::view-transition-old(.stone-product),
-::view-transition-new(.stone-product) {
-  height: 100%;
-  object-fit: contain;
-  animation-duration: var(--motion-product-duration);
-}
-
-::view-transition {
-  pointer-events: none;
-}
-
-@keyframes stone-page-in {
-  from {
-    opacity: 0;
-    transform: translateY(var(--motion-page-rise));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes stone-page-out {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes stone-quiet-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-hover-duration: 0ms;
@@ -103,10 +32,5 @@
     --motion-product-duration: 0ms;
     --motion-quiet-duration: 0ms;
     --motion-page-rise: 0px;
-  }
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
   }
 }
