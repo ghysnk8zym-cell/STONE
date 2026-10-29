@@ -85,7 +85,11 @@ describe("calculate", () => {
       field: "area",
       reason: "range",
     });
-    expect(calculate({ mode: "area", area: "10000" }, 100).ok).toBe(true);
+    expect(calculate({ mode: "area", area: "10000" }, 100)).toEqual({
+      ok: false,
+      field: "area",
+      reason: "capacity",
+    });
     expect(calculate({ mode: "area", area: "0.01" }, 100).ok).toBe(true);
   });
 

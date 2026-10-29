@@ -11,7 +11,7 @@ export type CalcResult =
       unitCents: number;
       totalCents: number;
     }
-  | { ok: false; field: CalcField; reason: "invalid" | "range" };
+  | { ok: false; field: CalcField; reason: "invalid" | "range" | "capacity" };
 
 export const EXTRA_RATE = 0.1;
 export const LIMITS = {
@@ -76,6 +76,12 @@ export function calculate(input: CalcInput, unitCents: number): CalcResult {
 
   const extraH = toHundredths((surfaceH * EXTRA_RATE) / 100);
   const orderH = surfaceH + extraH;
+  if (orderH > LIMITS.area[1] * 100)
+    return {
+      ok: false,
+      field: input.mode === "area" ? "area" : "height",
+      reason: "capacity",
+    };
   return {
     ok: true,
     surfaceM2: fromHundredths(surfaceH),

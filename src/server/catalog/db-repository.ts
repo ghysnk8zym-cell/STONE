@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 import { and, asc, eq, inArray } from "drizzle-orm";
 
@@ -85,7 +86,7 @@ async function loadCopy(
  * from the caller's Localizer otherwise (messages, the seed's source).
  */
 export function createDbRepository(db: Db): CatalogRepository {
-  const load = async (): Promise<Product[]> => {
+  const load = cache(async (): Promise<Product[]> => {
     const rows = await db
       .select()
       .from(schema.product)
@@ -96,7 +97,7 @@ export function createDbRepository(db: Db): CatalogRepository {
       rows.map((row) => row.id),
     );
     return rows.map((row) => toProduct(row, copy.get(row.id)));
-  };
+  });
   const loadRepository = async (): Promise<CatalogRepository> =>
     createStaticRepository(await load());
 

@@ -106,7 +106,7 @@ function FooterLink({
 }
 
 export function SiteFooter({
-  links = {},
+  links = { reviews: "/reviews" },
   privacyHref,
   social = {},
   reserveTabBar = false,
