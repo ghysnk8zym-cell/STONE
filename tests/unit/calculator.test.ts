@@ -146,3 +146,30 @@ describe("formatArea", () => {
     expect(formatArea(2.2, "ru-RU")).toBe("2,20");
   });
 });
+
+describe("order-area allowance boundary", () => {
+  for (const area of ["9090.91", "9 090,91"]) {
+    it(area + " produces exactly the maximum order area", () => {
+      const result = calculate({ mode: "area", area }, 24000);
+      expect(result.ok && result.orderM2).toBe(10000);
+      expect(result.ok && result.totalCents).toBe(240000000);
+    });
+  }
+  it("rejects one hundredth over the net-area boundary before adding", () => {
+    expect(calculate({ mode: "area", area: "9090.92" }, 24000)).toEqual({
+      ok: false,
+      field: "area",
+      reason: "capacity",
+    });
+  });
+  it("wall dimensions obey the same rounded order cap", () => {
+    const valid = calculate(
+      { mode: "wall", length: "100", height: "90.9091" },
+      24000,
+    );
+    expect(valid.ok && valid.orderM2).toBe(10000);
+    expect(
+      calculate({ mode: "wall", length: "100", height: "90.9092" }, 24000),
+    ).toEqual({ ok: false, field: "height", reason: "capacity" });
+  });
+});
