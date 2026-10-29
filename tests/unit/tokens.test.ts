@@ -16,6 +16,16 @@ type Contexts = Record<string, Declarations>;
 
 const MIN_WIDTH_ORDER = ["768", "1024", "1440", "1920"];
 
+// Owner-selected page motion is an application behavior, not a Figma variable.
+// Keep this allowlist exact so new visual overrides still require snapshot evidence.
+const APPROVED_MOTION_OVERRIDES: Record<string, Record<string, string>> = {
+  max767: {
+    "--motion-page-duration": "240ms",
+    "--motion-page-rise": "12px",
+    "--motion-product-duration": "320ms",
+  },
+};
+
 function stripComments(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, "");
 }
@@ -144,10 +154,15 @@ describe("design tokens", () => {
     }
   });
 
-  it("media blocks only override snapshot variables, each at a snapshot breakpoint", () => {
+  it("media blocks only override snapshot variables or exact approved motion values", () => {
     for (const [context, props] of Object.entries(contexts)) {
       if (context === "base" || !/^(max)?\d+$/.test(context)) continue;
       for (const name of Object.keys(props)) {
+        const motion = APPROVED_MOTION_OVERRIDES[context]?.[name];
+        if (motion !== undefined) {
+          expect(props[name], `${name} @ ${context}`).toBe(motion);
+          continue;
+        }
         const values = snapshot.variables[
           name as keyof typeof snapshot.variables
         ] as Record<string, string | number> | undefined;

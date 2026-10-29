@@ -113,7 +113,10 @@ export function ProductCard({
   const t = useTranslations("components.productCard");
   return (
     <article data-state={state} className={CARD}>
-      <div className="bg-stone-catalog-photo relative h-[190px] shrink-0 overflow-clip rounded-xl md:h-[240px]">
+      <div
+        data-product-photo={href.split("/").at(-1)}
+        className="bg-stone-catalog-photo relative h-[190px] shrink-0 overflow-clip rounded-xl md:h-[240px]"
+      >
         {image ? (
           <Image
             src={image.src}

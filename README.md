@@ -7,7 +7,8 @@ illustrative. The deliverable is a test version for customer approval, then sour
 handover for another team's development and server migration. Account/admin writes
 are implemented; orders come from synthetic seed. Custom requests include seeded
 examples and working private submissions with parameters and a reference photo.
-Cart/checkout, real payment, messaging and email delivery are not implemented.
+Cart and test checkout are implemented without payment. Real payment, messaging
+and email delivery are not implemented.
 The owner approved the request/photo demo without real online payment. Use only
 fictional contacts and non-sensitive images. See `docs/PUBLIC_REQUEST_DEMO.md`.
 
@@ -88,6 +89,9 @@ and migration SQL. Full Node/Docker instructions and exact verification limits:
 [docs/NODE_DEPLOYMENT.md](docs/NODE_DEPLOYMENT.md).
 
 ## Project evidence and decisions
+
+- Developer delivery contract and database/storage compatibility:
+  [docs/DEVELOPER_HANDOFF.md](docs/DEVELOPER_HANDOFF.md).
 
 - Development/scripts: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 - Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)

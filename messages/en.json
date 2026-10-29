@@ -586,7 +586,8 @@
         "illustrative": "Illustrative estimate",
         "error": {
           "invalid": "Enter a number, e.g. 2.5",
-          "range": "Enter a value from {min} to {max}"
+          "range": "Enter a value from {min} to {max}",
+          "capacity": "Order area including the 10% allowance must not exceed {max} m²"
         }
       }
     },
@@ -679,6 +680,12 @@
           "finish": "Hand carved, matte"
         }
       }
+    },
+    "reviews": {
+      "title": "Reviews",
+      "description": "STONE customer reviews",
+      "empty": "There are no published reviews yet. Customer reviews will appear here after confirmation.",
+      "catalog": "Browse the catalog"
     }
   },
   "auth": {

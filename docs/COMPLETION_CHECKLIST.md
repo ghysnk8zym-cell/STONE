@@ -1,5 +1,33 @@
 # STONE completion and acceptance checklist
 
+## Current local delivery candidate — 2026-10-29
+
+The dated sections below are historical milestone records, not the status of the
+current candidate. The candidate is base `bd33f903f9855eaf43621b6de8e3740e775cda62`
+plus the uncommitted changes in the delivery manifest. See DEVELOPER_HANDOFF.md
+for supported deployment targets, source exclusions and verification limits.
+
+- [x] Cart and test checkout are implemented, without real payment or delivery.
+- [x] Calculator preserves the 10000 m² order cap, including the allowance, and
+      refuses excess before adding; localized error and disabled-button regression.
+- [x] RU/EN Reviews route, localized metadata, honest empty state and footer link.
+- [x] Focused candidate suite: 88 tests passed in six files; this is not full CI.
+- [x] PostgreSQL/Node/Docker/optional Cloudflare handoff and media adapter gaps documented.
+- [ ] Exact-candidate full framework build/types/browser/Axe verification.
+- [ ] Request-cache deduplication inside a real server-component render and fresh
+      data/error behavior across separate requests. React.cache outside the server
+      dispatcher cannot establish these properties; framework startup is blocked
+      by native SWC/cache validation in the current sandbox.
+- [ ] New-host PostgreSQL auth/order/upload/restart and restore acceptance.
+- [ ] Select production Node product-media storage and orphan retention policy.
+- [ ] Owner asset/copy/price acceptance and current Figma/browser visual review.
+
+Earlier unchecked Linux/Docker statements below describe the historical stage;
+remote CI on 9780b5d later passed packaging jobs, but its e2e failed. Neither those
+jobs nor the prior baseline prove this candidate's complete acceptance.
+
+## Historical milestone record
+
 Updated 2026-10-18 during takeover. **The project is not yet accepted or released.**
 Passing local tests is evidence for individual code paths, not whole-project completion.
 The unchanged `docs/STONE_HANDOFF.md` records the original handoff; this document

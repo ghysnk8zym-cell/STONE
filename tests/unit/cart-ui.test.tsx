@@ -101,12 +101,22 @@ describe("product page: Add to cart / Buy now", () => {
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "9091" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Buy now" }));
+    fireEvent.blur(screen.getByRole("textbox"));
+    expect(
+      (screen.getByRole("button", { name: "Buy now" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: "Add to cart" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(
+      screen.getByText(
+        "Order area including the 10% allowance must not exceed 10,000 m²",
+      ),
+    ).toBeTruthy();
     expect(stored()).toEqual([]);
     expect(mocks.push).not.toHaveBeenCalled();
-    expect(screen.getByRole("status").textContent).toBe(
-      "One product can be ordered up to 10,000 m². Reduce the area.",
-    );
   });
 
   it("refuses an add that would take the line above 10 000 m², keeping the line as it was", () => {

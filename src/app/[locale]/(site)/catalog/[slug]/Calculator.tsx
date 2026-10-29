@@ -113,6 +113,8 @@ export function Calculator({
     if (result.ok || result.field !== field || !revealed[field])
       return undefined;
     if (result.reason === "invalid") return t("error.invalid");
+    if (result.reason === "capacity")
+      return t("error.capacity", { max: format.number(LIMITS.area[1]) });
     const [min, max] = LIMITS[field];
     return t("error.range", {
       min: format.number(min),

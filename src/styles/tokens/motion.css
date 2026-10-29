@@ -9,11 +9,28 @@
   --motion-hover-ease: cubic-bezier(0.2, 0, 0, 1);
   --motion-ripple-duration: 600ms;
   --motion-ripple-ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-page-duration: 300ms;
+  --motion-page-rise: 16px;
+  --motion-product-duration: 400ms;
+  --motion-quiet-duration: 160ms;
+  --motion-route-ease: cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --motion-page-duration: 240ms;
+    --motion-page-rise: 12px;
+    --motion-product-duration: 320ms;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-hover-duration: 0ms;
     --motion-ripple-duration: 0ms;
+    --motion-page-duration: 0ms;
+    --motion-product-duration: 0ms;
+    --motion-quiet-duration: 0ms;
+    --motion-page-rise: 0px;
   }
 }

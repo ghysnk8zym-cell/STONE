@@ -4,7 +4,7 @@ import { cache } from "react";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { IconButton } from "@/components/buttons/IconButton";
+import { CatalogBackButton } from "@/components/navigation/CatalogBackButton";
 import { FavoriteSaveButton } from "@/features/account/FavoriteControls";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { routing, type Locale } from "@/i18n/routing";
@@ -102,12 +102,7 @@ export default async function ProductPage({
     >
       <div className="mx-auto flex w-full max-w-(--layout-content-width) flex-col">
         <div className="pb-4">
-          <IconButton
-            icon="back"
-            tone="ink"
-            href="/catalog"
-            label={t("back")}
-          />
+          <CatalogBackButton label={t("back")} />
         </div>
         <div className="flex flex-col gap-6">
           <Breadcrumb
@@ -122,6 +117,7 @@ export default async function ProductPage({
           />
           <div className="flex flex-col gap-6 md:gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-8 min-[90rem]:grid-cols-[minmax(0,1fr)_520px] min-[90rem]:gap-10">
             <Gallery
+              slug={product.slug}
               photos={product.gallery}
               image={product.image}
               alt={name}

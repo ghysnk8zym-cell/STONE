@@ -12,6 +12,7 @@ export type GalleryView = { id: "full" | "detail"; label: string };
 export type GalleryCrop = { left: number; size: number };
 
 type GalleryProps = {
+  slug?: string;
   /** Ordered real photos for products created through the upload editor. */
   photos?: string[];
   /** Manifest key of the one source image (e.g. `images/catalog/black-marble`). */
@@ -117,6 +118,7 @@ export function Gallery(props: GalleryProps) {
     return (
       <div className="flex min-w-0 flex-col gap-4">
         <div
+          data-product-photo={props.slug}
           data-gallery-main
           data-view={active}
           className="bg-stone-catalog-photo relative aspect-[726/572] w-full overflow-clip rounded-[20px]"
@@ -170,6 +172,7 @@ export function Gallery(props: GalleryProps) {
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <div
+        data-product-photo={props.slug}
         data-gallery-main
         data-view={view}
         className="bg-stone-catalog-photo relative aspect-[726/572] w-full overflow-clip rounded-[20px]"

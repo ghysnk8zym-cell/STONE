@@ -25,6 +25,7 @@ const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   "",
   "catalog",
   "works",
+  "reviews",
   "create-your-stone",
   "_styleguide",
   "sign-in",

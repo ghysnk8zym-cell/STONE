@@ -167,15 +167,15 @@ test.describe("product", () => {
     expect(await overflow()).toBeLessThanOrEqual(0);
   });
 
-  // Largest total (10 000 m², the area limit) in ru, the longest format: «2 640 000,00 $».
+  // Maximum valid order: 9 090.91 m² net plus rounded allowance = 10 000 m².
   async function maxTotal(page: Page) {
     await page.goto("/ru/catalog/black-marble");
     await productReady(page, "ru");
     await page
       .getByLabel(PRODUCT_RU.calculator.fields.area, { exact: true })
-      .fill("10 000");
+      .fill("9 090,91");
     const total = page.getByTestId("calculator-total");
-    await expect(total).toHaveText(/^2\s640\s000,00\s\$$/);
+    await expect(total).toHaveText(/^2\s400\s000,00\s\$$/);
     return total.evaluate((el) => {
       const card = el.closest("section")!.getBoundingClientRect();
       const box = el.getBoundingClientRect();
@@ -206,6 +206,45 @@ test.describe("product", () => {
     expect(total.fontSize).toBe(compactDesktop ? "32px" : "40px");
     expect(total.insideRight).toBeGreaterThanOrEqual(0);
   });
+
+  for (const locale of LOCALES) {
+    test(
+      "order area boundary includes allowance (" + locale + ")",
+      async ({ page }) => {
+        const copy = MESSAGES[locale].pages.product;
+        await page.goto("/" + locale + "/catalog/black-marble");
+        await productReady(page, locale);
+        const area = page.getByLabel(copy.calculator.fields.area, {
+          exact: true,
+        });
+        await area.fill(locale === "ru" ? "9 090,91" : "9090.91");
+        await expect(
+          page.getByRole("button", { name: copy.addToCart, exact: true }),
+        ).toBeEnabled();
+        await expect(page.getByTestId("calculator-total")).toHaveText(
+          locale === "ru" ? /^2\s400\s000,00\s\$$/ : "$2,400,000.00",
+        );
+        await area.fill(locale === "ru" ? "9 090,92" : "9090.92");
+        await area.blur();
+        await expect(
+          page.getByText(
+            copy.calculator.error.capacity.replace(
+              "{max}",
+              new Intl.NumberFormat(locale).format(10000),
+            ),
+            { exact: true },
+          ),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("button", { name: copy.addToCart, exact: true }),
+        ).toBeDisabled();
+        await expect(
+          page.getByRole("button", { name: copy.buyNow, exact: true }),
+        ).toBeDisabled();
+        await expect(page.getByTestId("calculator-total")).toHaveText("—");
+      },
+    );
+  }
 
   for (const locale of LOCALES) {
     test(`axe has no critical or serious violations on a product (${locale})`, async ({

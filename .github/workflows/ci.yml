@@ -171,3 +171,119 @@ jobs:
           test "$(docker exec "$container_id" id -u)" != "0"
           docker exec "$container_id" node --input-type=module -e 'import {assertInternalLinks} from "./copy-node-runtime.mjs"; assertInternalLinks(process.cwd());'
           node scripts/smoke-packaged-app.mjs http://127.0.0.1:3101
+
+  customer-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      PLATFORM: node
+      APP_ENV: development
+      INDEXING: "off"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Reject unexpected application credentials
+        run: |
+          node -e 'const keys=["DATABASE_URL","BETTER_AUTH_SECRET","BETTER_AUTH_URL","SITE_URL","SEED_ADMIN_EMAIL","SEED_ADMIN_PASSWORD","SEED_CLIENT_EMAIL","SEED_CLIENT_PASSWORD"];const set=keys.filter(k=>process.env[k]);if(set.length)throw new Error("Unexpected application environment: "+set.join(","));'
+      - name: Reproduce and verify exact customer source
+        id: customer_export
+        run: node scripts/export-customer.mjs "$RUNNER_TEMP/stone-customer"
+      - name: Archive source before dependency installation
+        id: customer_archive
+        run: |
+          tar --sort=name -czf "$RUNNER_TEMP/stone-customer-source.tar.gz" -C "$RUNNER_TEMP/stone-customer" .
+          node --input-type=module -e 'import fs from "node:fs";import crypto from "node:crypto";const [reportPath,archivePath]=process.argv.slice(1);const report=JSON.parse(fs.readFileSync(reportPath));const bytes=fs.readFileSync(archivePath);report.sourceArchive={name:"stone-customer-source.tar.gz",bytes:bytes.length,sha256:crypto.createHash("sha256").update(bytes).digest("hex")};report.runUrl=process.env.GITHUB_SERVER_URL+"/"+process.env.GITHUB_REPOSITORY+"/actions/runs/"+process.env.GITHUB_RUN_ID;fs.writeFileSync(reportPath,JSON.stringify(report,null,2)+"\n");' "$RUNNER_TEMP/stone-customer.attestation.json" "$RUNNER_TEMP/stone-customer-source.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stone-customer-source
+          path: |
+            ${{ runner.temp }}/stone-customer-source.tar.gz
+            ${{ runner.temp }}/stone-customer.manifest.json
+          if-no-files-found: error
+          retention-days: 7
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install exact customer dependencies
+        id: customer_install
+        working-directory: ${{ runner.temp }}/stone-customer
+        run: pnpm install --frozen-lockfile
+      - name: Lint exact customer source
+        id: customer_lint
+        working-directory: ${{ runner.temp }}/stone-customer
+        run: pnpm lint
+      - name: Check exact customer formatting
+        id: customer_format
+        working-directory: ${{ runner.temp }}/stone-customer
+        run: pnpm format:check
+      - name: Typecheck exact customer source
+        id: customer_typecheck
+        working-directory: ${{ runner.temp }}/stone-customer
+        run: pnpm typecheck
+      - name: Unit and integration tests of exact customer source
+        id: customer_unit
+        working-directory: ${{ runner.temp }}/stone-customer
+        run: pnpm test
+      - name: Build exact customer source
+        id: customer_build
+        working-directory: ${{ runner.temp }}/stone-customer
+        run: pnpm build
+      - name: Install browser for isolated synthetic tests
+        working-directory: ${{ runner.temp }}/stone-customer
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Browser tests of exact customer source
+        id: customer_e2e
+        working-directory: ${{ runner.temp }}/stone-customer
+        run: pnpm test:e2e
+      - name: Package exact customer Node runtime
+        id: customer_package
+        working-directory: ${{ runner.temp }}/stone-customer
+        run: |
+          pnpm build:node
+          node scripts/copy-node-runtime.mjs .next/standalone "$RUNNER_TEMP/stone-customer-runtime"
+      - name: Smoke relocated customer Node runtime
+        id: customer_package_smoke
+        working-directory: ${{ runner.temp }}/stone-customer
+        env:
+          APP_ENV: production
+          PLATFORM: node
+          HOSTNAME: 127.0.0.1
+          PORT: "3100"
+          DATABASE_URL: ""
+          BETTER_AUTH_SECRET: ""
+          NODE_PATH: ""
+        run: |
+          runtime_pid=""
+          cleanup() {
+            if [ -n "$runtime_pid" ]; then
+              kill "$runtime_pid" 2>/dev/null || true
+              wait "$runtime_pid" 2>/dev/null || true
+            fi
+            cat "$RUNNER_TEMP/stone-customer-runtime.log" || true
+          }
+          trap cleanup EXIT
+          (cd "$RUNNER_TEMP/stone-customer-runtime" && exec node server.js) > "$RUNNER_TEMP/stone-customer-runtime.log" 2>&1 &
+          runtime_pid=$!
+          node scripts/smoke-packaged-app.mjs http://127.0.0.1:3100
+      - name: Record exact export check outcomes
+        if: always()
+        env:
+          CUSTOMER_OUTCOMES: >-
+            {"export":"${{ steps.customer_export.outcome }}","archive":"${{ steps.customer_archive.outcome }}","install":"${{ steps.customer_install.outcome }}","lint":"${{ steps.customer_lint.outcome }}","format":"${{ steps.customer_format.outcome }}","types":"${{ steps.customer_typecheck.outcome }}","unit":"${{ steps.customer_unit.outcome }}","build":"${{ steps.customer_build.outcome }}","e2e":"${{ steps.customer_e2e.outcome }}","package":"${{ steps.customer_package.outcome }}","smoke":"${{ steps.customer_package_smoke.outcome }}"}
+        run: |
+          node --input-type=module -e 'import fs from "node:fs";const path=process.env.RUNNER_TEMP+"/stone-customer.attestation.json";const report=fs.existsSync(path)?JSON.parse(fs.readFileSync(path)):{exportFailedBeforeAttestation:true};report.checks=JSON.parse(process.env.CUSTOMER_OUTCOMES);report.validation=Object.values(report.checks).every(value=>value==="success")?"success":"not_verified";fs.writeFileSync(path,JSON.stringify(report,null,2)+"\n");'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stone-customer-validation
+          path: ${{ runner.temp }}/stone-customer.attestation.json
+          if-no-files-found: error
+          retention-days: 7
